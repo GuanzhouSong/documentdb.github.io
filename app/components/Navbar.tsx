@@ -26,7 +26,7 @@ export default function Navbar() {
               Home
             </Link>
             <a
-              href="https://github.com/microsoft/documentdb"
+              href="https://github.com/documentdb/documentdb"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center text-gray-300 hover:text-blue-400 transition-colors duration-200 font-medium"
