@@ -14,7 +14,7 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a 
-                href="https://github.com/microsoft/documentdb" 
+                href="https://github.com/documentdb/documentdb" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-black bg-white hover:bg-gray-100 transition-colors duration-200"
@@ -464,7 +464,7 @@ export default function Home() {
             Join us as we build the future of document databases together
           </p>
           <a 
-            href="https://github.com/microsoft/documentdb" 
+            href="https://github.com/documentdb/documentdb" 
             target="_blank" 
             rel="noopener noreferrer"
             className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-black bg-white hover:bg-gray-100 transition-colors duration-200"
