@@ -122,7 +122,68 @@ export default function Blogs() {
             </article>
           </div>
 
-          {/* Blog 2 - DocumentDB Open Source Announcement */}
+          {/* Blog 2 - AWS joins the DocumentDB project */}
+          <article className="group relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-amber-500/10 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500 opacity-0 group-hover:opacity-100"></div>
+            <div className="relative bg-neutral-800/80 backdrop-blur-sm rounded-2xl border border-neutral-700/50 hover:border-orange-500/50 transition-all duration-500 group-hover:transform group-hover:scale-105 overflow-hidden h-full">
+              <div className="p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+                    <svg
+                      className="w-5 h-5 text-white"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <span className="text-orange-400 text-sm font-medium">
+                      AWS Blogs
+                    </span>
+                    <p className="text-gray-500 text-xs">Recent</p>
+                  </div>
+                </div>
+                <h2 className="text-xl font-bold text-white mb-3 group-hover:text-orange-300 transition-colors">
+                  AWS : DocumentDB Project Announcement
+                </h2>
+                <p className="text-gray-400 mb-4 text-sm leading-relaxed">
+                  AWS joins the DocumentDB project to build interoperable, open source document database technology
+                </p>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <span className="px-2 py-1 bg-orange-500/20 text-orange-400 rounded-full text-xs">
+                    Community
+                  </span>
+                  <span className="px-2 py-1 bg-amber-500/20 text-amber-400 rounded-full text-xs">
+                    Growth
+                  </span>
+                </div>
+                <a
+                  href="https://aws.amazon.com/blogs/opensource/aws-joins-the-documentdb-project-to-build-interoperable-open-source-document-database-technology/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center text-orange-400 hover:text-orange-300 transition-colors font-medium text-sm"
+                >
+                  Read more
+                  <svg
+                    className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 8l4 4m0 0l-4 4m4-4H3"
+                    />
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </article>
+          
+          {/* Blog 3 - DocumentDB Open Source Announcement */}
           <article className="group relative">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500 opacity-0 group-hover:opacity-100"></div>
             <div className="relative bg-neutral-800/80 backdrop-blur-sm rounded-2xl border border-neutral-700/50 hover:border-purple-500/50 transition-all duration-500 group-hover:transform group-hover:scale-105 overflow-hidden h-full">
@@ -192,7 +253,7 @@ export default function Blogs() {
             </div>
           </article>
 
-          {/* Blog 3 - DocumentDB Gaining Momentum */}
+          {/* Blog 4 - DocumentDB Gaining Momentum */}
           <article className="group relative">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500 opacity-0 group-hover:opacity-100"></div>
             <div className="relative bg-neutral-800/80 backdrop-blur-sm rounded-2xl border border-neutral-700/50 hover:border-purple-500/50 transition-all duration-500 group-hover:transform group-hover:scale-105 overflow-hidden h-full">
@@ -261,7 +322,7 @@ export default function Blogs() {
             </div>
           </article>
 
-          {/* Blog 4 - YugabyteDB MongoDB API */}
+          {/* Blog 5 - YugabyteDB MongoDB API */}
           <article className="group relative">
             <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500 opacity-0 group-hover:opacity-100"></div>
             <div className="relative bg-neutral-800/80 backdrop-blur-sm rounded-2xl border border-neutral-700/50 hover:border-green-500/50 transition-all duration-500 group-hover:transform group-hover:scale-105 overflow-hidden h-full">
