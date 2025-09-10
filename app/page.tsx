@@ -10,7 +10,7 @@ export default function Home() {
               DocumentDB
             </h1>
             <p className="text-xl sm:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
-              A powerful, scalable open-source document database built for modern applications
+              A powerful, scalable, MongoDB compatible open-source document database built for modern applications
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a 
