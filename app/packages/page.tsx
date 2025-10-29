@@ -173,33 +173,6 @@ sudo yum install documentdb`}</code>
           </ul>
         </div>
 
-        {/* Updates Info */}
-        <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-lg p-8 border border-blue-500/30">
-          <h2 className="text-2xl font-bold text-white mb-4">📢 Automatic Updates</h2>
-          <p className="text-gray-300 mb-4">
-            The repository is automatically updated whenever a new release is published in the{" "}
-            <a
-              href="https://github.com/documentdb/documentdb"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-400 hover:text-blue-300"
-            >
-              documentdb/documentdb
-            </a>{" "}
-            repository.
-          </p>
-          <p className="text-gray-400">
-            For more information about DocumentDB, visit the{" "}
-            <Link href="/" className="text-blue-400 hover:text-blue-300">
-              main site
-            </Link>{" "}
-            or check out the{" "}
-            <Link href="/docs" className="text-blue-400 hover:text-blue-300">
-              documentation
-            </Link>
-            .
-          </p>
-        </div>
       </div>
     </div>
   );
