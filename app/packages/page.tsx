@@ -28,17 +28,18 @@ export default function PackagesPage() {
             </div>
             <div className="bg-neutral-900 rounded p-4 mb-4">
               <code className="text-sm text-green-400 break-all">
-                curl -sSL https://documentdb.github.io/setup-apt.sh | sudo bash
+                # Add repository
+                <br />
+                echo "deb [trusted=yes] https://documentdb.github.io/deb stable main" | sudo tee /etc/apt/sources.list.d/documentdb.list
+                <br />
+                sudo apt-get update
+                <br />
+                <br />
+                # Install DocumentDB
                 <br />
                 sudo apt-get install documentdb
               </code>
             </div>
-            <a
-              href="https://documentdb.github.io/setup-apt.sh"
-              className="inline-flex items-center text-blue-400 hover:text-blue-300"
-            >
-              View setup script →
-            </a>
           </div>
 
           {/* RHEL/CentOS/Fedora Card */}
@@ -53,17 +54,28 @@ export default function PackagesPage() {
             </div>
             <div className="bg-neutral-900 rounded p-4 mb-4">
               <code className="text-sm text-green-400 break-all">
-                curl -sSL https://documentdb.github.io/setup-yum.sh | sudo bash
+                # Add repository
+                <br />
+                sudo tee /etc/yum.repos.d/documentdb.repo &lt;&lt;EOF
+                <br />
+                [documentdb]
+                <br />
+                name=DocumentDB Repository
+                <br />
+                baseurl=https://documentdb.github.io/rpm
+                <br />
+                enabled=1
+                <br />
+                gpgcheck=0
+                <br />
+                EOF
+                <br />
+                <br />
+                # Install DocumentDB
                 <br />
                 sudo yum install documentdb
               </code>
             </div>
-            <a
-              href="https://documentdb.github.io/setup-yum.sh"
-              className="inline-flex items-center text-blue-400 hover:text-blue-300"
-            >
-              View setup script →
-            </a>
           </div>
         </div>
 
