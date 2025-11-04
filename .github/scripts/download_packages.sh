@@ -130,18 +130,23 @@ for asset in data.get('assets', []):
         sign_deb_package "$DEB_POOL_UBUNTU24/$clean_name"
       fi
     elif [[ "$filename" == *.rpm ]]; then
+      echo "Processing RPM: $filename"
       wget -q -P out/packages "$download_url"
       
       if [[ "$filename" =~ ^rhel8-postgresql[0-9]+-documentdb.*\.rpm$ ]]; then
         GOT_RPM=1
         mkdir -p "$RPM_POOL_RHEL8"
         clean_name=$(echo "$filename" | sed 's/^rhel8-//')
+        echo "  Adding to RHEL 8: $filename -> $clean_name"
         cp "out/packages/$filename" "$RPM_POOL_RHEL8/$clean_name"
       elif [[ "$filename" =~ ^rhel9-postgresql[0-9]+-documentdb.*\.rpm$ ]]; then
         GOT_RPM=1
         mkdir -p "$RPM_POOL_RHEL9"
         clean_name=$(echo "$filename" | sed 's/^rhel9-//')
+        echo "  Adding to RHEL 9: $filename -> $clean_name"
         cp "out/packages/$filename" "$RPM_POOL_RHEL9/$clean_name"
+      else
+        echo "  Skipping RPM (does not match patterns): $filename"
       fi
     else
       wget -q -P out/packages "$download_url"
@@ -169,6 +174,16 @@ print(json.dumps(output, indent=2))
 " > out/packages/release-info.json
 
 echo "Successfully processed packages from $REPO"
+echo "GOT_DEB=$GOT_DEB, GOT_RPM=$GOT_RPM"
+echo "Checking final RPM repository structure:"
+for pool in "$RPM_POOL_RHEL8" "$RPM_POOL_RHEL9"; do
+  if [ -d "$pool" ]; then
+    echo "  $pool: $(ls -1 $pool/*.rpm 2>/dev/null | wc -l) RPM files"
+    ls -la "$pool"/ 2>/dev/null || echo "  Cannot list contents"
+  else
+    echo "  $pool: Directory does not exist"
+  fi
+done
 
 if [ "$GOT_DEB" = "1" ]; then
   echo "Building APT repository with multiple distribution components..."
