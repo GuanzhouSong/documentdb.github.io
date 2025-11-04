@@ -341,9 +341,16 @@ fi
 
 if [ "$GOT_RPM" = "1" ]; then
   echo "Building YUM repositories..."
+  echo "Current working directory: $(pwd)"
+  echo "RPM_POOL_RHEL8=$RPM_POOL_RHEL8"
+  echo "RPM_POOL_RHEL9=$RPM_POOL_RHEL9"
   
   for POOL in "$RPM_POOL_RHEL8" "$RPM_POOL_RHEL9"; do
-    if [ -d "$POOL" ] && [ "$(find "$POOL" -name "*.rpm" -type f | wc -l)" -gt 0 ]; then
+    echo "Checking pool: $POOL"
+    if [ -d "$POOL" ]; then
+      RPM_COUNT=$(find "$POOL" -name "*.rpm" -type f | wc -l)
+      echo "  Directory exists with $RPM_COUNT RPM files"
+      if [ "$RPM_COUNT" -gt 0 ]; then
       echo "Processing YUM repository: $POOL"
       pushd "$POOL" >/dev/null
       
@@ -365,9 +372,12 @@ if [ "$GOT_RPM" = "1" ]; then
         gpg --default-key "$GPG_FINGERPRINT" --detach-sign --armor repodata/repomd.xml 2>/dev/null || true
       fi
       
-      popd >/dev/null
+        popd >/dev/null
+      else
+        echo "  No RPM files found in directory"
+      fi
     else
-      echo "Skipping $POOL: directory not found or no RPM files"
+      echo "  Directory does not exist: $POOL"
     fi
   done
   
