@@ -386,7 +386,7 @@ if [ "$GOT_RPM" = "1" ]; then
   if [ -d "$RHEL8_POOL" ] && [ "$(find "$RHEL8_POOL" -name "*.rpm" -type f | wc -l)" -gt 0 ]; then
     echo "Creating main YUM repository"
     mkdir -p "$MAIN_POOL"
-    cp "$RHEL8_POOL"/* "$MAIN_POOL"/
+    cp "$RHEL8_POOL"/*.rpm "$MAIN_POOL"/ 2>/dev/null || true
     pushd "$MAIN_POOL" >/dev/null
     echo "Running createrepo_c for main repository in $(pwd)"
     if createrepo_c .; then
