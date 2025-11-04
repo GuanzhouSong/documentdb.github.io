@@ -259,17 +259,21 @@ print(json.dumps(output, indent=2))
   
   echo "Successfully processed packages from $REPO"
   echo "GOT_DEB=$GOT_DEB, GOT_RPM=$GOT_RPM"
-  echo "Checking DEB_POOL directory: $DEB_POOL"
-  ls -la "$DEB_POOL" 2>/dev/null || echo "DEB_POOL directory does not exist"
+  
+# Check distribution-specific DEB pools
+echo "Checking distribution-specific DEB pools..."
+for pool in "$DEB_POOL_DEB11" "$DEB_POOL_DEB12" "$DEB_POOL_UBUNTU22" "$DEB_POOL_UBUNTU24"; do
+  if [ -d "$pool" ]; then
+    echo "Found pool: $pool with $(ls -1 $pool/*.deb 2>/dev/null | wc -l) packages"
+  fi
+done
 
-# Build DEB repository if we have DEB packages
-echo "Checking if DEB repository should be built..."
-echo "DEB_POOL exists: $([ -d "$DEB_POOL" ] && echo 'yes' || echo 'no')"
-if [ -d "$DEB_POOL" ]; then
-  echo "DEB_POOL contents:"
-  ls -la "$DEB_POOL"
-fi
-echo "DEB files in pool: $(ls -1 $DEB_POOL/*.deb 2>/dev/null | wc -l)"
+echo "Checking RPM pools..."
+for pool in "$RPM_POOL_RHEL8" "$RPM_POOL_RHEL9"; do
+  if [ -d "$pool" ]; then
+    echo "Found pool: $pool with $(ls -1 $pool/*.rpm 2>/dev/null | wc -l) packages"  
+  fi
+done
 
 if [ "$GOT_DEB" = "1" ]; then
   echo "Building APT repository with multiple distribution components..."
@@ -412,88 +416,151 @@ if [ "$GOT_RPM" = "1" ]; then
   # Build RHEL 8 repository
   if [ -d "$RPM_POOL_RHEL8" ] && [ "$(ls -A $RPM_POOL_RHEL8/*.rpm 2>/dev/null)" ]; then
     echo "Building RHEL 8 YUM repository..."
+    echo "RHEL 8 packages found: $(ls -1 $RPM_POOL_RHEL8/*.rpm | wc -l)"
     pushd "$RPM_POOL_RHEL8" >/dev/null
     
     # Sign RPMs if GPG is available
     if [ -n "$GPG_FINGERPRINT" ]; then
       echo "Signing RHEL 8 RPM packages"
       for rpm_file in *.rpm; do
+        echo "Signing: $rpm_file"
         rpm --define "%_signature gpg" --define "%_gpg_name ${GPG_FINGERPRINT}" --addsign "$rpm_file" || echo "Warning: Could not sign $rpm_file"
       done
     fi
     
     echo "Creating RHEL 8 YUM repository metadata"
     if command -v createrepo_c >/dev/null 2>&1; then
-      createrepo_c .
+      echo "Running: createrepo_c ."
+      createrepo_c . || echo "Error: createrepo_c failed for RHEL 8"
+      echo "Repository metadata created. Contents:"
+      ls -la repodata/ 2>/dev/null || echo "No repodata directory found"
     else
-      echo "Warning: createrepo_c not found, skipping YUM repository metadata creation"
+      echo "Error: createrepo_c not found, cannot create YUM repository metadata"
     fi
     
     # Sign repository metadata if GPG is available
-    if [ -n "$GPG_FINGERPRINT" ]; then
+    if [ -n "$GPG_FINGERPRINT" ] && [ -f repodata/repomd.xml ]; then
       echo "Signing RHEL 8 repository metadata"
-      gpg --default-key "$GPG_FINGERPRINT" --detach-sign --armor repodata/repomd.xml
+      gpg --default-key "$GPG_FINGERPRINT" --detach-sign --armor repodata/repomd.xml || echo "Warning: Could not sign repodata/repomd.xml"
     fi
     
     popd >/dev/null
+  else
+    echo "No RHEL 8 packages found in $RPM_POOL_RHEL8"
   fi
   
   # Build RHEL 9 repository
   if [ -d "$RPM_POOL_RHEL9" ] && [ "$(ls -A $RPM_POOL_RHEL9/*.rpm 2>/dev/null)" ]; then
     echo "Building RHEL 9 YUM repository..."
+    echo "RHEL 9 packages found: $(ls -1 $RPM_POOL_RHEL9/*.rpm | wc -l)"
     pushd "$RPM_POOL_RHEL9" >/dev/null
     
     # Sign RPMs if GPG is available
     if [ -n "$GPG_FINGERPRINT" ]; then
       echo "Signing RHEL 9 RPM packages"
       for rpm_file in *.rpm; do
+        echo "Signing: $rpm_file"
         rpm --define "%_signature gpg" --define "%_gpg_name ${GPG_FINGERPRINT}" --addsign "$rpm_file" || echo "Warning: Could not sign $rpm_file"
       done
     fi
     
     echo "Creating RHEL 9 YUM repository metadata"
     if command -v createrepo_c >/dev/null 2>&1; then
-      createrepo_c .
+      echo "Running: createrepo_c ."
+      createrepo_c . || echo "Error: createrepo_c failed for RHEL 9"
+      echo "Repository metadata created. Contents:"
+      ls -la repodata/ 2>/dev/null || echo "No repodata directory found"
     else
-      echo "Warning: createrepo_c not found, skipping YUM repository metadata creation"
+      echo "Error: createrepo_c not found, cannot create YUM repository metadata"
     fi
     
     # Sign repository metadata if GPG is available
-    if [ -n "$GPG_FINGERPRINT" ]; then
+    if [ -n "$GPG_FINGERPRINT" ] && [ -f repodata/repomd.xml ]; then
       echo "Signing RHEL 9 repository metadata"
-      gpg --default-key "$GPG_FINGERPRINT" --detach-sign --armor repodata/repomd.xml
+      gpg --default-key "$GPG_FINGERPRINT" --detach-sign --armor repodata/repomd.xml || echo "Warning: Could not sign repodata/repomd.xml"
     fi
     
     popd >/dev/null
+  else
+    echo "No RHEL 9 packages found in $RPM_POOL_RHEL9"
   fi
   
   # Also create a main RPM repository with RHEL 8 packages for backward compatibility
   if [ -d "$RPM_POOL_RHEL8" ] && [ "$(ls -A $RPM_POOL_RHEL8/*.rpm 2>/dev/null)" ]; then
+    echo "Creating main YUM repository (RHEL 8 packages for backward compatibility)"
     mkdir -p out/rpm/main
     cp "$RPM_POOL_RHEL8"/* out/rpm/main/
+    echo "Copied $(ls -1 out/rpm/main/*.rpm | wc -l) packages to main repository"
     pushd out/rpm/main >/dev/null
-    echo "Creating main YUM repository (RHEL 8 packages)"
+    
     if command -v createrepo_c >/dev/null 2>&1; then
-      createrepo_c .
+      echo "Running: createrepo_c . (for main repository)"
+      createrepo_c . || echo "Error: createrepo_c failed for main repository"
+      echo "Main repository metadata created. Contents:"
+      ls -la repodata/ 2>/dev/null || echo "No repodata directory found"
     else
-      echo "Warning: createrepo_c not found, skipping YUM repository metadata creation"
+      echo "Error: createrepo_c not found, cannot create main YUM repository metadata"
     fi
-    if [ -n "$GPG_FINGERPRINT" ]; then
-      gpg --default-key "$GPG_FINGERPRINT" --detach-sign --armor repodata/repomd.xml
+    
+    if [ -n "$GPG_FINGERPRINT" ] && [ -f repodata/repomd.xml ]; then
+      echo "Signing main repository metadata"
+      gpg --default-key "$GPG_FINGERPRINT" --detach-sign --armor repodata/repomd.xml || echo "Warning: Could not sign main repodata/repomd.xml"
     fi
     popd >/dev/null
+  else
+    echo "No RHEL 8 packages found for main repository"
   fi
   
   echo "YUM repositories built successfully"
 fi
 
 
+echo ""
 echo "Package repository setup complete!"
 echo ""
-echo "Repository setup complete!"
+echo "=== Repository Structure Summary ==="
+
+# DEB Repository Status
+if [ -d out/deb ]; then
+  DEB_COUNT=$(find out/deb -name "*.deb" | wc -l)
+  DEB_RELEASE_FILE=$([ -f out/deb/dists/stable/Release ] && echo "✓" || echo "✗")
+  echo "DEB repository: ✓ Created with $DEB_COUNT signed packages, Release file: $DEB_RELEASE_FILE"
+else
+  echo "DEB repository: ✗ Not found"
+fi
+
+# RPM Repository Status  
+if [ -d out/rpm ]; then
+  RPM_COUNT=$(find out/rpm -name "*.rpm" | wc -l)
+  RHEL8_REPO=$([ -f out/rpm/rhel8/repodata/repomd.xml ] && echo "✓" || echo "✗")
+  RHEL9_REPO=$([ -f out/rpm/rhel9/repodata/repomd.xml ] && echo "✓" || echo "✗") 
+  MAIN_REPO=$([ -f out/rpm/main/repodata/repomd.xml ] && echo "✓" || echo "✗")
+  echo "RPM repository: ✓ Created with $RPM_COUNT packages"
+  echo "  - RHEL 8 metadata: $RHEL8_REPO"
+  echo "  - RHEL 9 metadata: $RHEL9_REPO"
+  echo "  - Main metadata: $MAIN_REPO"
+else
+  echo "RPM repository: ✗ Not found"
+fi
+
+# Direct Downloads Status
+if [ -d out/packages ]; then
+  PKG_COUNT=$(ls out/packages/*.{deb,rpm} 2>/dev/null | wc -l)
+  PKG_INDEX=$([ -f out/packages/index.html ] && echo "✓" || echo "✗")
+  echo "Direct downloads: ✓ Available with $PKG_COUNT packages, Index: $PKG_INDEX"
+else  
+  echo "Direct downloads: ✗ Not found"
+fi
+
+# GPG Key Status
+if [ -f out/documentdb-archive-keyring.gpg ]; then
+  echo "GPG key: ✓ Exported"
+else
+  echo "GPG key: ✗ Not found"
+fi
+
 echo ""
-echo "Multi-architecture GPG-signed repository structure created successfully."
-echo "DEB repository: $([ -d out/deb ] && echo "✓ Created with $(find out/deb -name "*.deb" | wc -l) signed packages" || echo "✗ Not found")"
-echo "RPM repository: $([ -d out/rpm ] && echo "✓ Created with $(find out/rpm -name "*.rpm" | wc -l) packages" || echo "✗ Not found")"
-echo "Direct downloads: $([ -d out/packages ] && echo "✓ Available with $(ls out/packages/*.{deb,rpm} 2>/dev/null | wc -l) packages" || echo "✗ Not found")"
-echo "GPG key: $([ -f out/documentdb-archive-keyring.gpg ] && echo "✓ Exported" || echo "✗ Not found")"
+echo "Repository URLs:"
+echo "  APT: https://documentdb.io/deb stable main"
+echo "  YUM: https://documentdb.io/rpm/rhel8 (or /rhel9, /main)"
+echo "  Browse: https://documentdb.io/packages/"

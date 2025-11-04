@@ -39,29 +39,26 @@ export default function PackagesPage() {
             </div>
             <div className="bg-neutral-900 rounded p-4 mb-4">
               <code className="text-sm text-green-400 break-all">
-                # Install GPG key (recommended)
+                # Add repository with GPG verification
                 <br />
-                curl -fsSL https://documentdb.github.io/documentdb-archive-keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
+                curl -fsSL https://documentdb.io/documentdb-archive-keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
                 <br />
-                <br />
-                # Add signed repository (AMD64 & ARM64)
-                <br />
-                echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/documentdb-archive-keyring.gpg] https://documentdb.github.io/deb stable main" | sudo tee /etc/apt/sources.list.d/documentdb.list
+                echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/documentdb-archive-keyring.gpg] https://documentdb.io/deb stable main" | sudo tee /etc/apt/sources.list.d/documentdb.list
                 <br />
                 <br />
-                # Update and install
+                # Install packages
                 <br />
-                sudo apt-get update
-                <br />
-                sudo apt-get install postgresql-16-documentdb
+                sudo apt-get update && sudo apt-get install postgresql-16-documentdb
               </code>
             </div>
-            <p className="text-sm text-gray-400 mb-2">
-              <strong>Multi-architecture:</strong> Supports both AMD64 and ARM64 (Apple Silicon, AWS Graviton, etc.)
-            </p>
-            <p className="text-sm text-gray-400 mb-2">
-              <strong>Quick install (no GPG verification):</strong> Add <code className="bg-neutral-700 px-1 rounded">trusted=yes</code> instead of GPG key
-            </p>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-400">
+                <strong>Supports:</strong> Debian 11/12, Ubuntu 22.04/24.04
+              </span>
+              <span className="text-blue-400">
+                AMD64 + ARM64
+              </span>
+            </div>
           </div>
 
           {/* RHEL/CentOS/Fedora Card */}
@@ -72,45 +69,41 @@ export default function PackagesPage() {
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold text-white">RHEL</h3>
+              <h3 className="text-2xl font-bold text-white">RHEL/CentOS</h3>
             </div>
+
             <div className="bg-neutral-900 rounded p-4 mb-4">
               <code className="text-sm text-green-400 break-all">
-                # Import GPG key (recommended)
+                # Add repository with GPG verification
                 <br />
-                curl -fsSL https://documentdb.github.io/documentdb-archive-keyring.gpg | sudo rpm --import -
+                curl -fsSL https://documentdb.io/documentdb-archive-keyring.gpg | sudo rpm --import -
                 <br />
-                <br />
-                # Add signed repository
-                <br />
-                sudo tee /etc/yum.repos.d/documentdb.repo &lt;&lt;EOF
-                <br />
-                [documentdb]
+                echo '[documentdb]
                 <br />
                 name=DocumentDB Repository
                 <br />
-                baseurl=https://documentdb.github.io/rpm/rhel8
+                baseurl=https://documentdb.io/rpm/rhel8
                 <br />
                 enabled=1
                 <br />
                 gpgcheck=1
                 <br />
-                gpgkey=https://documentdb.github.io/documentdb-archive-keyring.gpg
-                <br />
-                EOF
+                gpgkey=https://documentdb.io/documentdb-archive-keyring.gpg' | sudo tee /etc/yum.repos.d/documentdb.repo
                 <br />
                 <br />
-                # Install DocumentDB
+                # Install packages
                 <br />
                 sudo yum install postgresql16-documentdb
               </code>
             </div>
-            <p className="text-sm text-gray-400 mb-2">
-              <strong>Multi-architecture:</strong> Supports both x86_64 and aarch64 (AWS Graviton, etc.)
-            </p>
-            <p className="text-sm text-gray-400 mb-2">
-              <strong>Quick install (no GPG verification):</strong> Set <code className="bg-neutral-700 px-1 rounded">gpgcheck=0</code> instead of importing GPG key
-            </p>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-400">
+                <strong>Supports:</strong> RHEL 8/9, CentOS, Fedora
+              </span>
+              <span className="text-red-400">
+                x86_64 + aarch64
+              </span>
+            </div>
           </div>
         </div>
 
@@ -124,7 +117,7 @@ export default function PackagesPage() {
               </p>
             </div>
             <Link 
-              href="/PACKAGE-INSTALL.md" 
+              href="https://github.com/documentdb/documentdb.github.io/blob/main/PACKAGE-INSTALL.md" 
               className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
               target="_blank"
             >
@@ -133,145 +126,99 @@ export default function PackagesPage() {
           </div>
         </div>
 
-        {/* Manual Setup Section */}
+        {/* Alternative Installation Methods */}
         <div className="bg-neutral-800 rounded-lg p-8 border border-neutral-700 mb-8">
-          <h2 className="text-2xl font-bold text-white mb-6">Distribution-Specific Setup</h2>
+          <h2 className="text-2xl font-bold text-white mb-6">Alternative Installation Methods</h2>
           
-          {/* APT Manual Setup */}
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold text-blue-400 mb-3">
-              APT Repository (Debian/Ubuntu)
+          {/* Direct Downloads */}
+          <div className="mb-6">
+            <h3 className="text-xl font-semibold text-purple-400 mb-3">
+              Direct Package Downloads
             </h3>
-            <div className="bg-neutral-900 rounded p-4">
-              <pre className="text-sm text-gray-300 overflow-x-auto">
-                <code>{`# Option 1: With GPG verification (recommended)
-curl -fsSL https://documentdb.github.io/documentdb-archive-keyring.gpg | \\
-  sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
-echo "deb [arch=amd64 signed-by=/usr/share/keyrings/documentdb-archive-keyring.gpg] https://documentdb.github.io/deb stable main" | \\
-  sudo tee /etc/apt/sources.list.d/documentdb.list
-
-# Option 2: Quick install (no GPG verification)  
-echo "deb [arch=amd64 trusted=yes] https://documentdb.github.io/deb stable main" | \\
-  sudo tee /etc/apt/sources.list.d/documentdb.list
-
-sudo apt-get update
-sudo apt-get install postgresql-16-documentdb
-# Available: postgresql-15-documentdb, postgresql-16-documentdb, postgresql-17-documentdb`}</code>
-              </pre>
-            </div>
+            <p className="text-gray-400 mb-4">
+              Browse and download individual packages without setting up repositories.
+            </p>
+            <a
+              href="https://documentdb.io/packages/"
+              className="inline-flex items-center px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white font-medium rounded-md transition-colors"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Browse All Packages
+            </a>
           </div>
 
-          {/* YUM Manual Setup */}
-          <div>
-            <h3 className="text-xl font-semibold text-red-400 mb-3">
-              YUM Repository (RHEL/CentOS/Fedora)
-            </h3>
-            <div className="bg-neutral-900 rounded p-4">
-              <pre className="text-sm text-gray-300 overflow-x-auto">
-                <code>{`# Option 1: With GPG verification (recommended)
-curl -fsSL https://documentdb.github.io/documentdb-archive-keyring.gpg | sudo rpm --import -
-sudo tee /etc/yum.repos.d/documentdb.repo <<EOF
-[documentdb]
-name=DocumentDB Repository
-baseurl=https://documentdb.github.io/rpm/rhel8
-enabled=1
-gpgcheck=1
-gpgkey=https://documentdb.github.io/documentdb-archive-keyring.gpg
-EOF
-
-# Option 2: Quick install (no GPG verification)
-sudo tee /etc/yum.repos.d/documentdb.repo <<EOF
-[documentdb]
-name=DocumentDB Repository  
-baseurl=https://documentdb.github.io/rpm/rhel8
-enabled=1
-gpgcheck=0
-EOF
-
-sudo yum install postgresql16-documentdb
-# Available: postgresql16-documentdb, postgresql17-documentdb`}</code>
-              </pre>
+          {/* Manual Installation */}
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+            <h4 className="text-lg font-semibold text-blue-400 mb-2">Manual Installation</h4>
+            <p className="text-gray-300 text-sm">
+              For one-time installations, you can download and install packages manually:
+            </p>
+            <div className="bg-neutral-900 rounded p-3 mt-3">
+              <code className="text-xs text-green-400">
+                # Example: Direct .deb installation<br/>
+                wget https://documentdb.io/packages/ubuntu22.04-postgresql-16-documentdb_0.107-0_amd64.deb<br/>
+                sudo dpkg -i ubuntu22.04-postgresql-16-documentdb_0.107-0_amd64.deb<br/>
+                <br/>
+                # Example: Direct .rpm installation<br/>
+                wget https://documentdb.io/packages/rhel8-postgresql16-documentdb-0.107.0-1.el8.x86_64.rpm<br/>
+                sudo rpm -i rhel8-postgresql16-documentdb-0.107.0-1.el8.x86_64.rpm
+              </code>
             </div>
           </div>
-        </div>
-
-        {/* Direct Downloads */}
-        <div className="bg-neutral-800 rounded-lg p-8 border border-neutral-700 mb-8">
-          <h2 className="text-2xl font-bold text-white mb-4">Direct Downloads</h2>
-          <p className="text-gray-400 mb-4">
-            Browse and download packages directly without adding the repository.
-          </p>
-          <a
-            href="https://documentdb.github.io/packages/"
-            className="inline-flex items-center px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-md transition-colors"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Browse All Packages
-          </a>
-        </div>
-
-        {/* Repository Information */}
-        <div className="bg-neutral-800 rounded-lg p-8 border border-neutral-700 mb-8">
-          <h2 className="text-2xl font-bold text-white mb-4">Repository Information</h2>
-          <ul className="space-y-3 text-gray-300">
-            <li className="flex items-start">
-              <span className="text-blue-400 mr-2">•</span>
-              <div>
-                <strong className="text-white">APT Repository:</strong>{" "}
-                <code className="text-green-400 bg-neutral-900 px-2 py-1 rounded">
-                  https://documentdb.github.io/deb
-                </code>
-              </div>
-            </li>
-            <li className="flex items-start">
-              <span className="text-blue-400 mr-2">•</span>
-              <div>
-                <strong className="text-white">YUM Repository:</strong>{" "}
-                <code className="text-green-400 bg-neutral-900 px-2 py-1 rounded">
-                  https://documentdb.github.io/rpm
-                </code>
-              </div>
-            </li>
-            <li className="flex items-start">
-              <span className="text-blue-400 mr-2">•</span>
-              <div>
-                <strong className="text-white">Package Browser:</strong>{" "}
-                <a
-                  href="https://documentdb.github.io/packages/"
-                  className="text-blue-400 hover:text-blue-300"
-                >
-                  https://documentdb.github.io/packages/
-                </a>
-              </div>
-            </li>
-          </ul>
         </div>
 
         {/* Package Information */}
         <div className="bg-neutral-800 rounded-lg p-8 border border-neutral-700 mb-8">
           <h2 className="text-2xl font-bold text-white mb-4">Available Packages</h2>
-          <div className="space-y-4">
+          
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
             <div>
-              <h3 className="text-lg font-semibold text-blue-400 mb-2">APT Packages (Debian/Ubuntu)</h3>
-              <ul className="space-y-2 text-gray-300">
-                <li><code className="text-green-400">postgresql-15-documentdb</code> - DocumentDB extension for PostgreSQL 15</li>
-                <li><code className="text-green-400">postgresql-16-documentdb</code> - DocumentDB extension for PostgreSQL 16</li>
-                <li><code className="text-green-400">postgresql-17-documentdb</code> - DocumentDB extension for PostgreSQL 17</li>
+              <h3 className="text-lg font-semibold text-blue-400 mb-3 flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                APT Packages
+              </h3>
+              <div className="text-sm text-gray-400 mb-2">
+                Debian 11/12, Ubuntu 22.04/24.04
+              </div>
+              <ul className="space-y-2 text-gray-300 text-sm">
+                <li>• postgresql-15-documentdb</li>
+                <li>• postgresql-16-documentdb</li>
+                <li>• postgresql-17-documentdb</li>
               </ul>
             </div>
+            
             <div>
-              <h3 className="text-lg font-semibold text-red-400 mb-2">RPM Packages (RHEL/CentOS/Fedora)</h3>
-              <ul className="space-y-2 text-gray-300">
-                <li><code className="text-green-400">postgresql16-documentdb</code> - DocumentDB extension for PostgreSQL 16</li>
-                <li><code className="text-green-400">postgresql17-documentdb</code> - DocumentDB extension for PostgreSQL 17</li>
+              <h3 className="text-lg font-semibold text-red-400 mb-3 flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                RPM Packages  
+              </h3>
+              <div className="text-sm text-gray-400 mb-2">
+                RHEL 8/9, CentOS, Fedora
+              </div>
+              <ul className="space-y-2 text-gray-300 text-sm">
+                <li>• postgresql16-documentdb</li>
+                <li>• postgresql17-documentdb</li>
               </ul>
             </div>
-            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 mt-4">
-              <p className="text-yellow-300">
-                <strong>Note:</strong> These packages are currently unsigned. Use the <code className="text-yellow-400">trusted=yes</code> flag for APT or <code className="text-yellow-400">gpgcheck=0</code> for YUM as shown in the examples above.
-              </p>
+          </div>
+
+          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+            <div className="flex items-start">
+              <svg className="w-5 h-5 text-green-400 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <div>
+                <p className="text-green-300 font-semibold mb-1">Multi-Architecture Support</p>
+                <p className="text-green-200 text-sm">
+                  All packages support both AMD64 and ARM64 architectures (including Apple Silicon, AWS Graviton, etc.)
+                </p>
+              </div>
             </div>
           </div>
         </div>
