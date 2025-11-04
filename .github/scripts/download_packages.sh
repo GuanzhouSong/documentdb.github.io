@@ -329,6 +329,7 @@ if [ "$GOT_RPM" = "1" ]; then
   
   for POOL in "$RPM_POOL_RHEL8" "$RPM_POOL_RHEL9"; do
     if [ -d "$POOL" ] && [ "$(find "$POOL" -name "*.rpm" -type f | wc -l)" -gt 0 ]; then
+      echo "Processing YUM repository: $POOL"
       pushd "$POOL" >/dev/null
       
       if [ -n "$GPG_FINGERPRINT" ]; then
@@ -337,22 +338,37 @@ if [ "$GOT_RPM" = "1" ]; then
         done
       fi
       
-      createrepo_c . >/dev/null 2>&1 || echo "Warning: createrepo_c failed for $POOL"
+      echo "Running createrepo_c in $(pwd)"
+      if createrepo_c .; then
+        echo "Repository metadata created successfully"
+        ls -la repodata/ 2>/dev/null || echo "No repodata directory found"
+      else
+        echo "ERROR: createrepo_c failed for $POOL"
+      fi
       
       if [ -n "$GPG_FINGERPRINT" ] && [ -f repodata/repomd.xml ]; then
         gpg --default-key "$GPG_FINGERPRINT" --detach-sign --armor repodata/repomd.xml 2>/dev/null || true
       fi
       
       popd >/dev/null
+    else
+      echo "Skipping $POOL: directory not found or no RPM files"
     fi
   done
   
   # Create main repository for backward compatibility
   if [ -d "$RPM_POOL_RHEL8" ] && [ "$(find "$RPM_POOL_RHEL8" -name "*.rpm" -type f | wc -l)" -gt 0 ]; then
+    echo "Creating main YUM repository"
     mkdir -p out/rpm/main
     cp "$RPM_POOL_RHEL8"/* out/rpm/main/
     pushd out/rpm/main >/dev/null
-    createrepo_c . >/dev/null 2>&1 || true
+    echo "Running createrepo_c for main repository in $(pwd)"
+    if createrepo_c .; then
+      echo "Main repository metadata created successfully"
+      ls -la repodata/ 2>/dev/null || echo "No repodata directory found"
+    else
+      echo "ERROR: createrepo_c failed for main repository"
+    fi
     if [ -n "$GPG_FINGERPRINT" ] && [ -f repodata/repomd.xml ]; then
       gpg --default-key "$GPG_FINGERPRINT" --detach-sign --armor repodata/repomd.xml 2>/dev/null || true
     fi
