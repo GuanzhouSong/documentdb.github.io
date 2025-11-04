@@ -491,8 +491,9 @@ fi
 echo "Package repository setup complete!"
 echo ""
 echo "Repository structure:"
-ls -lh out/
-
-
-echo "Package download complete!"
-ls -lh out/packages/
+echo "DEB repository:"
+[ -d out/deb ] && ls -lh out/deb/ || echo "No DEB repository found"
+echo "RPM repository:"
+[ -d out/rpm ] && ls -lh out/rpm/ || echo "No RPM repository found"
+echo "Direct download packages:"
+[ -d out/packages ] && ls -lh out/packages/ || echo "No direct download packages found"
