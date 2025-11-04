@@ -30,14 +30,16 @@ export default function PackagesPage() {
               <code className="text-sm text-green-400 break-all">
                 # Add repository
                 <br />
-                echo "deb [trusted=yes] https://documentdb.github.io/deb stable main" | sudo tee /etc/apt/sources.list.d/documentdb.list
+                echo "deb [arch=amd64 trusted=yes] https://documentdb.github.io/deb stable main" | sudo tee /etc/apt/sources.list.d/documentdb.list
                 <br />
                 sudo apt-get update
                 <br />
                 <br />
-                # Install DocumentDB
+                # Install DocumentDB (choose your PostgreSQL version)
                 <br />
-                sudo apt-get install documentdb
+                sudo apt-get install postgresql-16-documentdb
+                <br />
+                # or postgresql-15-documentdb, postgresql-17-documentdb
               </code>
             </div>
           </div>
@@ -71,9 +73,11 @@ export default function PackagesPage() {
                 EOF
                 <br />
                 <br />
-                # Install DocumentDB
+                # Install DocumentDB (choose your PostgreSQL version)
                 <br />
-                sudo yum install documentdb
+                sudo yum install postgresql16-documentdb
+                <br />
+                # or postgresql17-documentdb
               </code>
             </div>
           </div>
@@ -90,10 +94,17 @@ export default function PackagesPage() {
             </h3>
             <div className="bg-neutral-900 rounded p-4">
               <pre className="text-sm text-gray-300 overflow-x-auto">
-                <code>{`echo "deb [arch=amd64] https://documentdb.github.io/deb stable main" | \\
+                <code>{`# Add repository with trusted flag (unsigned packages)
+echo "deb [arch=amd64 trusted=yes] https://documentdb.github.io/deb stable main" | \\
   sudo tee /etc/apt/sources.list.d/documentdb.list
 sudo apt-get update
-sudo apt-get install documentdb`}</code>
+
+# Install DocumentDB for your PostgreSQL version
+sudo apt-get install postgresql-16-documentdb
+# Available packages: postgresql-15-documentdb, postgresql-16-documentdb, postgresql-17-documentdb
+
+# List all available DocumentDB packages
+apt-cache search documentdb`}</code>
               </pre>
             </div>
           </div>
@@ -105,7 +116,8 @@ sudo apt-get install documentdb`}</code>
             </h3>
             <div className="bg-neutral-900 rounded p-4">
               <pre className="text-sm text-gray-300 overflow-x-auto">
-                <code>{`sudo tee /etc/yum.repos.d/documentdb.repo <<EOF
+                <code>{`# Add repository configuration
+sudo tee /etc/yum.repos.d/documentdb.repo <<EOF
 [documentdb]
 name=DocumentDB Repository
 baseurl=https://documentdb.github.io/rpm
@@ -113,7 +125,12 @@ enabled=1
 gpgcheck=0
 EOF
 
-sudo yum install documentdb`}</code>
+# Install DocumentDB for your PostgreSQL version
+sudo yum install postgresql16-documentdb
+# Available packages: postgresql16-documentdb, postgresql17-documentdb
+
+# List all available DocumentDB packages
+yum search documentdb`}</code>
               </pre>
             </div>
           </div>
@@ -171,6 +188,33 @@ sudo yum install documentdb`}</code>
               </div>
             </li>
           </ul>
+        </div>
+
+        {/* Package Information */}
+        <div className="bg-neutral-800 rounded-lg p-8 border border-neutral-700 mb-8">
+          <h2 className="text-2xl font-bold text-white mb-4">Available Packages</h2>
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-blue-400 mb-2">APT Packages (Debian/Ubuntu)</h3>
+              <ul className="space-y-2 text-gray-300">
+                <li><code className="text-green-400">postgresql-15-documentdb</code> - DocumentDB extension for PostgreSQL 15</li>
+                <li><code className="text-green-400">postgresql-16-documentdb</code> - DocumentDB extension for PostgreSQL 16</li>
+                <li><code className="text-green-400">postgresql-17-documentdb</code> - DocumentDB extension for PostgreSQL 17</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-red-400 mb-2">RPM Packages (RHEL/CentOS/Fedora)</h3>
+              <ul className="space-y-2 text-gray-300">
+                <li><code className="text-green-400">postgresql16-documentdb</code> - DocumentDB extension for PostgreSQL 16</li>
+                <li><code className="text-green-400">postgresql17-documentdb</code> - DocumentDB extension for PostgreSQL 17</li>
+              </ul>
+            </div>
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 mt-4">
+              <p className="text-yellow-300">
+                <strong>Note:</strong> These packages are currently unsigned. Use the <code className="text-yellow-400">trusted=yes</code> flag for APT or <code className="text-yellow-400">gpgcheck=0</code> for YUM as shown in the examples above.
+              </p>
+            </div>
+          </div>
         </div>
 
       </div>

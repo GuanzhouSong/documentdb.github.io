@@ -38,14 +38,19 @@ jobs:
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
         continue-on-error: true
-      - name: Set GPG fingerprint
+      - name: Set GPG fingerprint and version config
         run: |
+          # Configure GPG signing
           if [ -n "${{ steps.import_gpg.outputs.fingerprint }}" ]; then
             echo "GPG_FINGERPRINT=${{ steps.import_gpg.outputs.fingerprint }}" >> $GITHUB_ENV
             echo "✓ GPG key loaded: ${{ steps.import_gpg.outputs.fingerprint }}"
           else
             echo "⚠ No GPG key configured - packages will not be signed"
           fi
+          
+          # Configure DocumentDB version (can be overridden by repository variables)
+          echo "DOCUMENTDB_VERSION=${{ vars.DOCUMENTDB_VERSION || 'latest' }}" >> $GITHUB_ENV
+          echo "MULTI_VERSION=${{ vars.MULTI_VERSION || 'true' }}" >> $GITHUB_ENV
       - name: Detect package manager
         id: detect-package-manager
         run: |
@@ -138,13 +143,19 @@ jobs:
       - name: Debug output structure
         run: |
           echo "Contents of out directory:"
-          find out -type f | head -20
+          find out -type f | head -30
           echo ""
           echo "APT repository structure:"
           ls -la out/deb/ 2>/dev/null || echo "No deb directory found"
           echo ""
-          echo "Checking if DEB packages were downloaded:"
-          ls -la out/deb/pool/main/*.deb 2>/dev/null || echo "No DEB packages found"
+          echo "APT repository pools:"
+          ls -la out/deb/pool/ 2>/dev/null || echo "No pool directory found"
+          echo ""
+          echo "YUM repository structure:" 
+          ls -la out/rpm/ 2>/dev/null || echo "No rpm directory found"
+          echo ""
+          echo "Direct download packages:"
+          ls -la out/packages/*.{deb,rpm} 2>/dev/null || echo "No packages found"
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
