@@ -40,12 +40,17 @@ then
   mkdir -p out/packages
   
   # Process each asset
+  # First, create a temporary file to store asset information
+  ASSETS_FILE=$(mktemp)
   echo "$release" | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
 for asset in data.get('assets', []):
     print(f\"{asset['name']}|{asset['browser_download_url']}\")
-" | while IFS='|' read -r filename download_url
+" > "$ASSETS_FILE"
+
+  # Process each asset
+  while IFS='|' read -r filename download_url
   do
     if [ -z "$filename" ]; then
       continue
@@ -73,7 +78,10 @@ for asset in data.get('assets', []):
       echo "  Downloading to packages directory"
       wget -q -P out/packages "$download_url"
     fi
-  done
+  done < "$ASSETS_FILE"
+  
+  # Clean up temporary file
+  rm -f "$ASSETS_FILE"
   
   # Save release metadata
   echo "$release" | python3 -c "
@@ -95,12 +103,23 @@ print(json.dumps(output, indent=2))
 " > out/packages/release-info.json
   
   echo "Successfully processed packages from $REPO"
+  echo "GOT_DEB=$GOT_DEB, GOT_RPM=$GOT_RPM"
+  echo "Checking DEB_POOL directory: $DEB_POOL"
+  ls -la "$DEB_POOL" 2>/dev/null || echo "DEB_POOL directory does not exist"
 else
   echo "Error: Could not fetch release information for $REPO"
   exit 1
 fi
 
 # Build DEB repository if we have DEB packages
+echo "Checking if DEB repository should be built..."
+echo "DEB_POOL exists: $([ -d "$DEB_POOL" ] && echo 'yes' || echo 'no')"
+if [ -d "$DEB_POOL" ]; then
+  echo "DEB_POOL contents:"
+  ls -la "$DEB_POOL"
+fi
+echo "DEB files in pool: $(ls -1 $DEB_POOL/*.deb 2>/dev/null | wc -l)"
+
 if [ -d "$DEB_POOL" ] && [ "$(ls -A $DEB_POOL/*.deb 2>/dev/null)" ]; then
   echo "Building APT repository..."
   pushd out/deb >/dev/null
