@@ -1,31 +1,19 @@
 #!/bin/bash
 set -e
 
-# Repository to download packages from
 REPO="documentdb/documentdb"
-
-# Output directory
 OUT_DIR="out"
-
-# Version Configuration
-# Set to specific version (e.g., "v0.107-0") or "latest" for most recent release
 DOCUMENTDB_VERSION="${DOCUMENTDB_VERSION:-latest}"
-# Multi-version support: set to "true" to keep multiple versions in repository
 MULTI_VERSION="${MULTI_VERSION:-true}"
-
-# Repository configuration
 SUITE="${SUITE:-stable}"
 COMPONENTS="${COMPONENTS:-main}"
 ORIGIN="${ORIGIN:-DocumentDB}"
-
 DESCRIPTION="${DESCRIPTION:-DocumentDB APT and YUM Repository}"
 
-# Function to sign DEB packages
 sign_deb_package() {
   local package_file="$1"
   if [ -n "$GPG_FINGERPRINT" ] && [ -f "$package_file" ]; then
     echo "    Signing DEB package: $(basename "$package_file")"
-    # DEB packages can be signed using dpkg-sig
     if command -v dpkg-sig >/dev/null 2>&1; then
       dpkg-sig --sign builder --gpg-options "--default-key $GPG_FINGERPRINT" "$package_file" || echo "    Warning: Could not sign $(basename "$package_file")"
     else
@@ -66,7 +54,6 @@ generate_hashes() {
   HASH_TYPE="$1"
   HASH_COMMAND="$2"
   echo "${HASH_TYPE}:"
-  # Find all component directories and generate hashes for all files
   for component in ${COMPONENTS} deb11 deb12 ubuntu22 ubuntu24; do
     if [ -d "$component" ]; then
       find "$component" -type f | while read -r file
@@ -79,37 +66,26 @@ generate_hashes() {
 
 echo "Downloading packages from $REPO releases"
 
-# Get release info based on DOCUMENTDB_VERSION setting
 if [ "$DOCUMENTDB_VERSION" = "latest" ]; then
-  echo "Fetching latest release..."
   if release=$(curl -fqs "https://api.github.com/repos/${REPO}/releases" | python3 -c "import sys, json; releases = json.load(sys.stdin); print(json.dumps(releases[0])) if releases else sys.exit(1)")
   then
     tag="$(echo "$release" | python3 -c "import sys, json; print(json.load(sys.stdin)['tag_name'])")"
-    echo "Found latest release: $tag"
+    echo "Using latest release: $tag"
   else
     echo "Error: Could not fetch latest release information"
     exit 1
   fi
 else
-  echo "Using specified version: $DOCUMENTDB_VERSION"
   tag="$DOCUMENTDB_VERSION"
-  # Verify the specified version exists
   if ! release=$(curl -fqs "https://api.github.com/repos/${REPO}/releases/tags/$tag")
   then
     echo "Error: Version $tag not found in releases"
     exit 1
   fi
-  echo "Found specified release: $tag"
+  echo "Using specified release: $tag"
 fi
 
-# Show version information now that we have the tag
-
-  
-  # Create packages directory for direct downloads
-  mkdir -p out/packages
-  
-  # Process each asset
-  # First, create a temporary file to store asset information
+mkdir -p out/packages
   ASSETS_FILE=$(mktemp)
   echo "$release" | python3 -c "
 import sys, json
@@ -125,121 +101,56 @@ for asset in data.get('assets', []):
       continue
     fi
     
-    echo "Processing: $filename"
-    
-    # Determine file type and handle accordingly
     if [[ "$filename" == *.deb ]]; then
-      # Always download all deb packages for direct access
-      mkdir -p out/packages
-      echo "  Downloading DEB package for direct download"
       wget -q -P out/packages "$download_url"
       
-      # For APT repository, organize packages by distribution
       if [[ "$filename" =~ ^deb11-postgresql-[0-9]+-documentdb.*\.deb$ ]]; then
         GOT_DEB=1
         mkdir -p "$DEB_POOL_DEB11"
         clean_name=$(echo "$filename" | sed 's/^deb11-//')
-        echo "  Adding Debian 11 package to APT repository: $filename -> $clean_name"
-        if [ "$MULTI_VERSION" = "true" ]; then
-          # Multi-version mode: overwrite same version, preserve different versions
-          cp "out/packages/$filename" "$DEB_POOL_DEB11/$clean_name"
-          sign_deb_package "$DEB_POOL_DEB11/$clean_name"
-          if [ -f "$DEB_POOL_DEB11/$clean_name" ]; then
-            echo "    Updated existing package: $clean_name"
-          else
-            echo "    Added new package: $clean_name"
-          fi
-        else
-          # Single version mode: overwrite everything
-          cp "out/packages/$filename" "$DEB_POOL_DEB11/$clean_name"
-          sign_deb_package "$DEB_POOL_DEB11/$clean_name"
-        fi
+        cp "out/packages/$filename" "$DEB_POOL_DEB11/$clean_name"
+        sign_deb_package "$DEB_POOL_DEB11/$clean_name"
       elif [[ "$filename" =~ ^deb12-postgresql-[0-9]+-documentdb.*\.deb$ ]]; then
         GOT_DEB=1
         mkdir -p "$DEB_POOL_DEB12"
         clean_name=$(echo "$filename" | sed 's/^deb12-//')
-        echo "  Adding Debian 12 package to APT repository: $filename -> $clean_name"
-        if [ "$MULTI_VERSION" = "true" ]; then
-          cp "out/packages/$filename" "$DEB_POOL_DEB12/$clean_name"
-          sign_deb_package "$DEB_POOL_DEB12/$clean_name"
-          echo "    Updated package: $clean_name"
-        else
-          cp "out/packages/$filename" "$DEB_POOL_DEB12/$clean_name"
-          sign_deb_package "$DEB_POOL_DEB12/$clean_name"
-        fi
+        cp "out/packages/$filename" "$DEB_POOL_DEB12/$clean_name"
+        sign_deb_package "$DEB_POOL_DEB12/$clean_name"
       elif [[ "$filename" =~ ^ubuntu22\.04-postgresql-[0-9]+-documentdb.*\.deb$ ]]; then
         GOT_DEB=1
         mkdir -p "$DEB_POOL_UBUNTU22"
         clean_name=$(echo "$filename" | sed 's/^ubuntu22\.04-//')
-        echo "  Adding Ubuntu 22.04 package to APT repository: $filename -> $clean_name"
-        if [ "$MULTI_VERSION" = "true" ]; then
-          cp "out/packages/$filename" "$DEB_POOL_UBUNTU22/$clean_name"
-          sign_deb_package "$DEB_POOL_UBUNTU22/$clean_name"
-          echo "    Updated package: $clean_name"
-        else
-          cp "out/packages/$filename" "$DEB_POOL_UBUNTU22/$clean_name"
-          sign_deb_package "$DEB_POOL_UBUNTU22/$clean_name"
-        fi
+        cp "out/packages/$filename" "$DEB_POOL_UBUNTU22/$clean_name"
+        sign_deb_package "$DEB_POOL_UBUNTU22/$clean_name"
       elif [[ "$filename" =~ ^ubuntu24\.04-postgresql-[0-9]+-documentdb.*\.deb$ ]]; then
         GOT_DEB=1
         mkdir -p "$DEB_POOL_UBUNTU24"
         clean_name=$(echo "$filename" | sed 's/^ubuntu24\.04-//')
-        echo "  Adding Ubuntu 24.04 package to APT repository: $filename -> $clean_name"
-        if [ "$MULTI_VERSION" = "true" ]; then
-          cp "out/packages/$filename" "$DEB_POOL_UBUNTU24/$clean_name"
-          sign_deb_package "$DEB_POOL_UBUNTU24/$clean_name"
-          echo "    Updated package: $clean_name"
-        else
-          cp "out/packages/$filename" "$DEB_POOL_UBUNTU24/$clean_name"
-          sign_deb_package "$DEB_POOL_UBUNTU24/$clean_name"
-        fi
-      else
-        echo "  Skipping $filename for APT repository (unsupported distribution or architecture)"
+        cp "out/packages/$filename" "$DEB_POOL_UBUNTU24/$clean_name"
+        sign_deb_package "$DEB_POOL_UBUNTU24/$clean_name"
       fi
     elif [[ "$filename" == *.rpm ]]; then
-      # Always download all RPM packages for direct access
-      mkdir -p out/packages
-      echo "  Downloading RPM package for direct download"
       wget -q -P out/packages "$download_url"
       
-      # For YUM repository, organize packages by distribution
       if [[ "$filename" =~ ^rhel8-postgresql[0-9]+-documentdb.*\.rpm$ ]]; then
         GOT_RPM=1
         mkdir -p "$RPM_POOL_RHEL8"
         clean_name=$(echo "$filename" | sed 's/^rhel8-//')
-        echo "  Adding RHEL 8 package to YUM repository: $filename -> $clean_name"
-        if [ "$MULTI_VERSION" = "true" ]; then
-          cp "out/packages/$filename" "$RPM_POOL_RHEL8/$clean_name"
-          echo "    Updated package: $clean_name"
-        else
-          cp "out/packages/$filename" "$RPM_POOL_RHEL8/$clean_name"
-        fi
+        cp "out/packages/$filename" "$RPM_POOL_RHEL8/$clean_name"
       elif [[ "$filename" =~ ^rhel9-postgresql[0-9]+-documentdb.*\.rpm$ ]]; then
         GOT_RPM=1
         mkdir -p "$RPM_POOL_RHEL9"
         clean_name=$(echo "$filename" | sed 's/^rhel9-//')
-        echo "  Adding RHEL 9 package to YUM repository: $filename -> $clean_name"
-        if [ "$MULTI_VERSION" = "true" ]; then
-          cp "out/packages/$filename" "$RPM_POOL_RHEL9/$clean_name"
-          echo "    Updated package: $clean_name"
-        else
-          cp "out/packages/$filename" "$RPM_POOL_RHEL9/$clean_name"
-        fi
-      else
-        echo "  Skipping $filename for YUM repository (unsupported distribution or architecture)"
+        cp "out/packages/$filename" "$RPM_POOL_RHEL9/$clean_name"
       fi
     else
-      # Other files go directly to packages
-      echo "  Downloading to packages directory"
       wget -q -P out/packages "$download_url"
     fi
   done < "$ASSETS_FILE"
   
-  # Clean up temporary file
-  rm -f "$ASSETS_FILE"
-  
-  # Save release metadata
-  echo "$release" | python3 -c "
+rm -f "$ASSETS_FILE"
+
+echo "$release" | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
 output = {
@@ -256,42 +167,46 @@ output = {
 }
 print(json.dumps(output, indent=2))
 " > out/packages/release-info.json
-  
-  echo "Successfully processed packages from $REPO"
-  echo "GOT_DEB=$GOT_DEB, GOT_RPM=$GOT_RPM"
-  
-# Check distribution-specific DEB pools
-echo "Checking distribution-specific DEB pools..."
-for pool in "$DEB_POOL_DEB11" "$DEB_POOL_DEB12" "$DEB_POOL_UBUNTU22" "$DEB_POOL_UBUNTU24"; do
-  if [ -d "$pool" ]; then
-    echo "Found pool: $pool with $(ls -1 $pool/*.deb 2>/dev/null | wc -l) packages"
-  fi
-done
 
-echo "Checking RPM pools..."
-for pool in "$RPM_POOL_RHEL8" "$RPM_POOL_RHEL9"; do
-  if [ -d "$pool" ]; then
-    echo "Found pool: $pool with $(ls -1 $pool/*.rpm 2>/dev/null | wc -l) packages"  
-  fi
-done
+echo "Successfully processed packages from $REPO"
 
 if [ "$GOT_DEB" = "1" ]; then
   echo "Building APT repository with multiple distribution components..."
   pushd out/deb >/dev/null
   
-  # Create main component with Ubuntu 22.04 packages (for backward compatibility)
-  if [ -d "pool/ubuntu22" ] && [ "$(ls -A pool/ubuntu22/*.deb 2>/dev/null)" ]; then
-    # AMD64 packages
-    mkdir -p "${DEB_DISTS_COMPONENTS_AMD64}"
-    echo "Scanning Ubuntu 22.04 AMD64 packages for main component"
+    if [ -d "pool/ubuntu22" ] && [ "$(ls -A pool/ubuntu22/*.deb 2>/dev/null)" ]; then
+    mkdir -p "${DEB_DISTS_COMPONENTS_AMD64}" "${DEB_DISTS_COMPONENTS_ARM64}"
     dpkg-scanpackages --arch amd64 pool/ubuntu22/ > "${DEB_DISTS_COMPONENTS_AMD64}/Packages"
-    gzip -k -f "${DEB_DISTS_COMPONENTS_AMD64}/Packages"
-    
-    # ARM64 packages  
-    mkdir -p "${DEB_DISTS_COMPONENTS_ARM64}"
-    echo "Scanning Ubuntu 22.04 ARM64 packages for main component"
     dpkg-scanpackages --arch arm64 pool/ubuntu22/ > "${DEB_DISTS_COMPONENTS_ARM64}/Packages"
-    gzip -k -f "${DEB_DISTS_COMPONENTS_ARM64}/Packages"
+    gzip -k -f "${DEB_DISTS_COMPONENTS_AMD64}/Packages" "${DEB_DISTS_COMPONENTS_ARM64}/Packages"
+  fi
+  
+  if [ -d "pool/deb11" ] && [ "$(ls -A pool/deb11/*.deb 2>/dev/null)" ]; then
+    mkdir -p "${DEB_DISTS_DEB11_AMD64}" "${DEB_DISTS_DEB11_ARM64}"
+    dpkg-scanpackages --arch amd64 pool/deb11/ > "${DEB_DISTS_DEB11_AMD64}/Packages"
+    dpkg-scanpackages --arch arm64 pool/deb11/ > "${DEB_DISTS_DEB11_ARM64}/Packages"
+    gzip -k -f "${DEB_DISTS_DEB11_AMD64}/Packages" "${DEB_DISTS_DEB11_ARM64}/Packages"
+  fi
+  
+  if [ -d "pool/deb12" ] && [ "$(ls -A pool/deb12/*.deb 2>/dev/null)" ]; then
+    mkdir -p "${DEB_DISTS_DEB12_AMD64}" "${DEB_DISTS_DEB12_ARM64}"
+    dpkg-scanpackages --arch amd64 pool/deb12/ > "${DEB_DISTS_DEB12_AMD64}/Packages"
+    dpkg-scanpackages --arch arm64 pool/deb12/ > "${DEB_DISTS_DEB12_ARM64}/Packages"
+    gzip -k -f "${DEB_DISTS_DEB12_AMD64}/Packages" "${DEB_DISTS_DEB12_ARM64}/Packages"
+  fi
+  
+  if [ -d "pool/ubuntu22" ] && [ "$(ls -A pool/ubuntu22/*.deb 2>/dev/null)" ]; then
+    mkdir -p "${DEB_DISTS_UBUNTU22_AMD64}" "${DEB_DISTS_UBUNTU22_ARM64}"
+    dpkg-scanpackages --arch amd64 pool/ubuntu22/ > "${DEB_DISTS_UBUNTU22_AMD64}/Packages"
+    dpkg-scanpackages --arch arm64 pool/ubuntu22/ > "${DEB_DISTS_UBUNTU22_ARM64}/Packages"
+    gzip -k -f "${DEB_DISTS_UBUNTU22_AMD64}/Packages" "${DEB_DISTS_UBUNTU22_ARM64}/Packages"
+  fi
+  
+  if [ -d "pool/ubuntu24" ] && [ "$(ls -A pool/ubuntu24/*.deb 2>/dev/null)" ]; then
+    mkdir -p "${DEB_DISTS_UBUNTU24_AMD64}" "${DEB_DISTS_UBUNTU24_ARM64}"
+    dpkg-scanpackages --arch amd64 pool/ubuntu24/ > "${DEB_DISTS_UBUNTU24_AMD64}/Packages"
+    dpkg-scanpackages --arch arm64 pool/ubuntu24/ > "${DEB_DISTS_UBUNTU24_ARM64}/Packages"
+    gzip -k -f "${DEB_DISTS_UBUNTU24_AMD64}/Packages" "${DEB_DISTS_UBUNTU24_ARM64}/Packages"
   fi
   
   # Create deb11 component (Debian 11 Bullseye)
@@ -409,156 +324,46 @@ if [ "$GOT_DEB" = "1" ]; then
   echo "APT repository built successfully with multiple distribution support"
 fi
 
-# Build RPM repositories if we have RPM packages
 if [ "$GOT_RPM" = "1" ]; then
-  echo "Building YUM repositories for different RHEL versions..."
+  echo "Building YUM repositories..."
   
-  # Build RHEL 8 repository
-  if [ -d "$RPM_POOL_RHEL8" ] && [ "$(ls -A $RPM_POOL_RHEL8/*.rpm 2>/dev/null)" ]; then
-    echo "Building RHEL 8 YUM repository..."
-    echo "RHEL 8 packages found: $(ls -1 $RPM_POOL_RHEL8/*.rpm | wc -l)"
-    pushd "$RPM_POOL_RHEL8" >/dev/null
-    
-    # Sign RPMs if GPG is available
-    if [ -n "$GPG_FINGERPRINT" ]; then
-      echo "Signing RHEL 8 RPM packages"
-      for rpm_file in *.rpm; do
-        echo "Signing: $rpm_file"
-        rpm --define "%_signature gpg" --define "%_gpg_name ${GPG_FINGERPRINT}" --addsign "$rpm_file" || echo "Warning: Could not sign $rpm_file"
-      done
+  for POOL in "$RPM_POOL_RHEL8" "$RPM_POOL_RHEL9"; do
+    if [ -d "$POOL" ] && [ "$(find "$POOL" -name "*.rpm" -type f | wc -l)" -gt 0 ]; then
+      pushd "$POOL" >/dev/null
+      
+      if [ -n "$GPG_FINGERPRINT" ]; then
+        for rpm_file in *.rpm; do
+          rpm --define "%_signature gpg" --define "%_gpg_name ${GPG_FINGERPRINT}" --addsign "$rpm_file" 2>/dev/null || true
+        done
+      fi
+      
+      createrepo_c . >/dev/null 2>&1 || echo "Warning: createrepo_c failed for $POOL"
+      
+      if [ -n "$GPG_FINGERPRINT" ] && [ -f repodata/repomd.xml ]; then
+        gpg --default-key "$GPG_FINGERPRINT" --detach-sign --armor repodata/repomd.xml 2>/dev/null || true
+      fi
+      
+      popd >/dev/null
     fi
-    
-    echo "Creating RHEL 8 YUM repository metadata"
-    if command -v createrepo_c >/dev/null 2>&1; then
-      echo "Running: createrepo_c ."
-      createrepo_c . || echo "Error: createrepo_c failed for RHEL 8"
-      echo "Repository metadata created. Contents:"
-      ls -la repodata/ 2>/dev/null || echo "No repodata directory found"
-    else
-      echo "Error: createrepo_c not found, cannot create YUM repository metadata"
-    fi
-    
-    # Sign repository metadata if GPG is available
-    if [ -n "$GPG_FINGERPRINT" ] && [ -f repodata/repomd.xml ]; then
-      echo "Signing RHEL 8 repository metadata"
-      gpg --default-key "$GPG_FINGERPRINT" --detach-sign --armor repodata/repomd.xml || echo "Warning: Could not sign repodata/repomd.xml"
-    fi
-    
-    popd >/dev/null
-  else
-    echo "No RHEL 8 packages found in $RPM_POOL_RHEL8"
-  fi
+  done
   
-  # Build RHEL 9 repository
-  if [ -d "$RPM_POOL_RHEL9" ] && [ "$(ls -A $RPM_POOL_RHEL9/*.rpm 2>/dev/null)" ]; then
-    echo "Building RHEL 9 YUM repository..."
-    echo "RHEL 9 packages found: $(ls -1 $RPM_POOL_RHEL9/*.rpm | wc -l)"
-    pushd "$RPM_POOL_RHEL9" >/dev/null
-    
-    # Sign RPMs if GPG is available
-    if [ -n "$GPG_FINGERPRINT" ]; then
-      echo "Signing RHEL 9 RPM packages"
-      for rpm_file in *.rpm; do
-        echo "Signing: $rpm_file"
-        rpm --define "%_signature gpg" --define "%_gpg_name ${GPG_FINGERPRINT}" --addsign "$rpm_file" || echo "Warning: Could not sign $rpm_file"
-      done
-    fi
-    
-    echo "Creating RHEL 9 YUM repository metadata"
-    if command -v createrepo_c >/dev/null 2>&1; then
-      echo "Running: createrepo_c ."
-      createrepo_c . || echo "Error: createrepo_c failed for RHEL 9"
-      echo "Repository metadata created. Contents:"
-      ls -la repodata/ 2>/dev/null || echo "No repodata directory found"
-    else
-      echo "Error: createrepo_c not found, cannot create YUM repository metadata"
-    fi
-    
-    # Sign repository metadata if GPG is available
-    if [ -n "$GPG_FINGERPRINT" ] && [ -f repodata/repomd.xml ]; then
-      echo "Signing RHEL 9 repository metadata"
-      gpg --default-key "$GPG_FINGERPRINT" --detach-sign --armor repodata/repomd.xml || echo "Warning: Could not sign repodata/repomd.xml"
-    fi
-    
-    popd >/dev/null
-  else
-    echo "No RHEL 9 packages found in $RPM_POOL_RHEL9"
-  fi
-  
-  # Also create a main RPM repository with RHEL 8 packages for backward compatibility
-  if [ -d "$RPM_POOL_RHEL8" ] && [ "$(ls -A $RPM_POOL_RHEL8/*.rpm 2>/dev/null)" ]; then
-    echo "Creating main YUM repository (RHEL 8 packages for backward compatibility)"
+  # Create main repository for backward compatibility
+  if [ -d "$RPM_POOL_RHEL8" ] && [ "$(find "$RPM_POOL_RHEL8" -name "*.rpm" -type f | wc -l)" -gt 0 ]; then
     mkdir -p out/rpm/main
     cp "$RPM_POOL_RHEL8"/* out/rpm/main/
-    echo "Copied $(ls -1 out/rpm/main/*.rpm | wc -l) packages to main repository"
     pushd out/rpm/main >/dev/null
-    
-    if command -v createrepo_c >/dev/null 2>&1; then
-      echo "Running: createrepo_c . (for main repository)"
-      createrepo_c . || echo "Error: createrepo_c failed for main repository"
-      echo "Main repository metadata created. Contents:"
-      ls -la repodata/ 2>/dev/null || echo "No repodata directory found"
-    else
-      echo "Error: createrepo_c not found, cannot create main YUM repository metadata"
-    fi
-    
+    createrepo_c . >/dev/null 2>&1 || true
     if [ -n "$GPG_FINGERPRINT" ] && [ -f repodata/repomd.xml ]; then
-      echo "Signing main repository metadata"
-      gpg --default-key "$GPG_FINGERPRINT" --detach-sign --armor repodata/repomd.xml || echo "Warning: Could not sign main repodata/repomd.xml"
+      gpg --default-key "$GPG_FINGERPRINT" --detach-sign --armor repodata/repomd.xml 2>/dev/null || true
     fi
     popd >/dev/null
-  else
-    echo "No RHEL 8 packages found for main repository"
   fi
   
   echo "YUM repositories built successfully"
 fi
 
 
-echo ""
 echo "Package repository setup complete!"
-echo ""
-echo "=== Repository Structure Summary ==="
-
-# DEB Repository Status
-if [ -d out/deb ]; then
-  DEB_COUNT=$(find out/deb -name "*.deb" | wc -l)
-  DEB_RELEASE_FILE=$([ -f out/deb/dists/stable/Release ] && echo "✓" || echo "✗")
-  echo "DEB repository: ✓ Created with $DEB_COUNT signed packages, Release file: $DEB_RELEASE_FILE"
-else
-  echo "DEB repository: ✗ Not found"
-fi
-
-# RPM Repository Status  
-if [ -d out/rpm ]; then
-  RPM_COUNT=$(find out/rpm -name "*.rpm" | wc -l)
-  RHEL8_REPO=$([ -f out/rpm/rhel8/repodata/repomd.xml ] && echo "✓" || echo "✗")
-  RHEL9_REPO=$([ -f out/rpm/rhel9/repodata/repomd.xml ] && echo "✓" || echo "✗") 
-  MAIN_REPO=$([ -f out/rpm/main/repodata/repomd.xml ] && echo "✓" || echo "✗")
-  echo "RPM repository: ✓ Created with $RPM_COUNT packages"
-  echo "  - RHEL 8 metadata: $RHEL8_REPO"
-  echo "  - RHEL 9 metadata: $RHEL9_REPO"
-  echo "  - Main metadata: $MAIN_REPO"
-else
-  echo "RPM repository: ✗ Not found"
-fi
-
-# Direct Downloads Status
-if [ -d out/packages ]; then
-  PKG_COUNT=$(ls out/packages/*.{deb,rpm} 2>/dev/null | wc -l)
-  PKG_INDEX=$([ -f out/packages/index.html ] && echo "✓" || echo "✗")
-  echo "Direct downloads: ✓ Available with $PKG_COUNT packages, Index: $PKG_INDEX"
-else  
-  echo "Direct downloads: ✗ Not found"
-fi
-
-# GPG Key Status
-if [ -f out/documentdb-archive-keyring.gpg ]; then
-  echo "GPG key: ✓ Exported"
-else
-  echo "GPG key: ✗ Not found"
-fi
-
 echo ""
 echo "Repository URLs:"
 echo "  APT: https://documentdb.io/deb stable main"
