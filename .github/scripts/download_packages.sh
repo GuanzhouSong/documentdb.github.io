@@ -376,12 +376,9 @@ if [ "$GOT_RPM" = "1" ]; then
         gpg --default-key "$GPG_FINGERPRINT" --detach-sign --armor repodata/repomd.xml 2>/dev/null || true
       fi
       
-        popd >/dev/null
-      else
-        echo "  No RPM files found in directory"
-      fi
+      popd >/dev/null
     else
-      echo "  Directory does not exist: $POOL"
+      echo "Skipping $POOL: directory not found or no RPM files"
     fi
   done
   

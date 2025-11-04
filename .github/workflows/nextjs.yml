@@ -101,22 +101,6 @@ jobs:
         run: ${{ steps.detect-package-manager.outputs.runner }} next build
       - name: Download DocumentDB packages from latest release
         run: .github/scripts/download_packages.sh
-      - name: Debug output structure
-        run: |
-          echo "Contents of out directory:"
-          find out -type f | head -30
-          echo ""
-          echo "APT repository structure:"
-          ls -la out/deb/ 2>/dev/null || echo "No deb directory found"
-          echo ""
-          echo "APT repository pools:"
-          ls -la out/deb/pool/ 2>/dev/null || echo "No pool directory found"
-          echo ""
-          echo "YUM repository structure:" 
-          ls -la out/rpm/ 2>/dev/null || echo "No rpm directory found"
-          echo ""
-          echo "Direct download packages:"
-          ls -la out/packages/*.{deb,rpm} 2>/dev/null || echo "No packages found"
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
