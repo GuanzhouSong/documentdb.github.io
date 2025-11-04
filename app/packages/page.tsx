@@ -113,7 +113,7 @@ export default function PackagesPage() {
             <div>
               <h2 className="text-2xl font-bold text-white mb-2">📖 Complete Installation Guide</h2>
               <p className="text-gray-400">
-                Detailed instructions for all distributions, GPG verification, troubleshooting, and automation scripts
+                Detailed instructions for all distributions, GPG verification, troubleshooting, etc
               </p>
             </div>
             <Link 
@@ -138,15 +138,6 @@ export default function PackagesPage() {
             <p className="text-gray-400 mb-4">
               Browse and download individual packages without setting up repositories.
             </p>
-            <a
-              href="https://documentdb.io/packages/"
-              className="inline-flex items-center px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white font-medium rounded-md transition-colors"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Browse All Packages
-            </a>
           </div>
 
           {/* Manual Installation */}

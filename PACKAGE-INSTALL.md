@@ -1,40 +1,74 @@
 # DocumentDB Package Installation
 
-Fast and simple installation of DocumentDB.
+Fast and simple installation of DocumentDB extension for PostgreSQL.
+
+**Supported PostgreSQL Versions:** 15, 16, 17
 
 ## Install Commands
 
 ### Ubuntu & Debian (AMD64 & ARM64)
 ```bash
-curl -fsSL https://documentdb.github.io/documentdb-archive-keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
-echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/documentdb-archive-keyring.gpg] https://documentdb.github.io/deb stable main" | sudo tee /etc/apt/sources.list.d/documentdb.list
+curl -fsSL https://documentdb.io/KEY.gpg | sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
+echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/documentdb-archive-keyring.gpg] https://documentdb.io/deb stable main" | sudo tee /etc/apt/sources.list.d/documentdb.list
 sudo apt update
+
+# Install latest version for PostgreSQL 16 (recommended)
 sudo apt install postgresql-16-documentdb
 ```
 
-### RHEL & CentOS (x86_64 & aarch64)
+### RHEL & CentOS (x86_64 only)
 ```bash
-curl -fsSL https://documentdb.github.io/documentdb-archive-keyring.gpg | sudo rpm --import -
+# Import GPG key
+sudo rpm --import https://documentdb.io/KEY.gpg
+
+# Add repository (RHEL/Rocky 9)
 cat <<EOF | sudo tee /etc/yum.repos.d/documentdb.repo
 [documentdb]
-name=DocumentDB
-baseurl=https://documentdb.github.io/rpm/rhel8
+name=DocumentDB PostgreSQL Extension Repository
+baseurl=https://documentdb.io/rpm/rhel9
 enabled=1
 gpgcheck=1
-gpgkey=https://documentdb.github.io/documentdb-archive-keyring.gpg
+gpgkey=https://documentdb.io/KEY.gpg
 EOF
-sudo yum install postgresql-16-documentdb
+
+# Install latest version for PostgreSQL 16 (recommended)
+sudo dnf install postgresql16-documentdb
+
 ```
 
-## Package Names
+**Note:** PostgreSQL 15 RPM packages are not yet available.
 
-| PostgreSQL | APT Package | YUM Package |
-|------------|-------------|-------------|
-| 15 | postgresql-15-documentdb | postgresql15-documentdb |
-| 16 | postgresql-16-documentdb | postgresql16-documentdb |
-| 17 | postgresql-17-documentdb | postgresql17-documentdb |
+## Version Pinning
 
-## Architecture Support
+You can install either the latest version or pin to a specific DocumentDB version:
+
+### APT (Debian/Ubuntu)
+```bash
+# Install latest version (recommended - gets updates automatically)
+sudo apt install postgresql-16-documentdb
+
+# Pin to specific version (won't auto-update)
+sudo apt install postgresql-16-documentdb=0.107-0
+
+# List all available versions
+apt-cache madison postgresql-16-documentdb
+```
+
+### YUM/DNF (RHEL/CentOS)
+```bash
+# Install latest version (recommended - gets updates automatically)
+sudo dnf install postgresql16-documentdb
+
+# Pin to specific version (won't auto-update)
+sudo dnf install postgresql16-documentdb-0.107.0-1.el9
+
+# List all available versions
+dnf --showduplicates list postgresql16-documentdb
+```
+
+## Version & Architecture Support
+
+### Architecture Support
 
 **APT Packages (DEB):**
 - ✅ AMD64/x86_64 (Intel/AMD 64-bit processors)
@@ -42,13 +76,27 @@ sudo yum install postgresql-16-documentdb
 
 **YUM Packages (RPM):**
 - ✅ x86_64 (Intel/AMD 64-bit processors)
-- ✅ aarch64 (ARM64 processors - AWS Graviton, etc.)
+- ✅ aarch64 (Not available yet)
 
-## Quick Install (Skip GPG)
+### OS Distribution Support
+
+**Debian/Ubuntu (APT):**
+- Ubuntu 22.04 (Jammy)
+- Ubuntu 24.04 (Noble)
+- Debian 11 (Bullseye)
+- Debian 12 (Bookworm)
+
+**RHEL/CentOS (YUM):**
+- RHEL/Rocky/AlmaLinux 8
+- RHEL/Rocky/AlmaLinux 9
+
+## Quick Install (Skip GPG Verification)
+
+**⚠️ Warning:** Skipping GPG verification is not recommended for production environments.
 
 ### Ubuntu & Debian
 ```bash
-echo "deb [arch=amd64,arm64 trusted=yes] https://documentdb.github.io/deb stable main" | sudo tee /etc/apt/sources.list.d/documentdb.list
+echo "deb [arch=amd64,arm64 trusted=yes] https://documentdb.io/deb stable main" | sudo tee /etc/apt/sources.list.d/documentdb.list
 sudo apt update
 sudo apt install postgresql-16-documentdb
 ```
@@ -57,38 +105,70 @@ sudo apt install postgresql-16-documentdb
 ```bash
 cat <<EOF | sudo tee /etc/yum.repos.d/documentdb.repo
 [documentdb]
-name=DocumentDB
-baseurl=https://documentdb.github.io/rpm/rhel8
+name=DocumentDB PostgreSQL Extension Repository
+baseurl=https://documentdb.io/rpm/rhel9
 enabled=1
 gpgcheck=0
 EOF
-sudo yum install postgresql-16-documentdb
+sudo dnf install postgresql16-documentdb
 ```
 
-## Different OS Versions
+## Distribution-Specific Installation
 
-### Specific Debian/Ubuntu
+### Ubuntu 22.04 (Jammy)
 ```bash
-# Ubuntu 22.04
-https://documentdb.github.io/deb stable ubuntu22
-
-# Ubuntu 24.04
-https://documentdb.github.io/deb stable ubuntu24
-
-# Debian 11
-https://documentdb.github.io/deb/deb11 stable main
-
-# Debian 12  
-https://documentdb.github.io/deb/deb12 stable main
+curl -fsSL https://documentdb.io/KEY.gpg | sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
+echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/documentdb-archive-keyring.gpg] https://documentdb.io/deb stable ubuntu22" | sudo tee /etc/apt/sources.list.d/documentdb.list
+sudo apt update && sudo apt install postgresql-16-documentdb
 ```
 
-### Specific RHEL/CentOS
+### Ubuntu 24.04 (Noble)
 ```bash
-# RHEL/CentOS 8
-baseurl=https://documentdb.github.io/rpm/rhel8
+curl -fsSL https://documentdb.io/KEY.gpg | sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
+echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/documentdb-archive-keyring.gpg] https://documentdb.io/deb stable ubuntu24" | sudo tee /etc/apt/sources.list.d/documentdb.list
+sudo apt update && sudo apt install postgresql-16-documentdb
+```
 
-# RHEL/CentOS 9
-baseurl=https://documentdb.github.io/rpm/rhel9
+### Debian 11 (Bullseye)
+```bash
+curl -fsSL https://documentdb.io/KEY.gpg | sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
+echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/documentdb-archive-keyring.gpg] https://documentdb.io/deb stable deb11" | sudo tee /etc/apt/sources.list.d/documentdb.list
+sudo apt update && sudo apt install postgresql-16-documentdb
+```
+
+### Debian 12 (Bookworm)
+```bash
+curl -fsSL https://documentdb.io/KEY.gpg | sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
+echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/documentdb-archive-keyring.gpg] https://documentdb.io/deb stable deb12" | sudo tee /etc/apt/sources.list.d/documentdb.list
+sudo apt update && sudo apt install postgresql-16-documentdb
+```
+
+### RHEL/Rocky/AlmaLinux 8
+```bash
+sudo rpm --import https://documentdb.io/KEY.gpg
+cat <<EOF | sudo tee /etc/yum.repos.d/documentdb.repo
+[documentdb]
+name=DocumentDB PostgreSQL Extension Repository
+baseurl=https://documentdb.io/rpm/rhel8
+enabled=1
+gpgcheck=1
+gpgkey=https://documentdb.io/KEY.gpg
+EOF
+sudo dnf install postgresql16-documentdb
+```
+
+### RHEL/Rocky/AlmaLinux 9
+```bash
+sudo rpm --import https://documentdb.io/KEY.gpg
+cat <<EOF | sudo tee /etc/yum.repos.d/documentdb.repo
+[documentdb]
+name=DocumentDB PostgreSQL Extension Repository
+baseurl=https://documentdb.io/rpm/rhel9
+enabled=1
+gpgcheck=1
+gpgkey=https://documentdb.io/KEY.gpg
+EOF
+sudo dnf install postgresql16-documentdb
 ```
 
 ## Fix Common Issues
@@ -107,8 +187,17 @@ yum search documentdb    # RHEL/CentOS
 
 ### Check installation
 ```bash
-dpkg -l "*documentdb*"   # Ubuntu/Debian  
-rpm -qa "*documentdb*"   # RHEL/CentOS
+# Ubuntu/Debian - List installed packages
+dpkg -l "*documentdb*"
+
+# Ubuntu/Debian - Show specific package version
+apt-cache policy postgresql-16-documentdb
+
+# RHEL/CentOS - List installed packages
+rpm -qa "*documentdb*"
+
+# RHEL/CentOS - Show specific package version
+rpm -qi postgresql16-documentdb
 ```
 
 ## Repository Structure
@@ -144,24 +233,46 @@ https://documentdb.github.io/
 
 ### Package Locations
 ```
-https://documentdb.github.io/
+https://documentdb.io/
 └── packages/                          # All packages (direct download)
-    ├── postgresql-15-documentdb_*_amd64.deb
-    ├── postgresql-15-documentdb_*_arm64.deb
-    ├── postgresql-16-documentdb_*_amd64.deb
-    ├── postgresql-16-documentdb_*_arm64.deb
-    ├── postgresql-17-documentdb_*_amd64.deb
-    ├── postgresql-17-documentdb_*_arm64.deb
-    ├── postgresql15-documentdb-*.x86_64.rpm
-    ├── postgresql15-documentdb-*.aarch64.rpm
-    ├── postgresql16-documentdb-*.x86_64.rpm
-    ├── postgresql16-documentdb-*.aarch64.rpm
-    ├── postgresql17-documentdb-*.x86_64.rpm
-    └── postgresql17-documentdb-*.aarch64.rpm
+    # DEB packages (version 0.107-0)
+    ├── postgresql-15-documentdb_0.107-0_amd64.deb
+    ├── postgresql-15-documentdb_0.107-0_arm64.deb
+    ├── postgresql-15-documentdb-dbgsym_0.107-0_amd64.deb
+    ├── postgresql-15-documentdb-dbgsym_0.107-0_arm64.deb
+    ├── postgresql-16-documentdb_0.107-0_amd64.deb
+    ├── postgresql-16-documentdb_0.107-0_arm64.deb
+    ├── postgresql-16-documentdb-dbgsym_0.107-0_amd64.deb
+    ├── postgresql-16-documentdb-dbgsym_0.107-0_arm64.deb
+    ├── postgresql-17-documentdb_0.107-0_amd64.deb
+    ├── postgresql-17-documentdb_0.107-0_arm64.deb
+    ├── postgresql-17-documentdb-dbgsym_0.107-0_amd64.deb
+    ├── postgresql-17-documentdb-dbgsym_0.107-0_arm64.deb
+    # RPM packages (version 0.107.0-1) - x86_64 only
+    ├── postgresql16-documentdb-0.107.0-1.el8.x86_64.rpm
+    ├── postgresql16-documentdb-0.107.0-1.el9.x86_64.rpm
+    ├── postgresql17-documentdb-0.107.0-1.el8.x86_64.rpm
+    └── postgresql17-documentdb-0.107.0-1.el9.x86_64.rpm
 ```
 
 ## Direct Downloads
 
-**Repository packages:** https://documentdb.github.io/packages/
+**Repository packages:** https://documentdb.io/packages/
 
 **GitHub releases:** https://github.com/documentdb/documentdb/releases
+
+## Package Naming Convention
+
+### DEB Packages
+- Format: `postgresql-{PG_VERSION}-documentdb_{DOCUMENTDB_VERSION}_arch.deb`
+- Example: `postgresql-16-documentdb_0.107-0_amd64.deb`
+- Debug symbols: `postgresql-{PG_VERSION}-documentdb-dbgsym_{DOCUMENTDB_VERSION}_arch.deb`
+
+### RPM Packages
+- Format: `postgresql{PG_VERSION}-documentdb-{DOCUMENTDB_VERSION}.el{RHEL_VERSION}.arch.rpm`
+- Example: `postgresql16-documentdb-0.107.0-1.el9.x86_64.rpm`
+
+## Release Information
+
+The repository includes a `release-info.json` file with metadata about available packages:
+- https://documentdb.io/packages/release-info.json
