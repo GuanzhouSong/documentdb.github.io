@@ -341,16 +341,20 @@ fi
 
 if [ "$GOT_RPM" = "1" ]; then
   echo "Building YUM repositories..."
-  echo "Current working directory: $(pwd)"
-  echo "RPM_POOL_RHEL8=$RPM_POOL_RHEL8"
-  echo "RPM_POOL_RHEL9=$RPM_POOL_RHEL9"
   
-  for POOL in "$RPM_POOL_RHEL8" "$RPM_POOL_RHEL9"; do
-    echo "Checking pool: $POOL"
-    if [ -d "$POOL" ]; then
-      RPM_COUNT=$(find "$POOL" -name "*.rpm" -type f | wc -l)
-      echo "  Directory exists with $RPM_COUNT RPM files"
-      if [ "$RPM_COUNT" -gt 0 ]; then
+  # Adjust RPM pool paths if we're in the wrong directory after APT processing
+  if [[ "$PWD" == */out/deb ]]; then
+    RHEL8_POOL="../rpm/rhel8"
+    RHEL9_POOL="../rpm/rhel9"
+    MAIN_POOL="../rpm/main"
+  else
+    RHEL8_POOL="$RPM_POOL_RHEL8"
+    RHEL9_POOL="$RPM_POOL_RHEL9"
+    MAIN_POOL="out/rpm/main"
+  fi
+  
+  for POOL in "$RHEL8_POOL" "$RHEL9_POOL"; do
+    if [ -d "$POOL" ] && [ "$(find "$POOL" -name "*.rpm" -type f | wc -l)" -gt 0 ]; then
       echo "Processing YUM repository: $POOL"
       pushd "$POOL" >/dev/null
       
@@ -382,11 +386,11 @@ if [ "$GOT_RPM" = "1" ]; then
   done
   
   # Create main repository for backward compatibility
-  if [ -d "$RPM_POOL_RHEL8" ] && [ "$(find "$RPM_POOL_RHEL8" -name "*.rpm" -type f | wc -l)" -gt 0 ]; then
+  if [ -d "$RHEL8_POOL" ] && [ "$(find "$RHEL8_POOL" -name "*.rpm" -type f | wc -l)" -gt 0 ]; then
     echo "Creating main YUM repository"
-    mkdir -p out/rpm/main
-    cp "$RPM_POOL_RHEL8"/* out/rpm/main/
-    pushd out/rpm/main >/dev/null
+    mkdir -p "$MAIN_POOL"
+    cp "$RHEL8_POOL"/* "$MAIN_POOL"/
+    pushd "$MAIN_POOL" >/dev/null
     echo "Running createrepo_c for main repository in $(pwd)"
     if createrepo_c .; then
       echo "Main repository metadata created successfully"
