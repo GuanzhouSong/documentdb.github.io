@@ -31,7 +31,7 @@ jobs:
       - name: Install required packages
         run: |
           until sudo apt-get update; do sleep 1; done
-          sudo apt-get install -y createrepo-c dpkg-dev gnupg2 python3
+          sudo apt-get install -y createrepo-c dpkg-dev dpkg-sig gnupg2 python3
       - name: Setup GPG
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v6
@@ -43,9 +43,13 @@ jobs:
           # Configure GPG signing
           if [ -n "${{ steps.import_gpg.outputs.fingerprint }}" ]; then
             echo "GPG_FINGERPRINT=${{ steps.import_gpg.outputs.fingerprint }}" >> $GITHUB_ENV
-            echo "✓ GPG key loaded: ${{ steps.import_gpg.outputs.fingerprint }}"
+            echo "✅ GPG key loaded successfully"
+            echo "   Fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}"
+            echo "   Key ID: ${{ steps.import_gpg.outputs.keyid }}"
+            echo "   User ID: ${{ steps.import_gpg.outputs.name }} <${{ steps.import_gpg.outputs.email }}>"
           else
-            echo "⚠ No GPG key configured - packages will not be signed"
+            echo "⚠️ No GPG key configured - packages will not be signed"
+            echo "   To enable signing, add GPG_PRIVATE_KEY to repository secrets"
           fi
           
           # Configure DocumentDB version (can be overridden by repository variables)
@@ -97,49 +101,6 @@ jobs:
         run: ${{ steps.detect-package-manager.outputs.runner }} next build
       - name: Download DocumentDB packages from latest release
         run: .github/scripts/download_packages.sh
-      - name: Create installation instructions
-        run: |
-          mkdir -p out/install
-          cat > out/install/apt-install.md << 'EOF'
-          # Installing DocumentDB from APT Repository
-          
-          ## Available Packages
-          The repository contains DocumentDB packages for different PostgreSQL versions:
-          - `postgresql-15-documentdb` - DocumentDB extension for PostgreSQL 15
-          - `postgresql-16-documentdb` - DocumentDB extension for PostgreSQL 16  
-          - `postgresql-17-documentdb` - DocumentDB extension for PostgreSQL 17
-          
-          ## Option 1: Install with trusted repository (if GPG signed)
-          ```bash
-          # Add the repository
-          echo "deb [arch=amd64] https://documentdb.github.io/deb stable main" | \
-            sudo tee /etc/apt/sources.list.d/documentdb.list
-          
-          # Update package lists and install (choose your PostgreSQL version)
-          sudo apt-get update
-          sudo apt-get install postgresql-16-documentdb  # or postgresql-15-documentdb, postgresql-17-documentdb
-          ```
-          
-          ## Option 2: Install from unsigned repository (for testing)
-          ```bash
-          # Add the repository with trusted flag
-          echo "deb [arch=amd64 trusted=yes] https://documentdb.github.io/deb stable main" | \
-            sudo tee /etc/apt/sources.list.d/documentdb.list
-          
-          # Update package lists and install (choose your PostgreSQL version)
-          sudo apt-get update
-          sudo apt-get install postgresql-16-documentdb  # or postgresql-15-documentdb, postgresql-17-documentdb
-          ```
-          
-          ## Option 3: List all available packages
-          ```bash
-          # After adding the repository, list all DocumentDB packages
-          apt-cache search documentdb
-          ```
-          
-          ## Option 4: Direct package download
-          Download packages directly from: https://documentdb.github.io/packages/
-          EOF
       - name: Debug output structure
         run: |
           echo "Contents of out directory:"

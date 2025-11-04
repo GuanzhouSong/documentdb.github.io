@@ -9,9 +9,20 @@ export default function PackagesPage() {
           <h1 className="text-4xl font-bold text-white mb-4">
             📦 DocumentDB Package Repository
           </h1>
-          <p className="text-xl text-gray-400">
+          <p className="text-xl text-gray-400 mb-4">
             Official APT and YUM repositories for DocumentDB packages
           </p>
+          <div className="flex flex-wrap justify-center gap-4 text-sm">
+            <span className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full border border-green-500/30">
+              🔐 GPG Signed
+            </span>
+            <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full border border-blue-500/30">
+              🐧 Multi-Distribution
+            </span>
+            <span className="bg-purple-500/20 text-purple-400 px-3 py-1 rounded-full border border-purple-500/30">
+              🔄 Auto-Updates
+            </span>
+          </div>
         </div>
 
         {/* Quick Install Cards */}
@@ -28,20 +39,29 @@ export default function PackagesPage() {
             </div>
             <div className="bg-neutral-900 rounded p-4 mb-4">
               <code className="text-sm text-green-400 break-all">
-                # Add repository
+                # Install GPG key (recommended)
                 <br />
-                echo "deb [arch=amd64 trusted=yes] https://documentdb.github.io/deb stable main" | sudo tee /etc/apt/sources.list.d/documentdb.list
+                curl -fsSL https://documentdb.github.io/documentdb-archive-keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
+                <br />
+                <br />
+                # Add signed repository (AMD64 & ARM64)
+                <br />
+                echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/documentdb-archive-keyring.gpg] https://documentdb.github.io/deb stable main" | sudo tee /etc/apt/sources.list.d/documentdb.list
+                <br />
+                <br />
+                # Update and install
                 <br />
                 sudo apt-get update
                 <br />
-                <br />
-                # Install DocumentDB (choose your PostgreSQL version)
-                <br />
                 sudo apt-get install postgresql-16-documentdb
-                <br />
-                # or postgresql-15-documentdb, postgresql-17-documentdb
               </code>
             </div>
+            <p className="text-sm text-gray-400 mb-2">
+              <strong>Multi-architecture:</strong> Supports both AMD64 and ARM64 (Apple Silicon, AWS Graviton, etc.)
+            </p>
+            <p className="text-sm text-gray-400 mb-2">
+              <strong>Quick install (no GPG verification):</strong> Add <code className="bg-neutral-700 px-1 rounded">trusted=yes</code> instead of GPG key
+            </p>
           </div>
 
           {/* RHEL/CentOS/Fedora Card */}
@@ -52,11 +72,16 @@ export default function PackagesPage() {
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold text-white">RHEL/CentOS/Fedora</h3>
+              <h3 className="text-2xl font-bold text-white">RHEL</h3>
             </div>
             <div className="bg-neutral-900 rounded p-4 mb-4">
               <code className="text-sm text-green-400 break-all">
-                # Add repository
+                # Import GPG key (recommended)
+                <br />
+                curl -fsSL https://documentdb.github.io/documentdb-archive-keyring.gpg | sudo rpm --import -
+                <br />
+                <br />
+                # Add signed repository
                 <br />
                 sudo tee /etc/yum.repos.d/documentdb.repo &lt;&lt;EOF
                 <br />
@@ -64,28 +89,53 @@ export default function PackagesPage() {
                 <br />
                 name=DocumentDB Repository
                 <br />
-                baseurl=https://documentdb.github.io/rpm
+                baseurl=https://documentdb.github.io/rpm/rhel8
                 <br />
                 enabled=1
                 <br />
-                gpgcheck=0
+                gpgcheck=1
+                <br />
+                gpgkey=https://documentdb.github.io/documentdb-archive-keyring.gpg
                 <br />
                 EOF
                 <br />
                 <br />
-                # Install DocumentDB (choose your PostgreSQL version)
+                # Install DocumentDB
                 <br />
                 sudo yum install postgresql16-documentdb
-                <br />
-                # or postgresql17-documentdb
               </code>
             </div>
+            <p className="text-sm text-gray-400 mb-2">
+              <strong>Multi-architecture:</strong> Supports both x86_64 and aarch64 (AWS Graviton, etc.)
+            </p>
+            <p className="text-sm text-gray-400 mb-2">
+              <strong>Quick install (no GPG verification):</strong> Set <code className="bg-neutral-700 px-1 rounded">gpgcheck=0</code> instead of importing GPG key
+            </p>
+          </div>
+        </div>
+
+        {/* Installation Guide Link */}
+        <div className="bg-gradient-to-r from-blue-500/20 to-green-500/20 rounded-lg p-6 border border-blue-500/30 mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-2">📖 Complete Installation Guide</h2>
+              <p className="text-gray-400">
+                Detailed instructions for all distributions, GPG verification, troubleshooting, and automation scripts
+              </p>
+            </div>
+            <Link 
+              href="/PACKAGE-INSTALL.md" 
+              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+              target="_blank"
+            >
+              View Guide
+            </Link>
           </div>
         </div>
 
         {/* Manual Setup Section */}
         <div className="bg-neutral-800 rounded-lg p-8 border border-neutral-700 mb-8">
-          <h2 className="text-2xl font-bold text-white mb-6">Manual Setup</h2>
+          <h2 className="text-2xl font-bold text-white mb-6">Distribution-Specific Setup</h2>
           
           {/* APT Manual Setup */}
           <div className="mb-8">
@@ -94,17 +144,19 @@ export default function PackagesPage() {
             </h3>
             <div className="bg-neutral-900 rounded p-4">
               <pre className="text-sm text-gray-300 overflow-x-auto">
-                <code>{`# Add repository with trusted flag (unsigned packages)
+                <code>{`# Option 1: With GPG verification (recommended)
+curl -fsSL https://documentdb.github.io/documentdb-archive-keyring.gpg | \\
+  sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/documentdb-archive-keyring.gpg] https://documentdb.github.io/deb stable main" | \\
+  sudo tee /etc/apt/sources.list.d/documentdb.list
+
+# Option 2: Quick install (no GPG verification)  
 echo "deb [arch=amd64 trusted=yes] https://documentdb.github.io/deb stable main" | \\
   sudo tee /etc/apt/sources.list.d/documentdb.list
+
 sudo apt-get update
-
-# Install DocumentDB for your PostgreSQL version
 sudo apt-get install postgresql-16-documentdb
-# Available packages: postgresql-15-documentdb, postgresql-16-documentdb, postgresql-17-documentdb
-
-# List all available DocumentDB packages
-apt-cache search documentdb`}</code>
+# Available: postgresql-15-documentdb, postgresql-16-documentdb, postgresql-17-documentdb`}</code>
               </pre>
             </div>
           </div>
@@ -116,21 +168,28 @@ apt-cache search documentdb`}</code>
             </h3>
             <div className="bg-neutral-900 rounded p-4">
               <pre className="text-sm text-gray-300 overflow-x-auto">
-                <code>{`# Add repository configuration
+                <code>{`# Option 1: With GPG verification (recommended)
+curl -fsSL https://documentdb.github.io/documentdb-archive-keyring.gpg | sudo rpm --import -
 sudo tee /etc/yum.repos.d/documentdb.repo <<EOF
 [documentdb]
 name=DocumentDB Repository
-baseurl=https://documentdb.github.io/rpm
+baseurl=https://documentdb.github.io/rpm/rhel8
+enabled=1
+gpgcheck=1
+gpgkey=https://documentdb.github.io/documentdb-archive-keyring.gpg
+EOF
+
+# Option 2: Quick install (no GPG verification)
+sudo tee /etc/yum.repos.d/documentdb.repo <<EOF
+[documentdb]
+name=DocumentDB Repository  
+baseurl=https://documentdb.github.io/rpm/rhel8
 enabled=1
 gpgcheck=0
 EOF
 
-# Install DocumentDB for your PostgreSQL version
 sudo yum install postgresql16-documentdb
-# Available packages: postgresql16-documentdb, postgresql17-documentdb
-
-# List all available DocumentDB packages
-yum search documentdb`}</code>
+# Available: postgresql16-documentdb, postgresql17-documentdb`}</code>
               </pre>
             </div>
           </div>

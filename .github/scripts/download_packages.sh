@@ -18,10 +18,21 @@ SUITE="${SUITE:-stable}"
 COMPONENTS="${COMPONENTS:-main}"
 ORIGIN="${ORIGIN:-DocumentDB}"
 
-
-
-
 DESCRIPTION="${DESCRIPTION:-DocumentDB APT and YUM Repository}"
+
+# Function to sign DEB packages
+sign_deb_package() {
+  local package_file="$1"
+  if [ -n "$GPG_FINGERPRINT" ] && [ -f "$package_file" ]; then
+    echo "    Signing DEB package: $(basename "$package_file")"
+    # DEB packages can be signed using dpkg-sig
+    if command -v dpkg-sig >/dev/null 2>&1; then
+      dpkg-sig --sign builder --gpg-options "--default-key $GPG_FINGERPRINT" "$package_file" || echo "    Warning: Could not sign $(basename "$package_file")"
+    else
+      echo "    Warning: dpkg-sig not available, skipping DEB package signing"
+    fi
+  fi
+}
 
 GOT_DEB=0
 GOT_RPM=0
@@ -36,11 +47,18 @@ RPM_POOL_RHEL8="out/rpm/rhel8"
 RPM_POOL_RHEL9="out/rpm/rhel9"
 
 DEB_DISTS="dists/${SUITE}"
-DEB_DISTS_COMPONENTS="${DEB_DISTS}/${COMPONENTS}/binary-amd64"
-DEB_DISTS_DEB11="${DEB_DISTS}/deb11/binary-amd64"
-DEB_DISTS_DEB12="${DEB_DISTS}/deb12/binary-amd64"
-DEB_DISTS_UBUNTU22="${DEB_DISTS}/ubuntu22/binary-amd64"
-DEB_DISTS_UBUNTU24="${DEB_DISTS}/ubuntu24/binary-amd64"
+# AMD64 directories
+DEB_DISTS_COMPONENTS_AMD64="${DEB_DISTS}/${COMPONENTS}/binary-amd64"
+DEB_DISTS_DEB11_AMD64="${DEB_DISTS}/deb11/binary-amd64"
+DEB_DISTS_DEB12_AMD64="${DEB_DISTS}/deb12/binary-amd64"
+DEB_DISTS_UBUNTU22_AMD64="${DEB_DISTS}/ubuntu22/binary-amd64"
+DEB_DISTS_UBUNTU24_AMD64="${DEB_DISTS}/ubuntu24/binary-amd64"
+# ARM64 directories
+DEB_DISTS_COMPONENTS_ARM64="${DEB_DISTS}/${COMPONENTS}/binary-arm64"
+DEB_DISTS_DEB11_ARM64="${DEB_DISTS}/deb11/binary-arm64"
+DEB_DISTS_DEB12_ARM64="${DEB_DISTS}/deb12/binary-arm64"
+DEB_DISTS_UBUNTU22_ARM64="${DEB_DISTS}/ubuntu22/binary-arm64"
+DEB_DISTS_UBUNTU24_ARM64="${DEB_DISTS}/ubuntu24/binary-arm64"
 GPG_TTY=""
 export GPG_TTY
 
@@ -125,6 +143,7 @@ for asset in data.get('assets', []):
         if [ "$MULTI_VERSION" = "true" ]; then
           # Multi-version mode: overwrite same version, preserve different versions
           cp "out/packages/$filename" "$DEB_POOL_DEB11/$clean_name"
+          sign_deb_package "$DEB_POOL_DEB11/$clean_name"
           if [ -f "$DEB_POOL_DEB11/$clean_name" ]; then
             echo "    Updated existing package: $clean_name"
           else
@@ -133,6 +152,7 @@ for asset in data.get('assets', []):
         else
           # Single version mode: overwrite everything
           cp "out/packages/$filename" "$DEB_POOL_DEB11/$clean_name"
+          sign_deb_package "$DEB_POOL_DEB11/$clean_name"
         fi
       elif [[ "$filename" =~ ^deb12-postgresql-[0-9]+-documentdb.*\.deb$ ]]; then
         GOT_DEB=1
@@ -141,9 +161,11 @@ for asset in data.get('assets', []):
         echo "  Adding Debian 12 package to APT repository: $filename -> $clean_name"
         if [ "$MULTI_VERSION" = "true" ]; then
           cp "out/packages/$filename" "$DEB_POOL_DEB12/$clean_name"
+          sign_deb_package "$DEB_POOL_DEB12/$clean_name"
           echo "    Updated package: $clean_name"
         else
           cp "out/packages/$filename" "$DEB_POOL_DEB12/$clean_name"
+          sign_deb_package "$DEB_POOL_DEB12/$clean_name"
         fi
       elif [[ "$filename" =~ ^ubuntu22\.04-postgresql-[0-9]+-documentdb.*\.deb$ ]]; then
         GOT_DEB=1
@@ -152,9 +174,11 @@ for asset in data.get('assets', []):
         echo "  Adding Ubuntu 22.04 package to APT repository: $filename -> $clean_name"
         if [ "$MULTI_VERSION" = "true" ]; then
           cp "out/packages/$filename" "$DEB_POOL_UBUNTU22/$clean_name"
+          sign_deb_package "$DEB_POOL_UBUNTU22/$clean_name"
           echo "    Updated package: $clean_name"
         else
           cp "out/packages/$filename" "$DEB_POOL_UBUNTU22/$clean_name"
+          sign_deb_package "$DEB_POOL_UBUNTU22/$clean_name"
         fi
       elif [[ "$filename" =~ ^ubuntu24\.04-postgresql-[0-9]+-documentdb.*\.deb$ ]]; then
         GOT_DEB=1
@@ -163,9 +187,11 @@ for asset in data.get('assets', []):
         echo "  Adding Ubuntu 24.04 package to APT repository: $filename -> $clean_name"
         if [ "$MULTI_VERSION" = "true" ]; then
           cp "out/packages/$filename" "$DEB_POOL_UBUNTU24/$clean_name"
+          sign_deb_package "$DEB_POOL_UBUNTU24/$clean_name"
           echo "    Updated package: $clean_name"
         else
           cp "out/packages/$filename" "$DEB_POOL_UBUNTU24/$clean_name"
+          sign_deb_package "$DEB_POOL_UBUNTU24/$clean_name"
         fi
       else
         echo "  Skipping $filename for APT repository (unsupported distribution or architecture)"
@@ -251,42 +277,77 @@ if [ "$GOT_DEB" = "1" ]; then
   
   # Create main component with Ubuntu 22.04 packages (for backward compatibility)
   if [ -d "pool/ubuntu22" ] && [ "$(ls -A pool/ubuntu22/*.deb 2>/dev/null)" ]; then
-    mkdir -p "${DEB_DISTS_COMPONENTS}"
-    echo "Scanning Ubuntu 22.04 packages for main component"
-    dpkg-scanpackages --arch amd64 pool/ubuntu22/ > "${DEB_DISTS_COMPONENTS}/Packages"
-    gzip -k -f "${DEB_DISTS_COMPONENTS}/Packages"
+    # AMD64 packages
+    mkdir -p "${DEB_DISTS_COMPONENTS_AMD64}"
+    echo "Scanning Ubuntu 22.04 AMD64 packages for main component"
+    dpkg-scanpackages --arch amd64 pool/ubuntu22/ > "${DEB_DISTS_COMPONENTS_AMD64}/Packages"
+    gzip -k -f "${DEB_DISTS_COMPONENTS_AMD64}/Packages"
+    
+    # ARM64 packages  
+    mkdir -p "${DEB_DISTS_COMPONENTS_ARM64}"
+    echo "Scanning Ubuntu 22.04 ARM64 packages for main component"
+    dpkg-scanpackages --arch arm64 pool/ubuntu22/ > "${DEB_DISTS_COMPONENTS_ARM64}/Packages"
+    gzip -k -f "${DEB_DISTS_COMPONENTS_ARM64}/Packages"
   fi
   
   # Create deb11 component (Debian 11 Bullseye)
   if [ -d "pool/deb11" ] && [ "$(ls -A pool/deb11/*.deb 2>/dev/null)" ]; then
-    mkdir -p "${DEB_DISTS_DEB11}"
-    echo "Scanning Debian 11 packages for deb11 component"
-    dpkg-scanpackages --arch amd64 pool/deb11/ > "${DEB_DISTS_DEB11}/Packages"
-    gzip -k -f "${DEB_DISTS_DEB11}/Packages"
+    # AMD64 packages
+    mkdir -p "${DEB_DISTS_DEB11_AMD64}"
+    echo "Scanning Debian 11 AMD64 packages for deb11 component"
+    dpkg-scanpackages --arch amd64 pool/deb11/ > "${DEB_DISTS_DEB11_AMD64}/Packages"
+    gzip -k -f "${DEB_DISTS_DEB11_AMD64}/Packages"
+    
+    # ARM64 packages
+    mkdir -p "${DEB_DISTS_DEB11_ARM64}"
+    echo "Scanning Debian 11 ARM64 packages for deb11 component"
+    dpkg-scanpackages --arch arm64 pool/deb11/ > "${DEB_DISTS_DEB11_ARM64}/Packages"
+    gzip -k -f "${DEB_DISTS_DEB11_ARM64}/Packages"
   fi
   
   # Create deb12 component (Debian 12 Bookworm)
   if [ -d "pool/deb12" ] && [ "$(ls -A pool/deb12/*.deb 2>/dev/null)" ]; then
-    mkdir -p "${DEB_DISTS_DEB12}"
-    echo "Scanning Debian 12 packages for deb12 component"
-    dpkg-scanpackages --arch amd64 pool/deb12/ > "${DEB_DISTS_DEB12}/Packages"
-    gzip -k -f "${DEB_DISTS_DEB12}/Packages"
+    # AMD64 packages
+    mkdir -p "${DEB_DISTS_DEB12_AMD64}"
+    echo "Scanning Debian 12 AMD64 packages for deb12 component"
+    dpkg-scanpackages --arch amd64 pool/deb12/ > "${DEB_DISTS_DEB12_AMD64}/Packages"
+    gzip -k -f "${DEB_DISTS_DEB12_AMD64}/Packages"
+    
+    # ARM64 packages
+    mkdir -p "${DEB_DISTS_DEB12_ARM64}"
+    echo "Scanning Debian 12 ARM64 packages for deb12 component"
+    dpkg-scanpackages --arch arm64 pool/deb12/ > "${DEB_DISTS_DEB12_ARM64}/Packages"
+    gzip -k -f "${DEB_DISTS_DEB12_ARM64}/Packages"
   fi
   
   # Create ubuntu22 component (Ubuntu 22.04 Jammy)
   if [ -d "pool/ubuntu22" ] && [ "$(ls -A pool/ubuntu22/*.deb 2>/dev/null)" ]; then
-    mkdir -p "${DEB_DISTS_UBUNTU22}"
-    echo "Scanning Ubuntu 22.04 packages for ubuntu22 component"
-    dpkg-scanpackages --arch amd64 pool/ubuntu22/ > "${DEB_DISTS_UBUNTU22}/Packages"
-    gzip -k -f "${DEB_DISTS_UBUNTU22}/Packages"
+    # AMD64 packages
+    mkdir -p "${DEB_DISTS_UBUNTU22_AMD64}"
+    echo "Scanning Ubuntu 22.04 AMD64 packages for ubuntu22 component"
+    dpkg-scanpackages --arch amd64 pool/ubuntu22/ > "${DEB_DISTS_UBUNTU22_AMD64}/Packages"
+    gzip -k -f "${DEB_DISTS_UBUNTU22_AMD64}/Packages"
+    
+    # ARM64 packages
+    mkdir -p "${DEB_DISTS_UBUNTU22_ARM64}"
+    echo "Scanning Ubuntu 22.04 ARM64 packages for ubuntu22 component"
+    dpkg-scanpackages --arch arm64 pool/ubuntu22/ > "${DEB_DISTS_UBUNTU22_ARM64}/Packages"
+    gzip -k -f "${DEB_DISTS_UBUNTU22_ARM64}/Packages"
   fi
   
   # Create ubuntu24 component (Ubuntu 24.04 Noble)
   if [ -d "pool/ubuntu24" ] && [ "$(ls -A pool/ubuntu24/*.deb 2>/dev/null)" ]; then
-    mkdir -p "${DEB_DISTS_UBUNTU24}"
-    echo "Scanning Ubuntu 24.04 packages for ubuntu24 component"
-    dpkg-scanpackages --arch amd64 pool/ubuntu24/ > "${DEB_DISTS_UBUNTU24}/Packages"
-    gzip -k -f "${DEB_DISTS_UBUNTU24}/Packages"
+    # AMD64 packages
+    mkdir -p "${DEB_DISTS_UBUNTU24_AMD64}"
+    echo "Scanning Ubuntu 24.04 AMD64 packages for ubuntu24 component"
+    dpkg-scanpackages --arch amd64 pool/ubuntu24/ > "${DEB_DISTS_UBUNTU24_AMD64}/Packages"
+    gzip -k -f "${DEB_DISTS_UBUNTU24_AMD64}/Packages"
+    
+    # ARM64 packages
+    mkdir -p "${DEB_DISTS_UBUNTU24_ARM64}"
+    echo "Scanning Ubuntu 24.04 ARM64 packages for ubuntu24 component"
+    dpkg-scanpackages --arch arm64 pool/ubuntu24/ > "${DEB_DISTS_UBUNTU24_ARM64}/Packages"
+    gzip -k -f "${DEB_DISTS_UBUNTU24_ARM64}/Packages"
   fi
   
   pushd "${DEB_DISTS}" >/dev/null
@@ -301,13 +362,19 @@ if [ "$GOT_DEB" = "1" ]; then
   [ -d "ubuntu24/binary-amd64" ] && AVAILABLE_COMPONENTS="${AVAILABLE_COMPONENTS} ubuntu24"
   AVAILABLE_COMPONENTS=$(echo $AVAILABLE_COMPONENTS | sed 's/^ *//')
   
+  # Determine available architectures
+  AVAILABLE_ARCHITECTURES=""
+  [ -d "${COMPONENTS}/binary-amd64" ] || [ -d "deb11/binary-amd64" ] || [ -d "deb12/binary-amd64" ] || [ -d "ubuntu22/binary-amd64" ] || [ -d "ubuntu24/binary-amd64" ] && AVAILABLE_ARCHITECTURES="${AVAILABLE_ARCHITECTURES} amd64"
+  [ -d "${COMPONENTS}/binary-arm64" ] || [ -d "deb11/binary-arm64" ] || [ -d "deb12/binary-arm64" ] || [ -d "ubuntu22/binary-arm64" ] || [ -d "ubuntu24/binary-arm64" ] && AVAILABLE_ARCHITECTURES="${AVAILABLE_ARCHITECTURES} arm64"
+  AVAILABLE_ARCHITECTURES=$(echo $AVAILABLE_ARCHITECTURES | sed 's/^ *//')
+  
   {
     echo "Origin: ${ORIGIN}"
     echo "Label: DocumentDB"
     echo "Suite: ${SUITE}"
     echo "Codename: ${SUITE}"
     echo "Version: 1.0"
-    echo "Architectures: amd64"
+    echo "Architectures: ${AVAILABLE_ARCHITECTURES}"
     echo "Components: ${AVAILABLE_COMPONENTS}"
     echo "Description: ${DESCRIPTION} - Multiple distributions supported"
     echo "Date: $(date -Ru)"
@@ -321,6 +388,13 @@ if [ "$GOT_DEB" = "1" ]; then
     echo "Signing Release file with GPG"
     gpg --default-key "$GPG_FINGERPRINT" --detach-sign --armor -o Release.gpg Release
     gpg --default-key "$GPG_FINGERPRINT" --clearsign -o InRelease Release
+    
+    # Export public key for users to import
+    echo "Exporting GPG public key"
+    gpg --armor --export "$GPG_FINGERPRINT" > documentdb-archive-keyring.gpg
+    
+    # Also create the key in the main directory for easy access
+    gpg --armor --export "$GPG_FINGERPRINT" > ../../../documentdb-archive-keyring.gpg
   else
     echo "Warning: GPG_FINGERPRINT not set, skipping package signing"
   fi
