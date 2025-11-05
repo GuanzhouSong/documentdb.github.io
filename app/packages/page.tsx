@@ -43,12 +43,12 @@ export default function PackagesPage() {
                 <br />
                 curl -fsSL https://documentdb.io/documentdb-archive-keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
                 <br />
-                echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/documentdb-archive-keyring.gpg] https://documentdb.io/deb stable main" | sudo tee /etc/apt/sources.list.d/documentdb.list
+                echo &quot;deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/documentdb-archive-keyring.gpg] https://documentdb.io/deb stable main&quot; | sudo tee /etc/apt/sources.list.d/documentdb.list
                 <br />
                 <br />
                 # Install packages
                 <br />
-                sudo apt-get update && sudo apt-get install postgresql-16-documentdb
+                sudo apt update &amp;&amp; sudo apt install postgresql-16-documentdb
               </code>
             </div>
             <div className="flex items-center justify-between text-sm">
@@ -74,34 +74,41 @@ export default function PackagesPage() {
 
             <div className="bg-neutral-900 rounded p-4 mb-4">
               <code className="text-sm text-green-400 break-all">
+                # Enable CRB repo (for dependencies)
+                <br />
+                sudo dnf install -y dnf-plugins-core
+                <br />
+                sudo dnf config-manager --set-enabled crb
+                <br />
+                <br />
                 # Add repository with GPG verification
                 <br />
-                curl -fsSL https://documentdb.io/documentdb-archive-keyring.gpg | sudo rpm --import -
+                sudo rpm --import https://documentdb.io/documentdb-archive-keyring.gpg
                 <br />
-                echo '[documentdb]
+                echo &apos;[documentdb]
                 <br />
                 name=DocumentDB Repository
                 <br />
-                baseurl=https://documentdb.io/rpm/rhel8
+                baseurl=https://documentdb.io/rpm/rhel9
                 <br />
                 enabled=1
                 <br />
                 gpgcheck=1
                 <br />
-                gpgkey=https://documentdb.io/documentdb-archive-keyring.gpg' | sudo tee /etc/yum.repos.d/documentdb.repo
+                gpgkey=https://documentdb.io/documentdb-archive-keyring.gpg&apos; | sudo tee /etc/yum.repos.d/documentdb.repo
                 <br />
                 <br />
                 # Install packages
                 <br />
-                sudo yum install postgresql16-documentdb
+                sudo dnf install postgresql16-documentdb
               </code>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-400">
-                <strong>Supports:</strong> RHEL 8/9, CentOS, Fedora
+                <strong>Supports:</strong> RHEL 8/9, Rocky, AlmaLinux
               </span>
               <span className="text-red-400">
-                x86_64 + aarch64
+                x86_64 only
               </span>
             </div>
           </div>

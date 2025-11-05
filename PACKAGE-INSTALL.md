@@ -8,7 +8,7 @@ Fast and simple installation of DocumentDB extension for PostgreSQL.
 
 ### Ubuntu & Debian (AMD64 & ARM64)
 ```bash
-curl -fsSL https://documentdb.io/KEY.gpg | sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
+curl -fsSL https://documentdb.io/documentdb-archive-keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
 echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/documentdb-archive-keyring.gpg] https://documentdb.io/deb stable main" | sudo tee /etc/apt/sources.list.d/documentdb.list
 sudo apt update
 
@@ -18,8 +18,12 @@ sudo apt install postgresql-16-documentdb
 
 ### RHEL & CentOS (x86_64 only)
 ```bash
+# Enable CRB repository (required for PostGIS dependencies)
+sudo dnf install -y dnf-plugins-core
+sudo dnf config-manager --set-enabled crb
+
 # Import GPG key
-sudo rpm --import https://documentdb.io/KEY.gpg
+sudo rpm --import https://documentdb.io/documentdb-archive-keyring.gpg
 
 # Add repository (RHEL/Rocky 9)
 cat <<EOF | sudo tee /etc/yum.repos.d/documentdb.repo
@@ -28,7 +32,7 @@ name=DocumentDB PostgreSQL Extension Repository
 baseurl=https://documentdb.io/rpm/rhel9
 enabled=1
 gpgcheck=1
-gpgkey=https://documentdb.io/KEY.gpg
+gpgkey=https://documentdb.io/documentdb-archive-keyring.gpg
 EOF
 
 # Install latest version for PostgreSQL 16 (recommended)
@@ -36,7 +40,7 @@ sudo dnf install postgresql16-documentdb
 
 ```
 
-**Note:** PostgreSQL 15 RPM packages are not yet available.
+**Note:** PostgreSQL 15 RPM packages are not yet available. CRB (CodeReady Builder) repository is required for PostGIS/GDAL dependencies.
 
 ## Version Pinning
 
@@ -117,56 +121,64 @@ sudo dnf install postgresql16-documentdb
 
 ### Ubuntu 22.04 (Jammy)
 ```bash
-curl -fsSL https://documentdb.io/KEY.gpg | sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
+curl -fsSL https://documentdb.io/documentdb-archive-keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
 echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/documentdb-archive-keyring.gpg] https://documentdb.io/deb stable ubuntu22" | sudo tee /etc/apt/sources.list.d/documentdb.list
 sudo apt update && sudo apt install postgresql-16-documentdb
 ```
 
 ### Ubuntu 24.04 (Noble)
 ```bash
-curl -fsSL https://documentdb.io/KEY.gpg | sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
+curl -fsSL https://documentdb.io/documentdb-archive-keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
 echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/documentdb-archive-keyring.gpg] https://documentdb.io/deb stable ubuntu24" | sudo tee /etc/apt/sources.list.d/documentdb.list
 sudo apt update && sudo apt install postgresql-16-documentdb
 ```
 
 ### Debian 11 (Bullseye)
 ```bash
-curl -fsSL https://documentdb.io/KEY.gpg | sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
+curl -fsSL https://documentdb.io/documentdb-archive-keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
 echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/documentdb-archive-keyring.gpg] https://documentdb.io/deb stable deb11" | sudo tee /etc/apt/sources.list.d/documentdb.list
 sudo apt update && sudo apt install postgresql-16-documentdb
 ```
 
 ### Debian 12 (Bookworm)
 ```bash
-curl -fsSL https://documentdb.io/KEY.gpg | sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
+curl -fsSL https://documentdb.io/documentdb-archive-keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/documentdb-archive-keyring.gpg
 echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/documentdb-archive-keyring.gpg] https://documentdb.io/deb stable deb12" | sudo tee /etc/apt/sources.list.d/documentdb.list
 sudo apt update && sudo apt install postgresql-16-documentdb
 ```
 
 ### RHEL/Rocky/AlmaLinux 8
 ```bash
-sudo rpm --import https://documentdb.io/KEY.gpg
+# Enable CRB repository (required for PostGIS dependencies)
+sudo dnf install -y dnf-plugins-core
+sudo dnf config-manager --set-enabled crb
+
+sudo rpm --import https://documentdb.io/documentdb-archive-keyring.gpg
 cat <<EOF | sudo tee /etc/yum.repos.d/documentdb.repo
 [documentdb]
 name=DocumentDB PostgreSQL Extension Repository
 baseurl=https://documentdb.io/rpm/rhel8
 enabled=1
 gpgcheck=1
-gpgkey=https://documentdb.io/KEY.gpg
+gpgkey=https://documentdb.io/documentdb-archive-keyring.gpg
 EOF
 sudo dnf install postgresql16-documentdb
 ```
 
 ### RHEL/Rocky/AlmaLinux 9
 ```bash
-sudo rpm --import https://documentdb.io/KEY.gpg
+# Enable CRB repository (required for PostGIS dependencies)
+sudo dnf install -y dnf-plugins-core
+sudo dnf config-manager --set-enabled crb
+
+sudo rpm --import https://documentdb.io/documentdb-archive-keyring.gpg
 cat <<EOF | sudo tee /etc/yum.repos.d/documentdb.repo
 [documentdb]
 name=DocumentDB PostgreSQL Extension Repository
 baseurl=https://documentdb.io/rpm/rhel9
 enabled=1
 gpgcheck=1
-gpgkey=https://documentdb.io/KEY.gpg
+gpgkey=https://documentdb.io/documentdb-archive-keyring.gpg
 EOF
 sudo dnf install postgresql16-documentdb
 ```
