@@ -16,7 +16,7 @@ sudo apt update
 sudo apt install postgresql-16-documentdb
 ```
 
-### RHEL & CentOS (x86_64 only)
+### RHEL & CentOS (x86_64 & aarch64)
 ```bash
 # Enable CRB repository (required for PostGIS dependencies)
 sudo dnf install -y dnf-plugins-core
@@ -40,7 +40,7 @@ sudo dnf install postgresql16-documentdb
 
 ```
 
-**Note:** PostgreSQL 15 RPM packages are not yet available. CRB (CodeReady Builder) repository is required for PostGIS/GDAL dependencies.
+**Note:** CRB (CodeReady Builder) repository is required for PostGIS/GDAL dependencies. PostgreSQL 15 RPM packages may be available in future releases.
 
 ## Version Pinning
 
@@ -80,7 +80,7 @@ dnf --showduplicates list postgresql16-documentdb
 
 **YUM Packages (RPM):**
 - ✅ x86_64 (Intel/AMD 64-bit processors)
-- ✅ aarch64 (Not available yet)
+- ✅ aarch64 (ARM64 processors - AWS Graviton, etc.)
 
 ### OS Distribution Support
 
@@ -90,9 +90,11 @@ dnf --showduplicates list postgresql16-documentdb
 - Debian 11 (Bullseye)
 - Debian 12 (Bookworm)
 
-**RHEL/CentOS (YUM):**
-- RHEL/Rocky/AlmaLinux 8
-- RHEL/Rocky/AlmaLinux 9
+**RHEL-based distributions (YUM/DNF):**
+- RHEL 8/9
+- Rocky Linux 8/9
+- AlmaLinux 8/9
+- CentOS Stream 8/9
 
 ## Quick Install (Skip GPG Verification)
 
@@ -147,7 +149,7 @@ echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/documentdb-archive-key
 sudo apt update && sudo apt install postgresql-16-documentdb
 ```
 
-### RHEL/Rocky/AlmaLinux 8
+### RHEL/Rocky/AlmaLinux/CentOS Stream 8
 ```bash
 # Enable CRB repository (required for PostGIS dependencies)
 sudo dnf install -y dnf-plugins-core
@@ -165,7 +167,7 @@ EOF
 sudo dnf install postgresql16-documentdb
 ```
 
-### RHEL/Rocky/AlmaLinux 9
+### RHEL/Rocky/AlmaLinux/CentOS Stream 9
 ```bash
 # Enable CRB repository (required for PostGIS dependencies)
 sudo dnf install -y dnf-plugins-core

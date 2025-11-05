@@ -26,7 +26,7 @@ export default function PackagesPage() {
         </div>
 
         {/* Quick Install Cards */}
-        <div className="grid md:grid-cols-2 gap-6 mb-12">
+        <div className="space-y-6 mb-12">
           {/* Debian/Ubuntu Card */}
           <div className="bg-neutral-800 rounded-lg p-6 border border-neutral-700">
             <div className="flex items-center mb-4">
@@ -105,10 +105,10 @@ export default function PackagesPage() {
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-400">
-                <strong>Supports:</strong> RHEL 8/9, Rocky, AlmaLinux
+                <strong>Supports:</strong> RHEL 8/9, Rocky, AlmaLinux, CentOS Stream
               </span>
               <span className="text-red-400">
-                x86_64 only
+                x86_64 + aarch64
               </span>
             </div>
           </div>
