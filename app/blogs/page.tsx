@@ -213,7 +213,7 @@ export default function Blogs() {
                 <p className="text-gray-400 mb-4 text-sm leading-relaxed">
                   We are excited to announce the official release of
                   DocumentDB—an open-source document database platform and the
-                  engine powering the vCore-based Azure Cosmos DB for MongoDB,
+                  engine powering Azure DocumentDB (with MongoDB compatibility),
                   built on PostgreSQL. This marks a significant milestone in
                   creating an interoperable, portable, and fully supported
                   production-ready document data store.
