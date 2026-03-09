@@ -2,7 +2,7 @@
 
 Fast and simple installation of DocumentDB extension for PostgreSQL.
 
-**Supported PostgreSQL Versions:** 15, 16, 17
+**Supported PostgreSQL Versions:** 16, 17, 18
 
 ## Install Commands
 
@@ -52,7 +52,7 @@ You can install either the latest version or pin to a specific DocumentDB versio
 sudo apt install postgresql-16-documentdb
 
 # Pin to specific version (won't auto-update)
-sudo apt install postgresql-16-documentdb=0.107-0
+sudo apt install postgresql-16-documentdb=0.109-0
 
 # List all available versions
 apt-cache madison postgresql-16-documentdb
@@ -64,7 +64,7 @@ apt-cache madison postgresql-16-documentdb
 sudo dnf install postgresql16-documentdb
 
 # Pin to specific version (won't auto-update)
-sudo dnf install postgresql16-documentdb-0.107.0-1.el9
+sudo dnf install postgresql16-documentdb-0.109.0-1.el9
 
 # List all available versions
 dnf --showduplicates list postgresql16-documentdb
@@ -249,24 +249,18 @@ https://documentdb.github.io/
 ```
 https://documentdb.io/
 └── packages/                          # All packages (direct download)
-    # DEB packages (version 0.107-0)
-    ├── postgresql-15-documentdb_0.107-0_amd64.deb
-    ├── postgresql-15-documentdb_0.107-0_arm64.deb
-    ├── postgresql-15-documentdb-dbgsym_0.107-0_amd64.deb
-    ├── postgresql-15-documentdb-dbgsym_0.107-0_arm64.deb
-    ├── postgresql-16-documentdb_0.107-0_amd64.deb
-    ├── postgresql-16-documentdb_0.107-0_arm64.deb
-    ├── postgresql-16-documentdb-dbgsym_0.107-0_amd64.deb
-    ├── postgresql-16-documentdb-dbgsym_0.107-0_arm64.deb
-    ├── postgresql-17-documentdb_0.107-0_amd64.deb
-    ├── postgresql-17-documentdb_0.107-0_arm64.deb
-    ├── postgresql-17-documentdb-dbgsym_0.107-0_amd64.deb
-    ├── postgresql-17-documentdb-dbgsym_0.107-0_arm64.deb
-    # RPM packages (version 0.107.0-1) - x86_64 only
-    ├── postgresql16-documentdb-0.107.0-1.el8.x86_64.rpm
-    ├── postgresql16-documentdb-0.107.0-1.el9.x86_64.rpm
-    ├── postgresql17-documentdb-0.107.0-1.el8.x86_64.rpm
-    └── postgresql17-documentdb-0.107.0-1.el9.x86_64.rpm
+    # Example DEB packages (version 0.109-0)
+    ├── deb11-postgresql-16-documentdb_0.109-0_amd64.deb
+    ├── deb11-postgresql-16-documentdb_0.109-0_arm64.deb
+    ├── deb12-postgresql-17-documentdb_0.109-0_amd64.deb
+    ├── deb12-postgresql-17-documentdb_0.109-0_arm64.deb
+    ├── ubuntu22.04-postgresql-18-documentdb_0.109-0_amd64.deb
+    ├── ubuntu24.04-postgresql-18-documentdb_0.109-0_arm64.deb
+    # Example RPM packages (version 0.109.0-1) - x86_64 and aarch64
+    ├── rhel8-postgresql16-documentdb-0.109.0-1.el8.x86_64.rpm
+    ├── rhel8-postgresql16-documentdb-0.109.0-1.el8.aarch64.rpm
+    ├── rhel9-postgresql18-documentdb-0.109.0-1.el9.x86_64.rpm
+    └── rhel9-postgresql18-documentdb-0.109.0-1.el9.aarch64.rpm
 ```
 
 ## Direct Downloads
@@ -278,13 +272,13 @@ https://documentdb.io/
 ## Package Naming Convention
 
 ### DEB Packages
-- Format: `postgresql-{PG_VERSION}-documentdb_{DOCUMENTDB_VERSION}_arch.deb`
-- Example: `postgresql-16-documentdb_0.107-0_amd64.deb`
-- Debug symbols: `postgresql-{PG_VERSION}-documentdb-dbgsym_{DOCUMENTDB_VERSION}_arch.deb`
+- Format: `{distribution}-postgresql-{PG_VERSION}-documentdb_{DOCUMENTDB_VERSION}_arch.deb`
+- Example: `ubuntu22.04-postgresql-16-documentdb_0.109-0_amd64.deb`
+- Debug symbols: `{distribution}-postgresql-{PG_VERSION}-documentdb-dbgsym_{DOCUMENTDB_VERSION}_arch.deb`
 
 ### RPM Packages
-- Format: `postgresql{PG_VERSION}-documentdb-{DOCUMENTDB_VERSION}.el{RHEL_VERSION}.arch.rpm`
-- Example: `postgresql16-documentdb-0.107.0-1.el9.x86_64.rpm`
+- Format: `rhel{RHEL_VERSION}-postgresql{PG_VERSION}-documentdb-{DOCUMENTDB_VERSION}-1.el{RHEL_VERSION}.arch.rpm`
+- Example: `rhel9-postgresql16-documentdb-0.109.0-1.el9.x86_64.rpm`
 
 ## Release Information
 

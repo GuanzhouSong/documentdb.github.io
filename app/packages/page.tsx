@@ -156,12 +156,12 @@ export default function PackagesPage() {
             <div className="bg-neutral-900 rounded p-3 mt-3">
               <code className="text-xs text-green-400">
                 # Example: Direct .deb installation<br/>
-                wget https://documentdb.io/packages/ubuntu22.04-postgresql-16-documentdb_0.107-0_amd64.deb<br/>
-                sudo dpkg -i ubuntu22.04-postgresql-16-documentdb_0.107-0_amd64.deb<br/>
+                wget https://documentdb.io/packages/ubuntu22.04-postgresql-16-documentdb_0.109-0_amd64.deb<br/>
+                sudo dpkg -i ubuntu22.04-postgresql-16-documentdb_0.109-0_amd64.deb<br/>
                 <br/>
                 # Example: Direct .rpm installation<br/>
-                wget https://documentdb.io/packages/rhel8-postgresql16-documentdb-0.107.0-1.el8.x86_64.rpm<br/>
-                sudo rpm -i rhel8-postgresql16-documentdb-0.107.0-1.el8.x86_64.rpm
+                wget https://documentdb.io/packages/rhel8-postgresql16-documentdb-0.109.0-1.el8.x86_64.rpm<br/>
+                sudo rpm -i rhel8-postgresql16-documentdb-0.109.0-1.el8.x86_64.rpm
               </code>
             </div>
           </div>
@@ -183,9 +183,9 @@ export default function PackagesPage() {
                 Debian 11/12, Ubuntu 22.04/24.04
               </div>
               <ul className="space-y-2 text-gray-300 text-sm">
-                <li>• postgresql-15-documentdb</li>
                 <li>• postgresql-16-documentdb</li>
                 <li>• postgresql-17-documentdb</li>
+                <li>• postgresql-18-documentdb</li>
               </ul>
             </div>
             
@@ -202,6 +202,7 @@ export default function PackagesPage() {
               <ul className="space-y-2 text-gray-300 text-sm">
                 <li>• postgresql16-documentdb</li>
                 <li>• postgresql17-documentdb</li>
+                <li>• postgresql18-documentdb</li>
               </ul>
             </div>
           </div>
