@@ -79,17 +79,11 @@ export default function PackagesPage() {
   const rpmCommand = buildRpmInstallCommand(rpmTarget, rpmArch, rpmPgVersion);
   const selectedPackageNames =
     packageFamily === "apt"
-      ? `postgresql-${aptPgVersion}-documentdb + documentdb_gateway`
-      : `postgresql${rpmPgVersion}-documentdb + documentdb-gateway`;
+      ? `postgresql-${aptPgVersion}-documentdb`
+      : `postgresql${rpmPgVersion}-documentdb`;
   const selectedTargetText =
     packageFamily === "apt" ? aptTargetLabels[aptTarget] : rpmTargetLabels[rpmTarget];
   const selectedArchText = packageFamily === "apt" ? aptArch : rpmArch;
-  const selectedPgVersion = packageFamily === "apt" ? aptPgVersion : rpmPgVersion;
-  const setupCommand = `sudo documentdb-setup \\
-  --username <YOUR_USERNAME> \\
-  --password <YOUR_PASSWORD> \\
-  --pg-version ${selectedPgVersion} \\
-  --load-sample-data`;
 
   return (
     <div className="min-h-screen bg-neutral-900 py-12">
@@ -99,9 +93,9 @@ export default function PackagesPage() {
             Download DocumentDB
           </h1>
           <p className="mx-auto max-w-3xl text-lg text-gray-300">
-            Choose Docker for the fastest local setup, or Linux packages for managed host
-            installations. The generated package commands configure the PostgreSQL
-            dependency repositories and install the packages required by DocumentDB.
+            Choose Docker for the fastest local setup, or Linux packages for PostgreSQL
+            extension installs. The generated package commands configure the PostgreSQL
+            dependency repositories and install the DocumentDB extension package.
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-3 text-sm">
             <span className="rounded-full border border-green-500/30 bg-green-500/20 px-3 py-1 text-green-300">
@@ -287,21 +281,19 @@ export default function PackagesPage() {
                 The generated command adds the PostgreSQL upstream repositories that provide
                 PostgreSQL, <code className="text-gray-300">pg_cron</code>,{" "}
                 <code className="text-gray-300">pgvector</code>, PostGIS, and{" "}
-                <code className="text-gray-300">rum</code>.
+                <code className="text-gray-300">rum</code> for PostgreSQL 16/17.
               </p>
               <p className="mt-2 text-sm text-gray-400">
-                It also installs the PostgreSQL extension package plus the gateway package
-                required for MongoDB-compatible connections on port 10260.
+                It installs the PostgreSQL extension package. The published package repository
+                does not currently include a gateway package, setup helper, or systemd service.
               </p>
               <div className="mt-4 rounded-lg border border-neutral-700 bg-neutral-900/60 p-4">
                 <p className="mb-3 text-sm font-semibold text-white">
-                  Then initialize and start DocumentDB
+                  Need the MongoDB-compatible gateway?
                 </p>
-                <CommandSnippet command={setupCommand} label="Setup" />
                 <p className="mt-3 text-sm text-gray-400">
-                  Use <code className="text-gray-300">--skip-pg-init</code> and{" "}
-                  <code className="text-gray-300">--pg-port</code> if you want to attach
-                  DocumentDB to an existing PostgreSQL cluster instead of creating a new one.
+                  Use the Docker image for the fastest gateway-backed local setup, or build and
+                  run the gateway from source against your PostgreSQL host.
                 </p>
               </div>
               {packageFamily === "apt" ? (
@@ -351,7 +343,7 @@ export default function PackagesPage() {
                   <tr>
                     <td className="px-3 py-3 font-semibold text-red-300">RPM</td>
                     <td className="px-3 py-3">
-                      RHEL 8/9, Rocky, AlmaLinux, CentOS Stream
+                       RHEL-compatible 8/9 (tested on Rocky Linux)
                     </td>
                     <td className="px-3 py-3">x86_64, aarch64</td>
                     <td className="px-3 py-3">16, 17, 18</td>
@@ -463,19 +455,13 @@ export default function PackagesPage() {
               <div className="rounded-md border border-neutral-700 bg-black p-3">
                 <code className="text-xs text-green-400 sm:text-sm">
                   sudo apt update && apt search documentdb && apt-cache policy
-                  postgresql-16-documentdb documentdb_gateway
+                  postgresql-16-documentdb
                 </code>
               </div>
               <div className="rounded-md border border-neutral-700 bg-black p-3">
                 <code className="text-xs text-green-400 sm:text-sm">
                   sudo dnf clean all && dnf search documentdb && rpm -qi
-                  postgresql16-documentdb documentdb-gateway
-                </code>
-              </div>
-              <div className="rounded-md border border-neutral-700 bg-black p-3">
-                <code className="text-xs text-green-400 sm:text-sm">
-                  sudo systemctl status documentdb-gateway --no-pager && sudo journalctl -u
-                  documentdb-gateway --no-pager -n 20
+                  postgresql16-documentdb
                 </code>
               </div>
             </div>
@@ -488,9 +474,9 @@ export default function PackagesPage() {
               3. Connect and try it
             </h2>
             <p className="text-sm leading-6 text-gray-400">
-              After you run <code className="text-gray-300">documentdb-setup</code> and the
-              gateway is listening on port 10260, follow one of these guides to make your first
-              connection.
+              Docker starts a gateway-backed local endpoint on port 10260. Linux packages install
+              the PostgreSQL extension; use Docker or a source-built gateway when you need a
+              MongoDB-compatible endpoint.
             </p>
           </div>
 

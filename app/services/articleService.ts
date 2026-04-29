@@ -107,15 +107,15 @@ If something does not work as expected:
 
 const linuxPackagesGuideContent = `# Linux Packages Quick Start
 
-Install DocumentDB on Debian, Ubuntu, or RHEL-family hosts with repository-backed packages.
+Install the DocumentDB PostgreSQL extension package on Debian, Ubuntu, or RHEL-compatible hosts.
 
 ## Choose the right package command
 
 Use the [Package Finder](/packages) to generate the exact install command for your distro, architecture, and PostgreSQL version.
 
-> The generated command installs both the PostgreSQL extension package and the gateway package required for MongoDB-compatible connections on port \`10260\`.
+> The generated command installs the PostgreSQL extension package and its PostgreSQL-side dependencies. The published package repository does not currently include a gateway package, setup helper, or systemd service.
 >
-> The repository-backed install commands currently cover Ubuntu 22.04/24.04, Debian 11/12/13, and RHEL-family 8/9 systems. Debian 11 currently resolves PostgreSQL 16 and 17 in the repository-backed flow.
+> The repository-backed install commands currently cover Ubuntu 22.04/24.04, Debian 11/12/13, and RHEL-compatible 8/9 systems. Debian 11 currently resolves PostgreSQL 16 and 17 in the repository-backed flow.
 
 ## Install the packages
 
@@ -131,82 +131,56 @@ ${buildAptInstallCommand('ubuntu24', 'amd64', '16')}
 ${buildRpmInstallCommand('rhel9', 'x86_64', '16')}
 \`\`\`
 
-## Initialize and start DocumentDB
+## What the package installs
 
-After the packages are installed, run the packaged setup command:
+The packages install the DocumentDB PostgreSQL extension files for the selected PostgreSQL major version. They do not start a MongoDB-compatible gateway endpoint on port \`10260\`.
 
-\`\`\`bash
-sudo documentdb-setup \\
-  --username <YOUR_USERNAME> \\
-  --password <YOUR_PASSWORD> \\
-  --pg-version 16 \\
-  --load-sample-data
-\`\`\`
-
-> If you selected PostgreSQL 17 or 18 in the Package Finder, use that version in \`--pg-version\`.
->
-> If you want to attach DocumentDB to an existing PostgreSQL cluster instead of creating a new local cluster, use \`--skip-pg-init --pg-port <PORT>\`.
-
-## Verify the setup
-
-Use the gateway service status and \`mongosh\` to confirm the host install is ready:
+Use the Docker quick start when you need the fastest local gateway-backed DocumentDB endpoint:
 
 \`\`\`bash
-sudo systemctl status documentdb-gateway --no-pager
-
-mongosh localhost:10260 \\
-  -u <YOUR_USERNAME> \\
-  -p <YOUR_PASSWORD> \\
-  --authenticationMechanism SCRAM-SHA-256 \\
-  --tls \\
-  --tlsAllowInvalidCertificates
-\`\`\`
-
-Then run a quick health check and inspect the sample data:
-
-\`\`\`javascript
-db.runCommand({ ping: 1 })
-
-use sampledb
-
-db.users.find({}, { name: 1, email: 1, _id: 0 }).limit(3)
-\`\`\`
-
-If you skipped \`--load-sample-data\`, create your own collection instead of querying \`sampledb\`.
-
-## Existing PostgreSQL clusters and custom ports
-
-\`\`\`bash
-sudo documentdb-setup \\
-  --skip-pg-init \\
-  --pg-port 5432 \\
-  --gateway-port 10260 \\
+docker run -dt --name documentdb \\
+  -p 10260:10260 \\
+  ghcr.io/documentdb/documentdb/documentdb-local:latest \\
   --username <YOUR_USERNAME> \\
   --password <YOUR_PASSWORD>
 \`\`\`
 
-Use \`--data-dir\` and \`--pg-owner\` when your environment needs explicit PostgreSQL paths or ownership settings.
+If you are operating a host PostgreSQL installation, configure PostgreSQL and run the gateway using the source repository's build/run scripts.
+
+## Verify the package install
+
+Use package-manager metadata to confirm the extension package is installed:
+
+\`\`\`bash
+# APT
+apt-cache policy postgresql-16-documentdb
+dpkg -L postgresql-16-documentdb | grep -E 'documentdb.*\\.(control|sql|so)$' | head
+
+# RPM
+dnf info postgresql16-documentdb
+rpm -ql postgresql16-documentdb | grep -E 'documentdb.*\\.(control|sql|so)$' | head
+\`\`\`
 
 ## Troubleshooting and debugging
 
 If something does not work on the first try:
 
-- Confirm both packages are installed: \`postgresql-<PG>-documentdb\` plus \`documentdb_gateway\` on APT, or \`postgresql<PG>-documentdb\` plus \`documentdb-gateway\` on RPM
-- Re-run \`documentdb-setup --help\` to review cluster, port, and sample-data options
-- Use \`sudo documentdb-setup --verbose ...\` for more detailed setup output
-- Check the gateway service with \`sudo systemctl status documentdb-gateway\`
-- Inspect recent gateway logs with \`sudo journalctl -u documentdb-gateway --no-pager -n 50\`
-- If setup reports a PostgreSQL port or cluster conflict, use \`--skip-pg-init\` or choose a different \`--pg-port\`
+- Confirm the extension package is installed: \`postgresql-<PG>-documentdb\` on APT or \`postgresql<PG>-documentdb\` on RPM
+- Re-run the Package Finder command for the exact distro, architecture, and PostgreSQL version you selected
+- Confirm the PostgreSQL upstream repository was added before the DocumentDB package install
+- For Debian 11, use PostgreSQL 16 or 17; PostgreSQL 18 is blocked by the upstream Bullseye PostGIS dependency
+- If you need a gateway endpoint, use DocumentDB Local with Docker or build and run the gateway from source
 
 ## Next steps
 
+- [Docker Quick Start](/docs/getting-started/docker)
+- [Building from source](https://github.com/documentdb/documentdb/blob/main/docs/v1/building.md)
 - [Mongo Shell Quick Start](/docs/getting-started/mongo-shell-quickstart)
 - [Node.js Quick Start](/docs/getting-started/nodejs-setup)
 - [Python Quick Start](/docs/getting-started/python-setup)
 - [API Reference](/docs/reference)
 - [Samples Gallery](/samples)
 - [Package Finder](/packages)
-- [Docker Quick Start](/docs/getting-started/docker)
 `;
 
 const vscodeQuickStartGuideContent = `# Visual Studio Code Quick Start
@@ -217,7 +191,7 @@ Use DocumentDB for VS Code to connect to a local DocumentDB instance, browse sam
 
 - [Visual Studio Code](https://code.visualstudio.com/)
 - The [DocumentDB for VS Code extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-documentdb)
-- A local DocumentDB instance from [Docker Quick Start](/docs/getting-started/docker) or [Linux Packages Quick Start](/docs/getting-started/packages)
+- A local DocumentDB instance from [Docker Quick Start](/docs/getting-started/docker) or a host setup with a running DocumentDB gateway
 - Optional: [mongosh](https://www.mongodb.com/docs/mongodb-shell/install/) for independent connection checks
 
 ## Install the extension
@@ -242,7 +216,7 @@ docker run -dt --name documentdb \\
   --password <YOUR_PASSWORD>
 \`\`\`
 
-If you prefer a host installation instead of Docker, use [Linux Packages Quick Start](/docs/getting-started/packages) and complete the \`documentdb-setup\` step first.
+If you prefer a host installation instead of Docker, use [Linux Packages Quick Start](/docs/getting-started/packages) for the PostgreSQL extension package and run the gateway from source.
 
 ## Add a local connection in VS Code
 
@@ -289,7 +263,7 @@ If the extension does not connect on the first try:
 - Verify the extension is installed and reload VS Code if the DocumentDB view does not appear
 - Confirm your local DocumentDB instance is actually running before you connect
 - If you used Docker, check \`docker ps\` and \`docker logs documentdb\`
-- If you used Linux packages, check \`sudo systemctl status documentdb-gateway\` and \`sudo journalctl -u documentdb-gateway --no-pager -n 50\`
+- If you used a host-built gateway, confirm the gateway process is running and listening on the port you entered
 - If the local connection wizard fails on security, retry and choose the TLS/SSL option that matches your certificate setup
 - Use \`mongosh\` to confirm the endpoint works independently of VS Code
 
@@ -447,7 +421,7 @@ docker run -dt --name documentdb \\
   --password <YOUR_PASSWORD>
 \`\`\`
 
-If you prefer a host installation instead of Docker, use [Linux Packages Quick Start](/docs/getting-started/packages) and complete the \`documentdb-setup\` step first.
+If you prefer a host installation instead of Docker, use [Linux Packages Quick Start](/docs/getting-started/packages) for the PostgreSQL extension package and run the gateway from source.
 
 > DocumentDB Local uses a self-signed certificate by default, so the quickest local
 > PyMongo connection uses \`tlsAllowInvalidCertificates=true\`.
@@ -550,7 +524,7 @@ If the Python quick start does not work on the first try:
 
 - Verify your local DocumentDB instance is running before you start Python
 - If you used Docker, check \`docker ps --filter "name=documentdb"\` and \`docker logs documentdb\`
-- If you used Linux packages, check \`sudo systemctl status documentdb-gateway\` and \`sudo journalctl -u documentdb-gateway --no-pager -n 50\`
+- If you used a host-built gateway, confirm the gateway process is running and listening on port \`10260\`
 - If Python cannot import \`pymongo\`, verify the active interpreter with \`python -c "import sys; print(sys.executable)"\` and reinstall with \`python -m pip install pymongo\`
 - If you see TLS or certificate errors, either use the default local self-signed flow with \`tlsAllowInvalidCertificates=true\` or switch to a trusted local certificate with \`tlsCAFile\`
 - Use [Mongo Shell Quick Start](/docs/getting-started/mongo-shell-quickstart) to validate the endpoint independently of your application code
@@ -587,7 +561,7 @@ docker run -dt --name documentdb \\
   --password <YOUR_PASSWORD>
 \`\`\`
 
-If you prefer a host installation instead of Docker, use [Linux Packages Quick Start](/docs/getting-started/packages) and complete the \`documentdb-setup\` step first.
+If you prefer a host installation instead of Docker, use [Linux Packages Quick Start](/docs/getting-started/packages) for the PostgreSQL extension package and run the gateway from source.
 
 > Replace \`<YOUR_USERNAME>\` and \`<YOUR_PASSWORD>\` with your own credentials.
 >
@@ -675,8 +649,8 @@ If \`mongosh\` does not connect on the first try:
 
 - Verify the local DocumentDB instance is running before you connect
 - If you used Docker, check \`docker ps --filter "name=documentdb"\` and \`docker logs documentdb\`
-- If you used Linux packages, check \`sudo systemctl status documentdb-gateway\` and \`sudo journalctl -u documentdb-gateway --no-pager -n 50\`
-- If authentication fails, confirm the username and password you used when you started DocumentDB or ran \`documentdb-setup\`
+- If you used a host-built gateway, confirm the gateway process is running and listening on port \`10260\`
+- If authentication fails, confirm the username and password you used when you started DocumentDB
 - If TLS validation fails, either keep \`--tlsAllowInvalidCertificates\` for the default local self-signed setup or switch to \`--tlsCAFile\` with a trusted certificate
 - If \`mongosh\` is not installed, follow the [mongosh install guide](https://www.mongodb.com/docs/mongodb-shell/install/)
 - Use [Python Quick Start](/docs/getting-started/python-setup) or [Node.js Quick Start](/docs/getting-started/nodejs-setup) to verify the same endpoint from an application driver
@@ -1099,7 +1073,7 @@ export function getArticleByPath(section: string, slug: string[] = []): {
       content: linuxPackagesGuideContent,
       frontmatter: {
         title: articleTitleOverrides[getArticleKey(section, file)],
-        description: 'Install DocumentDB with Linux packages, run documentdb-setup, verify the gateway, and find troubleshooting guidance.',
+        description: 'Install the DocumentDB PostgreSQL extension with Linux packages and find package troubleshooting guidance.',
       },
       navigation,
       section,
