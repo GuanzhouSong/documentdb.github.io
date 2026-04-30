@@ -22,6 +22,10 @@ Repository-backed installation commands for the DocumentDB PostgreSQL extension 
 
 These commands install the required PostgreSQL upstream repositories first, then add the DocumentDB package repository, and finally install the DocumentDB PostgreSQL extension package.
 
+> These commands assume a regular Linux host where you use `sudo`. If you are testing in a clean container that already runs as `root`, omit `sudo` from the package-install commands.
+>
+> On Debian and Ubuntu in a clean container, also run `export DEBIAN_FRONTEND=noninteractive` in the shell before the APT commands. Without it, `tzdata` (and a few other packages) prompt for input during `apt install` and the install hangs with no visible error.
+
 ### Ubuntu 22.04 (Jammy)
 
 ```bash
@@ -163,28 +167,59 @@ The repository-backed install gives you the PostgreSQL extension package. To exp
 ### Prerequisites
 
 - `git`
-- A Rust toolchain (`cargo` and `rustc`)
+- `curl`
+- Native build tools for Rust crates that link against OpenSSL
+- A current Rust toolchain via `rustup`
 - `mongosh`
+
+> Run the PostgreSQL and gateway steps from an unprivileged user account, not `root`. PostgreSQL will not initialize as `root`.
+>
+> If you are following these steps in a clean container that starts as `root`, finish the package-install commands as `root`, then switch to an unprivileged account such as `postgres` before you start PostgreSQL or the gateway.
+
+```bash
+# from a root shell inside the container
+su - postgres
+```
 
 Example package-manager installs:
 
 ```bash
 # Debian / Ubuntu
-sudo apt install -y git rustc cargo
+sudo apt install -y git curl build-essential pkg-config libssl-dev
 
 # RHEL-compatible
-sudo dnf install -y git rust cargo
+sudo dnf install -y git curl gcc gcc-c++ make pkgconf-pkg-config openssl-devel
 ```
+
+Install a current Rust toolchain with `rustup`, then load it into your shell:
+
+```bash
+curl https://sh.rustup.rs -sSf | sh -s -- -y
+. "$HOME/.cargo/env"
+```
+
+In a clean container that starts as `root`, install the system packages above and install `mongosh` while you are still `root`. Then switch to the unprivileged user and run the `rustup` commands plus the remaining gateway steps from that user's shell.
 
 ### Example host flow
 
 Replace `<PG_MAJOR>` with the PostgreSQL major version you installed from the package repository, such as `16`, `17`, or `18`.
+
+If you do not already have `mongosh`, install it with the official MongoDB shell instructions for your distro before continuing:
+
+- https://www.mongodb.com/docs/mongodb-shell/install/
 
 ```bash
 git clone https://github.com/documentdb/documentdb.git
 cd documentdb
 
 export PG_VERSION_USED=<PG_MAJOR>
+
+# Required in non-interactive shells (CI, `docker exec` without `-t`,
+# `docker exec -d`, `nohup`, background `&`). build_and_start_gateway.sh
+# calls `tput` for colored output and aborts under `set -u` / `set -e` if
+# TERM is unset or set to `dumb`. Skip this line in a normal interactive
+# terminal where TERM is already `xterm`, `xterm-256color`, etc.
+export TERM=xterm
 
 ./scripts/start_oss_server.sh -c -u <YOUR_USERNAME> -a <YOUR_PASSWORD>
 
@@ -197,6 +232,7 @@ export PG_VERSION_USED=<PG_MAJOR>
 - `./scripts/start_oss_server.sh -c` initializes a fresh local PostgreSQL data directory under `~/.documentdb/data`.
 - `./scripts/build_and_start_gateway.sh -c` forces a clean gateway rebuild; after the first successful build, you can omit `-c` on later restarts.
 - Keep the gateway command running in the foreground. It listens on port `10260` and connects to PostgreSQL on port `9712`.
+- The first gateway build downloads several hundred Rust crates and typically takes a few minutes before the gateway begins listening on port `10260`. Subsequent runs without `-c` are much faster.
 
 Then connect with `mongosh`:
 
@@ -229,3 +265,4 @@ rhel9-postgresql18-documentdb-0.110.0-1.el9.x86_64.rpm
 - The APT repository currently publishes components for `ubuntu22`, `ubuntu24`, `deb11`, `deb12`, and `deb13`.
 - Debian 11 PostgreSQL 18 assets exist, but the upstream Bullseye PostGIS dependency is not currently installable from PGDG.
 - The RPM flow depends on EPEL plus PostgreSQL's upstream RPM repository because DocumentDB depends on PostgreSQL, `pg_cron`, `pgvector`, PostGIS, and `rum` for PostgreSQL 16/17.
+- On Debian/Ubuntu, the distro-packaged `cargo` can be older than the current gateway workspace lockfile. `rustup` avoids that mismatch.

@@ -287,6 +287,15 @@ export default function PackagesPage() {
                 It installs the PostgreSQL extension package. The published package repository
                 does not currently include a gateway package, setup helper, or systemd service.
               </p>
+              {packageFamily === "apt" ? (
+                <p className="mt-2 text-sm text-gray-400">
+                  Running in a clean Debian/Ubuntu container as <code className="text-gray-300">root</code>?
+                  Run <code className="text-gray-300">export DEBIAN_FRONTEND=noninteractive</code> in the shell first
+                  (and omit <code className="text-gray-300">sudo</code> from the command above).
+                  Without it, <code className="text-gray-300">tzdata</code> prompts for input partway through
+                  and the install hangs with no visible error.
+                </p>
+              ) : null}
               <div className="mt-4 rounded-lg border border-neutral-700 bg-neutral-900/60 p-4">
                 <p className="mb-3 text-sm font-semibold text-white">
                   Need the MongoDB-compatible gateway?
@@ -294,7 +303,8 @@ export default function PackagesPage() {
                 <p className="mt-3 text-sm text-gray-400">
                   Use the Docker image for the fastest gateway-backed local setup. If you want a
                   package-backed host install that still works with <code className="text-gray-300">mongosh</code>,
-                  the Linux package guide includes the exact gateway follow-up commands.
+                  the Linux package guide includes the exact non-root gateway follow-up commands
+                  and host build prerequisites.
                 </p>
               </div>
               {packageFamily === "apt" ? (
