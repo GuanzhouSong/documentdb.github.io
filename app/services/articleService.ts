@@ -107,15 +107,19 @@ If something does not work as expected:
 
 const linuxPackagesGuideContent = `# Linux Packages Quick Start
 
-Install DocumentDB on Debian, Ubuntu, or RHEL-family hosts with repository-backed packages.
+Install the DocumentDB PostgreSQL extension package on Debian, Ubuntu, or RHEL-compatible hosts.
 
 ## Choose the right package command
 
 Use the [Package Finder](/packages) to generate the exact install command for your distro, architecture, and PostgreSQL version.
 
-> The generated command installs both the PostgreSQL extension package and the gateway package required for MongoDB-compatible connections on port \`10260\`.
+> The generated command installs the PostgreSQL extension package and its PostgreSQL-side dependencies. The published package repository and GitHub Releases do not currently include a gateway package, setup helper, or systemd service.
 >
-> The repository-backed install commands currently cover Ubuntu 22.04/24.04, Debian 11/12/13, and RHEL-family 8/9 systems. Debian 11 currently resolves PostgreSQL 16 and 17 in the repository-backed flow.
+> The repository-backed install commands currently cover Ubuntu 22.04/24.04, Debian 11/12/13, and RHEL-compatible 8/9 systems. Debian 11 currently resolves PostgreSQL 16 and 17 in the repository-backed flow.
+>
+> The package commands assume a regular Linux host where you use \`sudo\`. If you are testing in a clean container that already runs as \`root\`, omit \`sudo\` from the package-install commands.
+>
+> On Debian and Ubuntu in a clean container, also run \`export DEBIAN_FRONTEND=noninteractive\` in the shell before the APT commands. Without it, \`tzdata\` (and a few other packages) prompt for input during \`apt install\` and the install hangs with no visible error.
 
 ## Install the packages
 
@@ -131,29 +135,114 @@ ${buildAptInstallCommand('ubuntu24', 'amd64', '16')}
 ${buildRpmInstallCommand('rhel9', 'x86_64', '16')}
 \`\`\`
 
-## Initialize and start DocumentDB
+## What the package installs
 
-After the packages are installed, run the packaged setup command:
+The packages install the DocumentDB PostgreSQL extension files for the selected PostgreSQL major version. They do not by themselves start a MongoDB-compatible gateway endpoint on port \`10260\`.
+
+Use the Docker quick start when you need the fastest local gateway-backed DocumentDB endpoint:
 
 \`\`\`bash
-sudo documentdb-setup \\
+docker run -dt --name documentdb \\
+  -p 10260:10260 \\
+  ghcr.io/documentdb/documentdb/documentdb-local:latest \\
   --username <YOUR_USERNAME> \\
-  --password <YOUR_PASSWORD> \\
-  --pg-version 16 \\
-  --load-sample-data
+  --password <YOUR_PASSWORD>
 \`\`\`
 
-> If you selected PostgreSQL 17 or 18 in the Package Finder, use that version in \`--pg-version\`.
->
-> If you want to attach DocumentDB to an existing PostgreSQL cluster instead of creating a new local cluster, use \`--skip-pg-init --pg-port <PORT>\`.
+If you are operating a host PostgreSQL installation, configure PostgreSQL and run the gateway using the source repository's build/run scripts.
 
-## Verify the setup
+## Verify the package install
 
-Use the gateway service status and \`mongosh\` to confirm the host install is ready:
+Use package-manager metadata to confirm the extension package is installed:
 
 \`\`\`bash
-sudo systemctl status documentdb-gateway --no-pager
+# APT
+apt-cache policy postgresql-16-documentdb
+dpkg -L postgresql-16-documentdb | grep -E 'documentdb.*\\.(control|sql|so)$' | head
 
+# RPM
+dnf info postgresql16-documentdb
+rpm -ql postgresql16-documentdb | grep -E 'documentdb.*\\.(control|sql|so)$' | head
+\`\`\`
+
+## Turn a package install into a local \`mongosh\` endpoint
+
+If you want to keep PostgreSQL on the host and still connect with \`mongosh\`, install the extension package first and then run the gateway from the source repository against that PostgreSQL instance.
+
+### Prerequisites for the host gateway step
+
+- [Git](https://git-scm.com/)
+- \`curl\`
+- Native build tools for Rust crates that link against OpenSSL
+- A current Rust toolchain via \`rustup\`
+- [mongosh](https://www.mongodb.com/docs/mongodb-shell/install/)
+
+Run the PostgreSQL and gateway steps from an unprivileged user account, not \`root\`. PostgreSQL will not initialize as \`root\`.
+
+If you are following these steps in a clean container that starts as \`root\`, finish the package-install commands as \`root\`, then switch to an unprivileged account such as \`postgres\` before you start PostgreSQL or the gateway.
+
+\`\`\`bash
+# from a root shell inside the container
+su - postgres
+\`\`\`
+
+Install the host prerequisites with your distro package manager before continuing. Examples:
+
+\`\`\`bash
+# Debian / Ubuntu
+sudo apt install -y git curl build-essential pkg-config libssl-dev
+
+# RHEL-compatible
+sudo dnf install -y git curl gcc gcc-c++ make pkgconf-pkg-config openssl-devel
+\`\`\`
+
+Install a current Rust toolchain with \`rustup\`, then load it into your shell:
+
+\`\`\`bash
+curl https://sh.rustup.rs -sSf | sh -s -- -y
+. "$HOME/.cargo/env"
+\`\`\`
+
+In a clean container that starts as \`root\`, install the system packages above and install \`mongosh\` while you are still \`root\`. Then switch to the unprivileged user and run the \`rustup\` commands plus the remaining gateway steps from that user's shell.
+
+### Host setup example
+
+Replace \`<PG_MAJOR>\` with the PostgreSQL major version you installed from the package repository, such as \`16\`, \`17\`, or \`18\`.
+
+If you do not already have \`mongosh\`, install it with the official MongoDB shell instructions for your distro before continuing:
+
+- https://www.mongodb.com/docs/mongodb-shell/install/
+
+\`\`\`bash
+git clone https://github.com/documentdb/documentdb.git
+cd documentdb
+
+export PG_VERSION_USED=<PG_MAJOR>
+
+# Required in non-interactive shells (CI, \`docker exec\` without \`-t\`,
+# \`docker exec -d\`, \`nohup\`, background \`&\`). build_and_start_gateway.sh
+# calls \`tput\` for colored output and aborts under \`set -u\` / \`set -e\` if
+# TERM is unset or set to \`dumb\`. Skip this line in a normal interactive
+# terminal where TERM is already \`xterm\`, \`xterm-256color\`, etc.
+export TERM=xterm
+
+./scripts/start_oss_server.sh -c -u <YOUR_USERNAME> -a <YOUR_PASSWORD>
+
+./scripts/build_and_start_gateway.sh -c \\
+  -u <YOUR_USERNAME> \\
+  -p <YOUR_PASSWORD> \\
+  -P 9712
+\`\`\`
+
+\`./scripts/start_oss_server.sh -c\` initializes a fresh local PostgreSQL data directory under \`~/.documentdb/data\`. \`./scripts/build_and_start_gateway.sh -c\` forces a clean gateway rebuild; after the first successful build, you can omit \`-c\` on later restarts.
+
+The first gateway build downloads several hundred Rust crates and typically takes a few minutes on a fresh machine before the gateway begins listening on port \`10260\`. Subsequent runs without \`-c\` are much faster.
+
+Keep the gateway command running in the foreground. It starts the MongoDB-compatible endpoint on port \`10260\` and connects it to PostgreSQL on port \`9712\`.
+
+Then connect with \`mongosh\`:
+
+\`\`\`bash
 mongosh localhost:10260 \\
   -u <YOUR_USERNAME> \\
   -p <YOUR_PASSWORD> \\
@@ -162,51 +251,35 @@ mongosh localhost:10260 \\
   --tlsAllowInvalidCertificates
 \`\`\`
 
-Then run a quick health check and inspect the sample data:
-
-\`\`\`javascript
-db.runCommand({ ping: 1 })
-
-use sampledb
-
-db.users.find({}, { name: 1, email: 1, _id: 0 }).limit(3)
-\`\`\`
-
-If you skipped \`--load-sample-data\`, create your own collection instead of querying \`sampledb\`.
-
-## Existing PostgreSQL clusters and custom ports
-
-\`\`\`bash
-sudo documentdb-setup \\
-  --skip-pg-init \\
-  --pg-port 5432 \\
-  --gateway-port 10260 \\
-  --username <YOUR_USERNAME> \\
-  --password <YOUR_PASSWORD>
-\`\`\`
-
-Use \`--data-dir\` and \`--pg-owner\` when your environment needs explicit PostgreSQL paths or ownership settings.
+Use this flow when you want a package-backed host install plus a local MongoDB-compatible endpoint. Use the Docker quick start instead when you want the shortest local setup path.
 
 ## Troubleshooting and debugging
 
 If something does not work on the first try:
 
-- Confirm both packages are installed: \`postgresql-<PG>-documentdb\` plus \`documentdb_gateway\` on APT, or \`postgresql<PG>-documentdb\` plus \`documentdb-gateway\` on RPM
-- Re-run \`documentdb-setup --help\` to review cluster, port, and sample-data options
-- Use \`sudo documentdb-setup --verbose ...\` for more detailed setup output
-- Check the gateway service with \`sudo systemctl status documentdb-gateway\`
-- Inspect recent gateway logs with \`sudo journalctl -u documentdb-gateway --no-pager -n 50\`
-- If setup reports a PostgreSQL port or cluster conflict, use \`--skip-pg-init\` or choose a different \`--pg-port\`
+- Confirm the extension package is installed: \`postgresql-<PG>-documentdb\` on APT or \`postgresql<PG>-documentdb\` on RPM
+- Re-run the Package Finder command for the exact distro, architecture, and PostgreSQL version you selected
+- Confirm the PostgreSQL upstream repository was added before the DocumentDB package install
+- If you are running in a clean container as \`root\`, omit \`sudo\` from the package-install commands and switch to an unprivileged user before the gateway steps
+- If \`apt install\` hangs forever in a clean container, run \`export DEBIAN_FRONTEND=noninteractive\` in that shell and re-run the install; the default front-end is waiting for a \`tzdata\` prompt that never gets typed
+- If you use the host gateway flow, confirm \`PG_VERSION_USED\` matches the PostgreSQL major version you installed
+- If \`./scripts/build_and_start_gateway.sh\` exits immediately with \`tput: No value for $TERM\` (or silently with \`set -e\` when \`TERM=dumb\`), set \`export TERM=xterm\` before re-running, or run the script from an interactive shell (for Docker, \`docker exec -it ...\`)
+- If \`./scripts/build_and_start_gateway.sh\` fails, confirm \`git\`, \`curl\`, native build tools, \`pkg-config\`, OpenSSL headers, and a current Rust toolchain are installed on the host
+- If the gateway build fails while reading \`Cargo.lock\`, switch to a current Rust toolchain from \`rustup\` instead of the distro-packaged \`cargo\`
+- If \`mongosh\` cannot connect, confirm the gateway script is still running and listening on port \`10260\`
+- For Debian 11, use PostgreSQL 16 or 17; PostgreSQL 18 is blocked by the upstream Bullseye PostGIS dependency
+- If you need a gateway endpoint, use DocumentDB Local with Docker or build and run the gateway from source
 
 ## Next steps
 
+- [Docker Quick Start](/docs/getting-started/docker)
+- [Building from source](https://github.com/documentdb/documentdb/blob/main/docs/v1/building.md)
 - [Mongo Shell Quick Start](/docs/getting-started/mongo-shell-quickstart)
 - [Node.js Quick Start](/docs/getting-started/nodejs-setup)
 - [Python Quick Start](/docs/getting-started/python-setup)
 - [API Reference](/docs/reference)
 - [Samples Gallery](/samples)
 - [Package Finder](/packages)
-- [Docker Quick Start](/docs/getting-started/docker)
 `;
 
 const vscodeQuickStartGuideContent = `# Visual Studio Code Quick Start
@@ -217,7 +290,7 @@ Use DocumentDB for VS Code to connect to a local DocumentDB instance, browse sam
 
 - [Visual Studio Code](https://code.visualstudio.com/)
 - The [DocumentDB for VS Code extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-documentdb)
-- A local DocumentDB instance from [Docker Quick Start](/docs/getting-started/docker) or [Linux Packages Quick Start](/docs/getting-started/packages)
+- A local DocumentDB instance from [Docker Quick Start](/docs/getting-started/docker) or a host setup with a running DocumentDB gateway
 - Optional: [mongosh](https://www.mongodb.com/docs/mongodb-shell/install/) for independent connection checks
 
 ## Install the extension
@@ -242,7 +315,7 @@ docker run -dt --name documentdb \\
   --password <YOUR_PASSWORD>
 \`\`\`
 
-If you prefer a host installation instead of Docker, use [Linux Packages Quick Start](/docs/getting-started/packages) and complete the \`documentdb-setup\` step first.
+If you prefer a host installation instead of Docker, use [Linux Packages Quick Start](/docs/getting-started/packages) for the PostgreSQL extension package and run the gateway from source.
 
 ## Add a local connection in VS Code
 
@@ -289,7 +362,7 @@ If the extension does not connect on the first try:
 - Verify the extension is installed and reload VS Code if the DocumentDB view does not appear
 - Confirm your local DocumentDB instance is actually running before you connect
 - If you used Docker, check \`docker ps\` and \`docker logs documentdb\`
-- If you used Linux packages, check \`sudo systemctl status documentdb-gateway\` and \`sudo journalctl -u documentdb-gateway --no-pager -n 50\`
+- If you used a host-built gateway, confirm the gateway process is running and listening on the port you entered
 - If the local connection wizard fails on security, retry and choose the TLS/SSL option that matches your certificate setup
 - Use \`mongosh\` to confirm the endpoint works independently of VS Code
 
@@ -447,7 +520,7 @@ docker run -dt --name documentdb \\
   --password <YOUR_PASSWORD>
 \`\`\`
 
-If you prefer a host installation instead of Docker, use [Linux Packages Quick Start](/docs/getting-started/packages) and complete the \`documentdb-setup\` step first.
+If you prefer a host installation instead of Docker, use [Linux Packages Quick Start](/docs/getting-started/packages) for the PostgreSQL extension package and run the gateway from source.
 
 > DocumentDB Local uses a self-signed certificate by default, so the quickest local
 > PyMongo connection uses \`tlsAllowInvalidCertificates=true\`.
@@ -550,7 +623,7 @@ If the Python quick start does not work on the first try:
 
 - Verify your local DocumentDB instance is running before you start Python
 - If you used Docker, check \`docker ps --filter "name=documentdb"\` and \`docker logs documentdb\`
-- If you used Linux packages, check \`sudo systemctl status documentdb-gateway\` and \`sudo journalctl -u documentdb-gateway --no-pager -n 50\`
+- If you used a host-built gateway, confirm the gateway process is running and listening on port \`10260\`
 - If Python cannot import \`pymongo\`, verify the active interpreter with \`python -c "import sys; print(sys.executable)"\` and reinstall with \`python -m pip install pymongo\`
 - If you see TLS or certificate errors, either use the default local self-signed flow with \`tlsAllowInvalidCertificates=true\` or switch to a trusted local certificate with \`tlsCAFile\`
 - Use [Mongo Shell Quick Start](/docs/getting-started/mongo-shell-quickstart) to validate the endpoint independently of your application code
@@ -587,7 +660,7 @@ docker run -dt --name documentdb \\
   --password <YOUR_PASSWORD>
 \`\`\`
 
-If you prefer a host installation instead of Docker, use [Linux Packages Quick Start](/docs/getting-started/packages) and complete the \`documentdb-setup\` step first.
+If you prefer a host installation instead of Docker, use [Linux Packages Quick Start](/docs/getting-started/packages) for the PostgreSQL extension package and run the gateway from source.
 
 > Replace \`<YOUR_USERNAME>\` and \`<YOUR_PASSWORD>\` with your own credentials.
 >
@@ -675,8 +748,8 @@ If \`mongosh\` does not connect on the first try:
 
 - Verify the local DocumentDB instance is running before you connect
 - If you used Docker, check \`docker ps --filter "name=documentdb"\` and \`docker logs documentdb\`
-- If you used Linux packages, check \`sudo systemctl status documentdb-gateway\` and \`sudo journalctl -u documentdb-gateway --no-pager -n 50\`
-- If authentication fails, confirm the username and password you used when you started DocumentDB or ran \`documentdb-setup\`
+- If you used a host-built gateway, confirm the gateway process is running and listening on port \`10260\`
+- If authentication fails, confirm the username and password you used when you started DocumentDB
 - If TLS validation fails, either keep \`--tlsAllowInvalidCertificates\` for the default local self-signed setup or switch to \`--tlsCAFile\` with a trusted certificate
 - If \`mongosh\` is not installed, follow the [mongosh install guide](https://www.mongodb.com/docs/mongodb-shell/install/)
 - Use [Python Quick Start](/docs/getting-started/python-setup) or [Node.js Quick Start](/docs/getting-started/nodejs-setup) to verify the same endpoint from an application driver
@@ -1099,7 +1172,7 @@ export function getArticleByPath(section: string, slug: string[] = []): {
       content: linuxPackagesGuideContent,
       frontmatter: {
         title: articleTitleOverrides[getArticleKey(section, file)],
-        description: 'Install DocumentDB with Linux packages, run documentdb-setup, verify the gateway, and find troubleshooting guidance.',
+        description: 'Install the DocumentDB PostgreSQL extension with Linux packages and find package troubleshooting guidance.',
       },
       navigation,
       section,
