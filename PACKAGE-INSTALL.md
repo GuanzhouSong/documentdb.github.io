@@ -8,7 +8,7 @@ Repository-backed installation commands for the DocumentDB PostgreSQL extension 
 - Both `amd64`/`x86_64` and `arm64`/`aarch64` variants are published.
 - PostgreSQL package variants `16`, `17`, and `18` are published for the supported repository-backed combinations, with one exception: Debian 11 currently resolves PostgreSQL `16` and `17` only.
 - Debian 13 `.deb` assets are published on GitHub Releases, and the APT repository now publishes a `deb13` component for repository-backed installs.
-- The published package repository installs the PostgreSQL extension package. It does not currently publish a gateway package, setup helper, or systemd service.
+- The published package repository installs the PostgreSQL extension package. It does not currently publish a gateway package, setup helper, or systemd service in either the repository-backed install flow or GitHub Releases.
 
 ## Supported PostgreSQL Versions
 
@@ -156,9 +156,62 @@ dnf --showduplicates list postgresql16-documentdb
 sudo dnf install postgresql16-documentdb-<VERSION>
 ```
 
+## From package install to a local `mongosh` endpoint
+
+The repository-backed install gives you the PostgreSQL extension package. To expose a local MongoDB-compatible endpoint on the same host, run PostgreSQL and the gateway from the source repository against the packaged extension files.
+
+### Prerequisites
+
+- `git`
+- A Rust toolchain (`cargo` and `rustc`)
+- `mongosh`
+
+Example package-manager installs:
+
+```bash
+# Debian / Ubuntu
+sudo apt install -y git rustc cargo
+
+# RHEL-compatible
+sudo dnf install -y git rust cargo
+```
+
+### Example host flow
+
+Replace `<PG_MAJOR>` with the PostgreSQL major version you installed from the package repository, such as `16`, `17`, or `18`.
+
+```bash
+git clone https://github.com/documentdb/documentdb.git
+cd documentdb
+
+export PG_VERSION_USED=<PG_MAJOR>
+
+./scripts/start_oss_server.sh -c -u <YOUR_USERNAME> -a <YOUR_PASSWORD>
+
+./scripts/build_and_start_gateway.sh -c \
+  -u <YOUR_USERNAME> \
+  -p <YOUR_PASSWORD> \
+  -P 9712
+```
+
+- `./scripts/start_oss_server.sh -c` initializes a fresh local PostgreSQL data directory under `~/.documentdb/data`.
+- `./scripts/build_and_start_gateway.sh -c` forces a clean gateway rebuild; after the first successful build, you can omit `-c` on later restarts.
+- Keep the gateway command running in the foreground. It listens on port `10260` and connects to PostgreSQL on port `9712`.
+
+Then connect with `mongosh`:
+
+```bash
+mongosh localhost:10260 \
+  -u <YOUR_USERNAME> \
+  -p <YOUR_PASSWORD> \
+  --authenticationMechanism SCRAM-SHA-256 \
+  --tls \
+  --tlsAllowInvalidCertificates
+```
+
 ## Direct downloads
 
-GitHub Releases contains `.deb` and `.rpm` assets for every published combination, including Debian 13 release assets.
+GitHub Releases contains `.deb` and `.rpm` extension assets for every published combination, including Debian 13 release assets. It does not currently publish a gateway package.
 
 Examples:
 

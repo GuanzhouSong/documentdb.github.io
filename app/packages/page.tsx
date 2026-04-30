@@ -292,8 +292,9 @@ export default function PackagesPage() {
                   Need the MongoDB-compatible gateway?
                 </p>
                 <p className="mt-3 text-sm text-gray-400">
-                  Use the Docker image for the fastest gateway-backed local setup, or build and
-                  run the gateway from source against your PostgreSQL host.
+                  Use the Docker image for the fastest gateway-backed local setup. If you want a
+                  package-backed host install that still works with <code className="text-gray-300">mongosh</code>,
+                  the Linux package guide includes the exact gateway follow-up commands.
                 </p>
               </div>
               {packageFamily === "apt" ? (
@@ -475,8 +476,9 @@ export default function PackagesPage() {
             </h2>
             <p className="text-sm leading-6 text-gray-400">
               Docker starts a gateway-backed local endpoint on port 10260. Linux packages install
-              the PostgreSQL extension; use Docker or a source-built gateway when you need a
-              MongoDB-compatible endpoint.
+              the PostgreSQL extension; the Linux package guide adds the extra source-gateway
+              steps needed when you want a host install that still exposes a MongoDB-compatible
+              endpoint.
             </p>
           </div>
 

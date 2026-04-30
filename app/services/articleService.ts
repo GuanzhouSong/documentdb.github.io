@@ -113,7 +113,7 @@ Install the DocumentDB PostgreSQL extension package on Debian, Ubuntu, or RHEL-c
 
 Use the [Package Finder](/packages) to generate the exact install command for your distro, architecture, and PostgreSQL version.
 
-> The generated command installs the PostgreSQL extension package and its PostgreSQL-side dependencies. The published package repository does not currently include a gateway package, setup helper, or systemd service.
+> The generated command installs the PostgreSQL extension package and its PostgreSQL-side dependencies. The published package repository and GitHub Releases do not currently include a gateway package, setup helper, or systemd service.
 >
 > The repository-backed install commands currently cover Ubuntu 22.04/24.04, Debian 11/12/13, and RHEL-compatible 8/9 systems. Debian 11 currently resolves PostgreSQL 16 and 17 in the repository-backed flow.
 
@@ -133,7 +133,7 @@ ${buildRpmInstallCommand('rhel9', 'x86_64', '16')}
 
 ## What the package installs
 
-The packages install the DocumentDB PostgreSQL extension files for the selected PostgreSQL major version. They do not start a MongoDB-compatible gateway endpoint on port \`10260\`.
+The packages install the DocumentDB PostgreSQL extension files for the selected PostgreSQL major version. They do not by themselves start a MongoDB-compatible gateway endpoint on port \`10260\`.
 
 Use the Docker quick start when you need the fastest local gateway-backed DocumentDB endpoint:
 
@@ -161,6 +161,61 @@ dnf info postgresql16-documentdb
 rpm -ql postgresql16-documentdb | grep -E 'documentdb.*\\.(control|sql|so)$' | head
 \`\`\`
 
+## Turn a package install into a local \`mongosh\` endpoint
+
+If you want to keep PostgreSQL on the host and still connect with \`mongosh\`, install the extension package first and then run the gateway from the source repository against that PostgreSQL instance.
+
+### Prerequisites for the host gateway step
+
+- [Git](https://git-scm.com/)
+- A Rust toolchain (\`cargo\` + \`rustc\`)
+- [mongosh](https://www.mongodb.com/docs/mongodb-shell/install/)
+
+Install Git and Rust with your distro package manager before continuing. Examples:
+
+\`\`\`bash
+# Debian / Ubuntu
+sudo apt install -y git rustc cargo
+
+# RHEL-compatible
+sudo dnf install -y git rust cargo
+\`\`\`
+
+### Host setup example
+
+Replace \`<PG_MAJOR>\` with the PostgreSQL major version you installed from the package repository, such as \`16\`, \`17\`, or \`18\`.
+
+\`\`\`bash
+git clone https://github.com/documentdb/documentdb.git
+cd documentdb
+
+export PG_VERSION_USED=<PG_MAJOR>
+
+./scripts/start_oss_server.sh -c -u <YOUR_USERNAME> -a <YOUR_PASSWORD>
+
+./scripts/build_and_start_gateway.sh -c \\
+  -u <YOUR_USERNAME> \\
+  -p <YOUR_PASSWORD> \\
+  -P 9712
+\`\`\`
+
+\`./scripts/start_oss_server.sh -c\` initializes a fresh local PostgreSQL data directory under \`~/.documentdb/data\`. \`./scripts/build_and_start_gateway.sh -c\` forces a clean gateway rebuild; after the first successful build, you can omit \`-c\` on later restarts.
+
+Keep the gateway command running in the foreground. It starts the MongoDB-compatible endpoint on port \`10260\` and connects it to PostgreSQL on port \`9712\`.
+
+Then connect with \`mongosh\`:
+
+\`\`\`bash
+mongosh localhost:10260 \\
+  -u <YOUR_USERNAME> \\
+  -p <YOUR_PASSWORD> \\
+  --authenticationMechanism SCRAM-SHA-256 \\
+  --tls \\
+  --tlsAllowInvalidCertificates
+\`\`\`
+
+Use this flow when you want a package-backed host install plus a local MongoDB-compatible endpoint. Use the Docker quick start instead when you want the shortest local setup path.
+
 ## Troubleshooting and debugging
 
 If something does not work on the first try:
@@ -168,6 +223,9 @@ If something does not work on the first try:
 - Confirm the extension package is installed: \`postgresql-<PG>-documentdb\` on APT or \`postgresql<PG>-documentdb\` on RPM
 - Re-run the Package Finder command for the exact distro, architecture, and PostgreSQL version you selected
 - Confirm the PostgreSQL upstream repository was added before the DocumentDB package install
+- If you use the host gateway flow, confirm \`PG_VERSION_USED\` matches the PostgreSQL major version you installed
+- If \`./scripts/build_and_start_gateway.sh\` fails, confirm \`git\`, \`cargo\`, and \`rustc\` are installed on the host
+- If \`mongosh\` cannot connect, confirm the gateway script is still running and listening on port \`10260\`
 - For Debian 11, use PostgreSQL 16 or 17; PostgreSQL 18 is blocked by the upstream Bullseye PostGIS dependency
 - If you need a gateway endpoint, use DocumentDB Local with Docker or build and run the gateway from source
 
