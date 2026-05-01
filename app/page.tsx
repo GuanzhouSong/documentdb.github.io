@@ -312,7 +312,7 @@ export default function Home() {
                 DocumentDB
               </h1>
               <p className="mb-4 max-w-3xl text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-                A powerful, scalable, MongoDB compatible open-source document database built for modern applications
+                A powerful, scalable, fully MongoDB compatible open-source database built for modern applications
               </p>
               <p className="mb-7 max-w-xl text-base leading-7 text-gray-300 sm:text-lg">
                 Open source and MIT licensed, with native BSON, advanced
