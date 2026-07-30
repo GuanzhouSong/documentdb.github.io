@@ -1,10 +1,10 @@
 {
   "yaml.schemas": {
     "./schema/blog.content.schema.json": [
-      "blogs/content.{yml,yaml}"
+      "blogs/_data/posts.{yml,yaml}"
     ],
-    "./schema/reference.content.schema.json": [
-      "reference/content.{yml,yaml}"
+    "./schema/blog.categories.schema.json": [
+      "blogs/_data/categories.{yml,yaml}"
     ],
     "./schema/articles.content.schema.json": [
       "articles/**/content.{yml,yaml}"
