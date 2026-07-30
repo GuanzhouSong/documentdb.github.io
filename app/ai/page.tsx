@@ -166,11 +166,11 @@ const useCases = [
 
 const credibilityPoints = [
   {
-    value: "3.2k+",
+    value: "3.4k+",
     label: "GitHub stars",
   },
   {
-    value: "200+",
+    value: "240+",
     label: "Forks",
   },
   {
