@@ -12,15 +12,18 @@ const siteUrl = 'https://documentdb.io';
 const outDir = path.join(process.cwd(), 'out');
 
 // Top-level build outputs that are not HTML pages: Next.js assets, the APT/RPM
-// package repositories, release metadata, and images. The packages workflow
-// adds deb/, rpm/, and packages/ after this script runs in the deploy job, but
-// they are excluded here too so local full builds behave identically.
+// package repositories, images, and the not-found page (with trailingSlash the
+// export emits out/404/index.html alongside out/404.html). The packages
+// workflow adds deb/ and rpm/ after this script runs in the deploy job, but
+// they are excluded here too so local full builds behave identically. Note
+// that out/packages/ is NOT excluded: it is the exported /packages download
+// page; the workflow only adds release-info.json (not a page) next to it.
 const excludedTopLevelDirectories = new Set([
   '_next',
   'deb',
   'rpm',
-  'packages',
   'images',
+  '404',
 ]);
 
 function xmlEscape(value) {
