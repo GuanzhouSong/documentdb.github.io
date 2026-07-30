@@ -12,6 +12,7 @@ export async function generateMetadata() {
   return getMetadata({
     title: 'DocumentDB MQL Reference',
     description: await sanitizeMarkdown(description),
+    path: '/docs/reference/',
     extraKeywords: ['reference']
   });
 }
@@ -23,9 +24,9 @@ export default function Home() {
     <article>
       <Breadcrumb />
       <div className="mb-8">
-        <h2 className="text-4xl font-bold text-white mb-4">
+        <h1 className="text-4xl font-bold text-white mb-4">
           MongoDB Query Language (MQL)
-        </h2>
+        </h1>
         <div className="w-24 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-green-500 rounded-full mb-6"></div>
         {description && (
           <div className="text-gray-400 text-lg mb-6">

@@ -1,7 +1,11 @@
 title: DocumentDB Blog
 description: Insights, updates, and deep dives into the world of document databases and open-source innovation.
+# Shared external links. The Next.js app keeps the same values in
+# app/services/externalLinks.ts; update both when one changes.
+discord_url: https://discord.gg/vH7bYu524D
 baseurl: /blogs
-url: ""
+# Absolute host for og:url, og:image, and the Atom feed's permanent IDs.
+url: "https://documentdb.io"
 permalink: pretty
 markdown: kramdown
 kramdown:
