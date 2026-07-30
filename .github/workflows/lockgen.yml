@@ -21,6 +21,10 @@ on:
         description: Space-separated `npm pkg set` assignments to apply first
         required: false
         default: devDependencies.eslint=^10.8.0 devDependencies.eslint-config-next=^16.2.11
+      pkg_delete:
+        description: Space-separated `npm pkg delete` keys to remove first
+        required: false
+        default: ""
       out_branch:
         description: Branch on this fork to push the result to
         required: true
@@ -45,6 +49,10 @@ jobs:
           for kv in ${{ inputs.pkg_set }}; do
             echo "npm pkg set $kv"
             npm pkg set "$kv"
+          done
+          for k in ${{ inputs.pkg_delete }}; do
+            echo "npm pkg delete $k"
+            npm pkg delete "$k"
           done
           git --no-pager diff -- package.json
       - name: Resolve and install
