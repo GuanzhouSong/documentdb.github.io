@@ -180,21 +180,44 @@ async function cloneContent(
       const repoName = source.repository.split('/').pop() || 'repo';
       const cloneDir = path.join(TEMP_DIR, repoName);
 
-      // Clone the repository
-      spawnSync(
+      // Clone the repository. A failed clone must fail the build: the copy
+      // loop below finds nothing to copy and the site would otherwise deploy
+      // with empty documentation and reference sections.
+      const cloneResult = spawnSync(
         'git',
         ['clone', '--depth', '1', '--branch', source.branch, source.repository, cloneDir],
         { stdio: 'pipe' }
       );
+
+      if (cloneResult.error) {
+        throw new Error(
+          `git clone failed for ${source.repository}: ${cloneResult.error.message}`
+        );
+      }
+
+      if (cloneResult.status !== 0) {
+        const stderr = cloneResult.stderr?.toString().trim();
+        throw new Error(
+          `git clone failed for ${source.repository} (branch ${source.branch}): ${stderr || `exit code ${cloneResult.status}`}`
+        );
+      }
 
       // Process each mapping
       for (const mapping of source.mappings) {
         const sourceDir = path.join(cloneDir, mapping.source);
         const targetDir = path.join(process.cwd(), mapping.target);
 
+        if (!fs.existsSync(sourceDir)) {
+          throw new Error(
+            `Source folder "${mapping.source}" does not exist in ${source.repository}; the repository layout may have changed.`
+          );
+        }
+
         // Clean target directory
         cleanDirectory(targetDir);
         ensureDirectory(targetDir);
+
+        const copiedBefore = tracker.getCopiedFiles().length;
 
         // Copy files with filtering
         copyFilesRecursive(
@@ -205,6 +228,12 @@ async function cloneContent(
           tracker,
           source.repository
         );
+
+        if (tracker.getCopiedFiles().length === copiedBefore) {
+          throw new Error(
+            `No files matched for mapping "${mapping.source}" -> "${mapping.target}" from ${source.repository}; refusing to build with empty documentation content.`
+          );
+        }
       }
     }
 

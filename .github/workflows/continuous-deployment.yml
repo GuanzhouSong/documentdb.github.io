@@ -87,6 +87,26 @@ jobs:
         env:
           JEKYLL_BASE_PATH: /blogs
         run: npm run build
+      - name: Verify exported documentation pages
+        # A partially failed content compile must never reach production as a
+        # docs-less site. compile-content fails the build on clone/copy errors;
+        # this is the independent belt-and-braces check on the final artifact.
+        run: |
+          set -euo pipefail
+          for page in out/index.html out/docs/index.html out/docs/getting-started/index.html out/docs/reference/index.html; do
+            if [ ! -f "$page" ]; then
+              echo "Missing expected page: $page"
+              exit 1
+            fi
+          done
+          reference_count=$(find out/docs/reference -name index.html | wc -l)
+          echo "Reference pages exported: $reference_count"
+          # The docs repo currently holds ~240 reference entries; well under
+          # half of that means the compile silently lost content.
+          if [ "$reference_count" -lt 100 ]; then
+            echo "Only $reference_count reference pages exported - documentation content looks incomplete."
+            exit 1
+          fi
       - name: Download DocumentDB packages from latest release
         run: .github/scripts/download_packages.sh
       - name: Verify generated package components
