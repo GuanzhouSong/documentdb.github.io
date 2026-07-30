@@ -1,0 +1,73 @@
+# Scratch workflow: regenerate package-lock.json on GitHub infrastructure.
+#
+# Exists because the maintainer's machine sits behind a corporate registry
+# proxy that cannot reach registry.npmjs.org and lags it by several
+# releases, so lockfiles cannot be generated or verified locally. This
+# runs the resolution on a plain runner and pushes the result to a branch
+# on this fork for collection.
+name: Generate lockfile
+on:
+  workflow_dispatch:
+    inputs:
+      base_repo:
+        description: Repository to base the lockfile on
+        required: true
+        default: documentdb/documentdb.github.io
+      base_ref:
+        description: Ref within that repository
+        required: true
+        default: main
+      pkg_set:
+        description: Space-separated `npm pkg set` assignments to apply first
+        required: false
+        default: devDependencies.eslint=^10.8.0 devDependencies.eslint-config-next=^16.2.11
+      out_branch:
+        description: Branch on this fork to push the result to
+        required: true
+        default: lockgen/result
+permissions:
+  contents: write
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout base
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ inputs.base_repo }}
+          ref: ${{ inputs.base_ref }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Apply version changes
+        run: |
+          for kv in ${{ inputs.pkg_set }}; do
+            echo "npm pkg set $kv"
+            npm pkg set "$kv"
+          done
+          git --no-pager diff -- package.json
+      - name: Resolve and install
+        run: npm install
+      - name: Verify lint runs
+        # The upstream CI does not run lint, so prove it here: this is the
+        # step that would catch an ESLint major actually breaking the flat
+        # config.
+        run: npm run lint
+      - name: Verify build
+        run: npm run build:next
+      - name: Confirm resolved URLs are canonical
+        run: |
+          bad=$(grep -c 'pkgs.visualstudio.com\|packagefeedproxy' package-lock.json || true)
+          echo "non-npmjs resolved URLs: $bad"
+          test "$bad" -eq 0
+      - name: Push result
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "lockgen"
+          git config user.email "lockgen@users.noreply.github.com"
+          git checkout -b "${{ inputs.out_branch }}"
+          git add package.json package-lock.json
+          git commit -m "lockgen: ${{ inputs.pkg_set }}"
+          git push -f "https://x-access-token:$TOKEN@github.com/${{ github.repository }}.git" "${{ inputs.out_branch }}"
