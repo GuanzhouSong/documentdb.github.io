@@ -4,9 +4,10 @@
 # Temporary content cloning directory
 _tmp/
 
-# Reference files
-api-reference/
-reference/
+# Reference files (compiled into the repo root from documentdb/docs; anchored
+# so the patterns cannot swallow tracked paths like app/docs/reference/)
+/api-reference/
+/reference/
 
 # Documentation articles
 articles/*/
