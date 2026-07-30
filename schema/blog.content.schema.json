@@ -15,8 +15,9 @@
       },
       "category": {
         "type": "string",
-        "description": "A unique identifier representing the source or topical category of the blog post. This value determines which section or feed the post appears in. Must be one of: microsoft-open-source-blog, aws-blog, azure-cosmos-db-blog, yugabytedb-blog.",
+        "description": "A unique identifier representing the source or topical category of the blog post. This value determines which section or feed the post appears in, and must be a key defined in blogs/_data/categories.yml.",
         "enum": [
+          "documentdb-blog",
           "microsoft-open-source-blog",
           "aws-blog",
           "azure-cosmos-db-blog",

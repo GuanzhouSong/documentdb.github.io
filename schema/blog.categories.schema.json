@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Blog Categories",
+  "description": "Defines the blog sources a post can be filed under. Each key is a category identifier referenced by the `category` field of an entry in blogs/_data/posts.yml, and the value supplies the labels rendered on the blog index.",
+  "type": "object",
+  "minProperties": 1,
+  "propertyNames": {
+    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+    "description": "Lower-case kebab-case identifier, matched against the `category` field of a blog post."
+  },
+  "additionalProperties": {
+    "type": "object",
+    "required": ["label", "meta"],
+    "additionalProperties": false,
+    "properties": {
+      "label": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Human-readable name of the publication, shown as the heading for this category's group on the blog index (e.g. 'Microsoft Open Source Blog').",
+        "examples": ["DocumentDB Blog", "AWS Blogs"]
+      },
+      "meta": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Short qualifier displayed beside the label, used for a publication date or a note about the source (e.g. 'August 25, 2025', 'Partner Content').",
+        "examples": ["Recent", "Published here", "Partner Content"]
+      }
+    }
+  }
+}
