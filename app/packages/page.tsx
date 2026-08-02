@@ -50,12 +50,17 @@ const nextGuides = [
 ] as const;
 
 const allReleasesUrl = "https://github.com/documentdb/documentdb/releases";
-const currentAptVersionExample = "0.114-0";
-const currentRpmVersionExample = "0.114.0-1.el9";
+// Latest GitHub release, used for the direct .deb/.rpm download examples.
+const latestReleaseAptVersion = "0.114-0";
+const latestReleaseRpmVersion = "0.114.0-1.el9";
+// Version currently served by the APT/RPM package repositories, which can lag
+// GitHub Releases. Used for the version-pinning examples.
+const repoAptVersionExample = "0.113-0";
+const repoRpmVersionExample = "0.113.0-1.el9";
 const currentReleaseExamples = [
-  `ubuntu22.04-postgresql-18-documentdb_${currentAptVersionExample}_amd64.deb`,
-  `deb13-postgresql-18-documentdb_${currentAptVersionExample}_amd64.deb`,
-  `rhel9-postgresql18-documentdb-${currentRpmVersionExample}.x86_64.rpm`,
+  `ubuntu22.04-postgresql-18-documentdb_${latestReleaseAptVersion}_amd64.deb`,
+  `deb13-postgresql-18-documentdb_${latestReleaseAptVersion}_amd64.deb`,
+  `rhel9-postgresql18-documentdb-${latestReleaseRpmVersion}.x86_64.rpm`,
 ] as const;
 
 export default function PackagesPage() {
@@ -384,8 +389,10 @@ export default function PackagesPage() {
                 Use the commands below to discover available versions before pinning. Replace{" "}
                 <code className="text-gray-300">&lt;VERSION&gt;</code> with the version string
                 shown by the list command (e.g.{" "}
-                <code className="text-gray-300">{currentAptVersionExample}</code> for APT,{" "}
-                <code className="text-gray-300">{currentRpmVersionExample}</code> for RPM).
+                <code className="text-gray-300">{repoAptVersionExample}</code> for APT,{" "}
+                <code className="text-gray-300">{repoRpmVersionExample}</code> for RPM). The
+                package repositories can lag the newest GitHub release, so pin to a version the
+                list command actually shows.
               </p>
               <div>
                 <p className="mb-1 text-xs font-semibold text-gray-400">APT — list then pin</p>
