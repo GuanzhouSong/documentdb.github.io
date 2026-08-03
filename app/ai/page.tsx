@@ -2,6 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import CommandSnippet from "../components/CommandSnippet";
 import { getMetadata } from "../services/metadataService";
+import {
+  documentdbGitHubForks,
+  documentdbGitHubStars,
+  documentdbTscMembers,
+  documentdbTscOrganizations,
+} from "../services/projectStats";
 import { withBasePath } from "../services/sitePath";
 
 export const metadata = getMetadata({
@@ -166,17 +172,17 @@ const useCases = [
 
 const credibilityPoints = [
   {
-    value: "3.4k+",
+    value: documentdbGitHubStars,
     label: "GitHub stars",
   },
   {
-    value: "240+",
+    value: documentdbGitHubForks,
     label: "Forks",
   },
   {
-    value: "11",
+    value: documentdbTscMembers,
     label: "TSC members",
-    detail: "across 5 organizations",
+    detail: `across ${documentdbTscOrganizations} organizations`,
   },
 ];
 
