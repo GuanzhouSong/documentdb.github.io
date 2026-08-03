@@ -11,24 +11,40 @@ import path from 'node:path';
 const siteUrl = 'https://documentdb.io';
 const outDir = path.join(process.cwd(), 'out');
 
-// Top-level build outputs that are not HTML pages: Next.js assets, the APT/RPM
-// package repositories, images, and the two forms the not-found page takes
-// (with trailingSlash the export emits out/404/index.html alongside
-// out/404.html, plus out/_not-found/index.html for the App Router's not-found
-// route - both serve noindex, so listing either one submits a URL that tells
-// crawlers not to index it). The packages workflow adds deb/ and rpm/ after
-// this script runs in the deploy job, but they are excluded here too so local
-// full builds behave identically. Note that out/packages/ is NOT excluded: it
-// is the exported /packages download page; the workflow only adds
-// release-info.json (not a page) next to it.
+// Top-level build outputs that are not pages at all: Next.js assets, the
+// APT/RPM package repositories, and images. The packages workflow adds deb/
+// and rpm/ after this script runs in the deploy job, but they are excluded
+// here too so local full builds behave identically. Note that out/packages/ is
+// NOT excluded: it is the exported /packages download page; the workflow only
+// adds release-info.json (not a page) next to it.
+//
+// Pages that exist but must not be advertised are handled by isNoindex()
+// rather than by name. That covers both forms the not-found route takes - with
+// trailingSlash the export writes out/404/index.html alongside out/404.html,
+// and the App Router adds out/_not-found/index.html - and anything else the
+// framework starts emitting later. Listing a noindex URL is what earns the
+// "submitted URL marked noindex" warning in Search Console, and a page already
+// states that about itself, so there is no second list to keep in sync.
 const excludedTopLevelDirectories = new Set([
   '_next',
   'deb',
   'rpm',
   'images',
-  '404',
-  '_not-found',
 ]);
+
+let noindexPagesSkipped = 0;
+
+/**
+ * True when the page asks crawlers not to index it. Reads the meta tag in
+ * either attribute order and tolerates content lists such as "noindex,nofollow".
+ */
+function isNoindex(html) {
+  return (html.match(/<meta\b[^>]*>/gi) ?? []).some(
+    (tag) =>
+      /\bname=["']?robots["']?/i.test(tag) &&
+      /\bcontent=["'][^"']*\bnoindex\b/i.test(tag),
+  );
+}
 
 function xmlEscape(value) {
   return value
@@ -49,10 +65,14 @@ function collectPages(directory, relativePath = '') {
   const indexFile = path.join(directory, 'index.html');
 
   if (fs.existsSync(indexFile)) {
-    pages.push({
-      url: relativePath === '' ? '/' : `/${relativePath}/`,
-      lastModified: fs.statSync(indexFile).mtime,
-    });
+    if (isNoindex(fs.readFileSync(indexFile, 'utf8'))) {
+      noindexPagesSkipped += 1;
+    } else {
+      pages.push({
+        url: relativePath === '' ? '/' : `/${relativePath}/`,
+        lastModified: fs.statSync(indexFile).mtime,
+      });
+    }
   }
 
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
@@ -117,4 +137,8 @@ if (fs.existsSync(robotsPath)) {
   fs.writeFileSync(robotsPath, `User-agent: *\nAllow: /\n\n${sitemapLine}\n`);
 }
 
-console.log(`Wrote out/sitemap.xml with ${pages.length} URLs and advertised it in out/robots.txt.`);
+console.log(
+  `Wrote out/sitemap.xml with ${pages.length} URLs (skipped ${noindexPagesSkipped} noindex ${
+    noindexPagesSkipped === 1 ? 'page' : 'pages'
+  }) and advertised it in out/robots.txt.`,
+);
