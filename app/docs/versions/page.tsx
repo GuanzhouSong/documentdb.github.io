@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getMetadata } from "../../services/metadataService";
 import { getDocVersions } from "../../services/versionService";
+import DocsBreadcrumb from "../../components/DocsBreadcrumb";
 
 export async function generateMetadata() {
     return getMetadata({
@@ -19,6 +20,9 @@ export default function VersionsPage() {
             <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-neutral-800 to-black"></div>
 
             <div className="relative mx-auto max-w-4xl px-4 py-16 sm:px-8">
+                <DocsBreadcrumb
+                    crumbs={[{ title: "Docs", href: "/docs" }, { title: "Versions" }]}
+                />
                 <h1 className="text-4xl font-bold text-white">Documentation Versions</h1>
                 <p className="mt-3 max-w-2xl text-gray-400">
                     The documentation site always describes the latest DocumentDB release,

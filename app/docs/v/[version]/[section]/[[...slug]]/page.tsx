@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { capitalCase } from "change-case";
 import {
+    formatSectionTitle,
     getAllVersionedArticlePaths,
     getVersionedArticleByPath,
+    getVersionedSections,
+    getVersionSwitcherEntries,
+    orderSections,
 } from "../../../../../services/versionService";
-import { getArticleByPath } from "../../../../../services/articleService";
 import Markdown from "../../../../../components/Markdown";
-import VersionSwitcher from "../../../../../components/VersionSwitcher";
+import DocsSidebar, { DocsSidebarMobile } from "../../../../../components/DocsSidebar";
+import DocsBreadcrumb from "../../../../../components/DocsBreadcrumb";
 
 export async function generateStaticParams() {
     return getAllVersionedArticlePaths().map((path) => ({
@@ -49,55 +52,63 @@ export default async function VersionedArticlePage({ params }: PageProps) {
 
     const { content, frontmatter, navigation, file } = articleData;
     const pageTitle = frontmatter.title || section;
-    const sectionTitle = capitalCase(section)
-        .replace(/documentdb/i, "DocumentDB")
-        .replace(/api/i, "API");
+    const sectionTitle = formatSectionTitle(section);
+    const switcherEntries = getVersionSwitcherEntries(version, section, file);
+    const currentEquivalent =
+        switcherEntries.find((entry) => entry.label.startsWith("Current"))?.href ?? "/docs";
 
-    // Link the banner to the same page in the current docs when it still
-    // exists there, otherwise to the section root.
-    const currentEquivalent = getArticleByPath(section, slug)
-        ? slug.length > 0
-            ? `/docs/${section}/${slug.join("/")}`
-            : `/docs/${section}`
-        : "/docs";
+    // Every navigation element on this page stays inside the version: the back
+    // link goes to the version home, section links stay under /docs/v/<v>/,
+    // and only the banner/switcher deliberately exit to current.
+    const navItems = navigation.map((item) => {
+        const isActive =
+            file === "index"
+                ? item.link === `/docs/v/${version}/${section}`
+                : item.link.endsWith(`/${file}`);
+        return { title: item.title, href: item.link, active: isActive };
+    });
 
-    const navigationLinks = navigation.map((item) => (
-        <Link
-            key={item.link}
-            href={item.link}
-            className="block w-full text-left px-4 py-3 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-neutral-700/50 transition-all duration-200"
-        >
-            {item.title}
-        </Link>
-    ));
+    const sectionItems = orderSections(getVersionedSections(version)).map((s) => ({
+        title: formatSectionTitle(s),
+        href: `/docs/v/${version}/${s}`,
+        active: s === section,
+    }));
+
+    const sidebarProps = {
+        version,
+        backHref: `/docs/v/${version}`,
+        backLabel: `${version} documentation home`,
+        sectionTitle,
+        nav: navItems,
+        sections: sectionItems,
+        switcherEntries,
+    };
+
+    const breadcrumbs = [
+        { title: "Docs", href: "/docs" },
+        { title: version, href: `/docs/v/${version}` },
+        ...(file === "index"
+            ? [{ title: sectionTitle }]
+            : [
+                { title: sectionTitle, href: `/docs/v/${version}/${section}` },
+                { title: pageTitle },
+            ]),
+    ];
 
     return (
         <div className="min-h-screen bg-neutral-900 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-neutral-800 to-black"></div>
 
             <div className="relative flex min-h-screen">
-                {/* Left Sidebar */}
-                <div className="hidden w-80 bg-neutral-800/50 backdrop-blur-sm border-r border-neutral-700/50 md:flex flex-col">
-                    <div className="p-6 border-b border-neutral-700/50">
-                        <Link
-                            href="/docs"
-                            className="text-blue-400 hover:text-blue-300 text-sm mb-4 flex items-center transition-colors"
-                        >
-                            ← Back to Documentation
-                        </Link>
-                        <p className="text-2xl font-bold text-white">{sectionTitle}</p>
-                        <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-amber-400">
-                            {version} snapshot
-                        </p>
-                    </div>
-                    <div className="flex-1 p-4 overflow-y-auto">
-                        <nav className="space-y-1">{navigationLinks}</nav>
-                    </div>
-                </div>
+                <DocsSidebar {...sidebarProps} />
 
                 {/* Main Content */}
                 <div className="flex-1 p-4 sm:p-8 overflow-y-auto">
                     <div className="max-w-4xl">
+                        <DocsSidebarMobile {...sidebarProps} />
+
+                        <DocsBreadcrumb crumbs={breadcrumbs} />
+
                         {/* Old-version banner */}
                         <div className="mb-6 flex flex-col gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
                             <p className="text-sm text-amber-200">
@@ -111,15 +122,6 @@ export default async function VersionedArticlePage({ params }: PageProps) {
                             >
                                 View current version →
                             </Link>
-                        </div>
-
-                        <div className="mb-6">
-                            <VersionSwitcher
-                                current={version}
-                                targets={[
-                                    { label: "current (latest release)", href: currentEquivalent },
-                                ]}
-                            />
                         </div>
 
                         <Markdown content={content} />

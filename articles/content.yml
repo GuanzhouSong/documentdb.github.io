@@ -14,9 +14,12 @@ landing:
       link: /docs/documentdb-local
     - title: Architecture under the hood
       link: /docs/architecture
-    - title: Release Notes
-      link: /docs/release-notes
-    - title: Documentation Versions
-      link: /docs/versions
     - title: Samples & Demos
       link: /samples
+  secondaryLinks:
+    - title: Release Notes
+      description: What changed in each DocumentDB release
+      link: /docs/release-notes
+    - title: Documentation Versions
+      description: Current docs, archived snapshots, and older tags
+      link: /docs/versions
