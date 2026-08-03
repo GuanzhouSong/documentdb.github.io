@@ -3,6 +3,12 @@ import Link from "next/link";
 import CommandSnippet from "./components/CommandSnippet";
 import { documentdbKubernetesOperatorQuickStartUrl } from "./services/externalLinks";
 import { getMetadata } from "./services/metadataService";
+import {
+  documentdbGitHubForks,
+  documentdbGitHubStars,
+  documentdbTscMembers,
+  documentdbTscOrganizations,
+} from "./services/projectStats";
 import { withBasePath } from "./services/sitePath";
 
 export const metadata = getMetadata({
@@ -131,19 +137,19 @@ const trustBadges = [
 
 const credibilityPoints = [
   {
-    value: "3.2k+",
+    value: documentdbGitHubStars,
     label: "GitHub stars",
     detail: "on documentdb/documentdb",
   },
   {
-    value: "200+",
+    value: documentdbGitHubForks,
     label: "Public forks",
     detail: "public on GitHub",
   },
   {
-    value: "11",
+    value: documentdbTscMembers,
     label: "TSC members",
-    detail: "representing 5 organizations",
+    detail: `representing ${documentdbTscOrganizations} organizations`,
   },
 ];
 
