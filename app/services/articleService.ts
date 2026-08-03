@@ -274,7 +274,7 @@ If something does not work on the first try:
 ## Next steps
 
 - [Docker Quick Start](/docs/getting-started/docker)
-- [Building from source](https://github.com/documentdb/documentdb/blob/main/docs/v1/building.md)
+- [Building the packages from source](https://github.com/documentdb/documentdb/blob/main/packaging/README.md)
 - [Mongo Shell Quick Start](/docs/getting-started/mongo-shell-quickstart)
 - [Node.js Quick Start](/docs/getting-started/nodejs-setup)
 - [Python Quick Start](/docs/getting-started/python-setup)
