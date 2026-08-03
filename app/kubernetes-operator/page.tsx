@@ -1,7 +1,7 @@
 import CommandSnippet from "../components/CommandSnippet";
 import { getMetadata } from "../services/metadataService";
 import {
-  documentdbKubernetesOperatorDocsUrl,
+  documentdbKubernetesOperatorQuickStartUrl,
   documentdbKubernetesOperatorGitHubUrl,
 } from "../services/externalLinks";
 
@@ -278,7 +278,7 @@ export default function KubernetesOperatorPage() {
               </p>
               <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <a
-                  href={documentdbKubernetesOperatorDocsUrl}
+                  href={documentdbKubernetesOperatorQuickStartUrl}
                   className="inline-flex w-full items-center justify-center rounded-md bg-emerald-500 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-400 sm:w-auto"
                 >
                   Open quick start
@@ -465,7 +465,7 @@ export default function KubernetesOperatorPage() {
                 </p>
               </div>
               <a
-                href={documentdbKubernetesOperatorDocsUrl}
+                href={documentdbKubernetesOperatorQuickStartUrl}
                 className="inline-flex items-center justify-center rounded-md bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-400"
               >
                 Open quick start
@@ -489,7 +489,7 @@ export default function KubernetesOperatorPage() {
           </p>
           <div className="flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap">
             <a
-              href={documentdbKubernetesOperatorDocsUrl}
+              href={documentdbKubernetesOperatorQuickStartUrl}
               className="inline-flex w-full items-center justify-center rounded-md bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-400 sm:w-auto"
             >
               Open quick start
