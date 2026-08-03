@@ -27,8 +27,13 @@
         {
           "source": "kubernetes-operator",
           "target": "articles/kubernetes-operator"
+        },
+        {
+          "source": "release-notes",
+          "target": "articles/release-notes"
         }
-      ]
+      ],
+      "versions": []
     }
   ],
   "include": [
