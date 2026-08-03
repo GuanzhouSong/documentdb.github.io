@@ -227,9 +227,8 @@ const bestFitScenarios = [
   "Operators that need failover, backup, promotion, and recovery workflows across clusters.",
 ] as const;
 
-const operatorQuickStartCommand = `helm repo add documentdb https://documentdb.github.io/documentdb-kubernetes-operator
-helm install documentdb-operator documentdb/documentdb-operator \\
-  --namespace documentdb-operator --create-namespace`;
+const operatorQuickStartCommand = `helm install documentdb-operator oci://ghcr.io/documentdb/documentdb-operator \\
+  --namespace documentdb-operator --create-namespace --wait`;
 
 export const metadata = getMetadata({
   title: "DocumentDB Kubernetes Operator",

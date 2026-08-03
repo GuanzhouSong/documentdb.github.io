@@ -5,7 +5,7 @@ landing:
     - title: Getting Started with DocumentDB
       link: /docs/getting-started
     - title: DocumentDB Kubernetes Operator (Preview)
-      link: /kubernetes-operator
+      link: /docs/kubernetes-operator
     - title: API Reference
       link: /docs/reference
     - title: Postgres Extension API

@@ -23,6 +23,10 @@
         {
           "source": "documentdb-local",
           "target": "articles/documentdb-local"
+        },
+        {
+          "source": "kubernetes-operator",
+          "target": "articles/kubernetes-operator"
         }
       ]
     }
