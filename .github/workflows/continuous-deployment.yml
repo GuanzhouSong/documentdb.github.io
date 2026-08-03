@@ -1,59 +1,27 @@
-# Workflow for building Next.js site and downloading DocumentDB packages, then deploying to GitHub Pages
-name: Deploy Next.js site and DocumentDB packages to Pages
+# Fork-demo deployment: builds the Next.js site (including versioned docs
+# snapshots) and deploys to GitHub Pages as a project page under
+# /documentdb.github.io/. The upstream workflow additionally builds the
+# APT/RPM package repositories; those steps are omitted here because the fork
+# demo only showcases the documentation site.
+name: Deploy Next.js site to Pages (fork demo)
 on:
-  # Runs on pushes targeting the default branch
   push:
     branches:
       - main
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
 concurrency:
   group: pages
   cancel-in-progress: false
 jobs:
-  # Build job
   build:
     name: Build Next.js static site
-    # Sets permissions of the GITHUB_TOKEN to allow reading of repository content
     permissions:
       contents: read
     runs-on: ubuntu-22.04
-    # Without an explicit timeout a stalled step runs against GitHub's 6-hour
-    # default before failing, which for `pages` concurrency means blocking
-    # every deployment queued behind it.
     timeout-minutes: 30
     steps:
       - name: Checkout source
         uses: actions/checkout@v7
-      - name: Install required packages
-        run: |
-          until sudo apt-get update; do sleep 1; done
-          sudo apt-get install -y createrepo-c dpkg-dev dpkg-sig gnupg2 python3
-      - name: Setup GPG
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v7
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-        continue-on-error: true
-      - name: Set GPG fingerprint and version config
-        run: |
-          # Configure GPG signing
-          if [ -n "${{ steps.import_gpg.outputs.fingerprint }}" ]; then
-            echo "GPG_FINGERPRINT=${{ steps.import_gpg.outputs.fingerprint }}" >> $GITHUB_ENV
-            echo "✅ GPG key loaded successfully"
-            echo "   Fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}"
-            echo "   Key ID: ${{ steps.import_gpg.outputs.keyid }}"
-            echo "   User ID: ${{ steps.import_gpg.outputs.name }} <${{ steps.import_gpg.outputs.email }}>"
-          else
-            echo "⚠️ No GPG key configured - packages will not be signed"
-            echo "   To enable signing, add GPG_PRIVATE_KEY to repository secrets"
-          fi
-          
-          # Configure DocumentDB version (can be overridden by repository variables)
-          echo "DOCUMENTDB_VERSION=${{ vars.DOCUMENTDB_VERSION || 'latest' }}" >> $GITHUB_ENV
-          echo "MULTI_VERSION=${{ vars.MULTI_VERSION || 'true' }}" >> $GITHUB_ENV
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
@@ -69,31 +37,23 @@ jobs:
         with:
           path: |
             .next/cache
-          # Generate a new cache whenever packages or source files change.
           key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json', '**/yarn.lock') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
-          # If source files changed but packages didn't, rebuild from a prior cache.
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json', '**/yarn.lock') }}-
       - name: Install dependencies
         run: npm ci
       - name: Build with Next.js
-        # This repository is the organization Pages site served at the root of
-        # the custom domain (documentdb.io), so the build must NOT set
-        # NEXT_BASE_PATH. Setting it to the repository name (the usual trick
-        # for project pages) prefixes every internal link and asset URL with
-        # /documentdb.github.io/, which GitHub Pages then 301-redirects back
-        # to the root on every request and leaves the prefixed URL visible in
-        # the address bar after client-side navigation.
+        # This fork deploys as a PROJECT page at
+        # https://guanzhousong.github.io/documentdb.github.io/, so unlike the
+        # upstream org-domain deployment the base path MUST be set.
         env:
-          JEKYLL_BASE_PATH: /blogs
+          NEXT_BASE_PATH: documentdb.github.io
+          JEKYLL_BASE_PATH: /documentdb.github.io/blogs
         run: npm run build
       - name: Verify exported documentation pages
-        # A partially failed content compile must never reach production as a
-        # docs-less site. compile-content fails the build on clone/copy errors;
-        # this is the independent belt-and-braces check on the final artifact.
         run: |
           set -euo pipefail
-          for page in out/index.html out/docs/index.html out/docs/getting-started/index.html out/docs/reference/index.html; do
+          for page in out/index.html out/docs/index.html out/docs/getting-started/index.html out/docs/reference/index.html out/docs/versions/index.html out/docs/v/v0.114-0/getting-started/index.html; do
             if [ ! -f "$page" ]; then
               echo "Missing expected page: $page"
               exit 1
@@ -101,61 +61,14 @@ jobs:
           done
           reference_count=$(find out/docs/reference -name index.html | wc -l)
           echo "Reference pages exported: $reference_count"
-          # The docs repo currently holds ~240 reference entries; well under
-          # half of that means the compile silently lost content.
           if [ "$reference_count" -lt 100 ]; then
             echo "Only $reference_count reference pages exported - documentation content looks incomplete."
             exit 1
           fi
-      - name: Download DocumentDB packages from latest release
-        run: .github/scripts/download_packages.sh
-      - name: Verify generated package components
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-
-          release_info = Path("out/packages/release-info.json")
-          if not release_info.exists():
-              raise SystemExit("release-info.json was not generated")
-
-          data = json.loads(release_info.read_text())
-          assets = [asset["name"] for asset in data.get("assets", [])]
-          components = ("deb11", "deb12", "deb13", "ubuntu22", "ubuntu24")
-
-          for component in components:
-              has_assets = any(
-                  name.endswith(".deb")
-                  and (
-                      name.startswith(f"{component}-")
-                      or name.startswith(f"{component}.04-")
-                  )
-                  for name in assets
-              )
-              if not has_assets:
-                  continue
-
-              for arch in ("amd64", "arm64"):
-                  packages = Path(f"out/deb/dists/stable/{component}/binary-{arch}/Packages")
-                  packages_gz = Path(f"out/deb/dists/stable/{component}/binary-{arch}/Packages.gz")
-                  if not packages.exists() or not packages_gz.exists():
-                      raise SystemExit(
-                          f"Missing APT metadata for {component} {arch}: "
-                          f"{packages} / {packages_gz}"
-                      )
-
-          release_file = Path("out/deb/dists/stable/Release")
-          if release_file.exists() and any(name.startswith("deb13-") and name.endswith(".deb") for name in assets):
-              release_text = release_file.read_text()
-              if "deb13" not in release_text:
-                  raise SystemExit("deb13 assets exist but deb13 is missing from the APT Release file")
-          PY
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
           path: ./out
-  # Deployment job
   deploy:
     name: Publish site to GitHub Pages
     environment:
@@ -165,7 +78,6 @@ jobs:
     timeout-minutes: 10
     needs:
       - build
-    # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
     permissions:
       pages: write
       id-token: write
@@ -173,11 +85,7 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v6
         with:
-          # Automatically inject basePath in your Next.js configuration file and disable
-          # server side image optimization (https://nextjs.org/docs/api-reference/next/image#unoptimized).
-          #
-          # You may remove this line if you want to manage the configuration yourself.
-          static_site_generator: next
+          enablement: true
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5

@@ -1,7 +1,7 @@
 {
   "sources": [
     {
-      "repository": "https://github.com/documentdb/docs",
+      "repository": "https://github.com/GuanzhouSong/docs",
       "branch": "main",
       "mappings": [
         {
@@ -33,7 +33,12 @@
           "target": "articles/release-notes"
         }
       ],
-      "versions": []
+      "versions": [
+        {
+          "label": "v0.114-0",
+          "ref": "v0.114-0"
+        }
+      ]
     }
   ],
   "include": [
