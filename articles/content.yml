@@ -12,7 +12,7 @@ landing:
       link: /docs/postgres-api
     - title: DocumentDB Local
       link: /docs/documentdb-local
-    - title: Architecture under the hood
+    - title: Architecture under the hood (Coming soon)
       link: /docs/architecture
     - title: Samples & Demos
       link: /samples

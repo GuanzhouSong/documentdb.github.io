@@ -12,18 +12,22 @@ const siteUrl = 'https://documentdb.io';
 const outDir = path.join(process.cwd(), 'out');
 
 // Top-level build outputs that are not HTML pages: Next.js assets, the APT/RPM
-// package repositories, images, and the not-found page (with trailingSlash the
-// export emits out/404/index.html alongside out/404.html). The packages
-// workflow adds deb/ and rpm/ after this script runs in the deploy job, but
-// they are excluded here too so local full builds behave identically. Note
-// that out/packages/ is NOT excluded: it is the exported /packages download
-// page; the workflow only adds release-info.json (not a page) next to it.
+// package repositories, images, and the two forms the not-found page takes
+// (with trailingSlash the export emits out/404/index.html alongside
+// out/404.html, plus out/_not-found/index.html for the App Router's not-found
+// route - both serve noindex, so listing either one submits a URL that tells
+// crawlers not to index it). The packages workflow adds deb/ and rpm/ after
+// this script runs in the deploy job, but they are excluded here too so local
+// full builds behave identically. Note that out/packages/ is NOT excluded: it
+// is the exported /packages download page; the workflow only adds
+// release-info.json (not a page) next to it.
 const excludedTopLevelDirectories = new Set([
   '_next',
   'deb',
   'rpm',
   'images',
   '404',
+  '_not-found',
 ]);
 
 function xmlEscape(value) {

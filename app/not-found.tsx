@@ -1,4 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+// Without this the route inherits the root layout's metadata, which hardcodes
+// robots index/follow - so the page emitted both that tag and the noindex
+// Next.js injects for not-found, and carried the homepage title verbatim.
+export const metadata: Metadata = {
+  title: "Page not found - DocumentDB",
+  description:
+    "The page you're looking for doesn't exist. Find documentation, downloads, and samples for DocumentDB.",
+  robots: {
+    index: false,
+    follow: true,
+  },
+};
 
 const suggestions = [
   {
