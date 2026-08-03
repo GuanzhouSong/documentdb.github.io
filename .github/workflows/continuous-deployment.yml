@@ -53,7 +53,7 @@ jobs:
       - name: Verify exported documentation pages
         run: |
           set -euo pipefail
-          for page in out/index.html out/docs/index.html out/docs/getting-started/index.html out/docs/reference/index.html out/docs/versions/index.html out/docs/v/v0.114-0/getting-started/index.html; do
+          for page in out/index.html out/docs/index.html out/docs/getting-started/index.html out/docs/reference/index.html out/docs/versions/index.html out/docs/versions/v0.114-0/getting-started/index.html; do
             if [ ! -f "$page" ]; then
               echo "Missing expected page: $page"
               exit 1

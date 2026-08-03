@@ -11,7 +11,7 @@ export interface SidebarNavItem {
 export interface DocsSidebarProps {
     /** null when viewing current docs; the version label on archived pages. */
     version: string | null;
-    /** Where the top back link goes: /docs for current, /docs/v/<v> for a version. */
+    /** Where the top back link goes: /docs for current, /docs/versions/<v> for a version. */
     backHref: string;
     backLabel: string;
     sectionTitle: string;
