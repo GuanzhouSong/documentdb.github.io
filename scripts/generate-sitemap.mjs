@@ -54,6 +54,9 @@ function collectPages(directory, relativePath = '') {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
     if (relativePath === '' && excludedTopLevelDirectories.has(entry.name)) continue;
+    // Archived documentation versions (/docs/v/...) are noindex and must not
+    // appear in the sitemap; only the current docs are advertised to crawlers.
+    if (relativePath === 'docs' && entry.name === 'v') continue;
 
     pages.push(
       ...collectPages(

@@ -6,6 +6,8 @@ import { getMetadata } from "../../../services/metadataService";
 import ComingSoon from "../../../components/ComingSoon";
 import CommandSnippet from "../../../components/CommandSnippet";
 import Markdown from "../../../components/Markdown";
+import VersionSwitcher from "../../../components/VersionSwitcher";
+import { getDocVersions, versionedArticleExists } from "../../../services/versionService";
 
 const dockerQuickRunCommand = `docker run -dt --name documentdb \\
   -p 10260:10260 \\
@@ -309,6 +311,28 @@ export default async function ArticlePage({ params }: PageProps) {
                                 </div>
                             </section>
                         )}
+
+                        {/* Version switcher: shown when archived snapshots of this page exist */}
+                        {(() => {
+                            const versionTargets = getDocVersions()
+                                .filter((version) => versionedArticleExists(version, section, file))
+                                .map((version) => ({
+                                    label: `${version} (archived)`,
+                                    href:
+                                        file === 'index'
+                                            ? `/docs/v/${version}/${section}`
+                                            : `/docs/v/${version}/${section}/${file}`,
+                                }));
+
+                            return versionTargets.length > 0 ? (
+                                <div className="mb-6">
+                                    <VersionSwitcher
+                                        current="current (latest release)"
+                                        targets={versionTargets}
+                                    />
+                                </div>
+                            ) : null;
+                        })()}
 
                         {/* Markdown Content */}
                         <Markdown content={content} />

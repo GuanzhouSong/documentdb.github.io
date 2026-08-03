@@ -248,9 +248,16 @@ function getMarkdownComponents() {
     // /samples, #anchors) navigate in place
     a: ({ children, href, ...props }: any) => {
       const isExternal = /^https?:\/\//i.test(href ?? '');
+      // Site-root-relative links inside markdown bypass next/link, so the
+      // configured base path (project-page deployments) must be added here.
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const resolvedHref =
+        !isExternal && href?.startsWith('/') && basePath && !href.startsWith(`${basePath}/`)
+          ? `${basePath}${href}`
+          : href;
       return (
         <a
-          href={href}
+          href={resolvedHref}
           className="text-blue-400 hover:text-blue-300 transition-colors"
           {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
           {...props}
