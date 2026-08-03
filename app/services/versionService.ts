@@ -100,6 +100,88 @@ export function getVersionedNavigation(version: string, section: string): Link[]
   });
 }
 
+/** Human-readable section title (shared by current and versioned navigation). */
+export function formatSectionTitle(section: string): string {
+  const words = section
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
+  return words.replace(/documentdb/i, 'DocumentDB').replace(/\bapi\b/i, 'API');
+}
+
+const SECTION_ORDER = [
+  'getting-started',
+  'documentdb-local',
+  'postgres-api',
+  'architecture',
+  'kubernetes-operator',
+  'release-notes',
+];
+
+/** Sort sections into their canonical display order (unknown sections last). */
+export function orderSections(sections: string[]): string[] {
+  return [...sections].sort((a, b) => {
+    const ia = SECTION_ORDER.indexOf(a);
+    const ib = SECTION_ORDER.indexOf(b);
+    return (ia === -1 ? SECTION_ORDER.length : ia) - (ib === -1 ? SECTION_ORDER.length : ib);
+  });
+}
+
+export interface VersionSwitcherEntry {
+  label: string;
+  href: string;
+  active: boolean;
+}
+
+/**
+ * Entries for the version switcher shown on every docs page.
+ *
+ * `viewing` is 'current' or a version label. For each version the target is the
+ * best equivalent of the page being viewed: the same page when it exists in
+ * that version, otherwise the section home, otherwise the version home. This
+ * keeps switching lossless where possible and predictable where not.
+ */
+export function getVersionSwitcherEntries(
+  viewing: string,
+  section: string | null,
+  file: string | null
+): VersionSwitcherEntry[] {
+  const currentArticlesDir = path.join(process.cwd(), 'articles');
+
+  const currentTarget = (() => {
+    if (!section) return '/docs';
+    if (!fs.existsSync(path.join(currentArticlesDir, section))) return '/docs';
+    if (!file || file === 'index') return `/docs/${section}`;
+    if (fs.existsSync(path.join(currentArticlesDir, section, `${file}.md`))) {
+      return `/docs/${section}/${file}`;
+    }
+    return `/docs/${section}`;
+  })();
+
+  const entries: VersionSwitcherEntry[] = [
+    { label: 'Current (latest release)', href: currentTarget, active: viewing === 'current' },
+  ];
+
+  for (const version of getDocVersions()) {
+    const target = (() => {
+      if (!section) return `/docs/v/${version}`;
+      if (!fs.existsSync(path.join(versionArticlesDir(version), section))) {
+        return `/docs/v/${version}`;
+      }
+      if (!file || file === 'index') return `/docs/v/${version}/${section}`;
+      if (versionedArticleExists(version, section, file)) {
+        return `/docs/v/${version}/${section}/${file}`;
+      }
+      return `/docs/v/${version}/${section}`;
+    })();
+
+    entries.push({ label: `${version} (archived)`, href: target, active: viewing === version });
+  }
+
+  return entries;
+}
+
 /** Load a versioned article: raw snapshot content plus parsed front matter. */
 export function getVersionedArticleByPath(
   version: string,
