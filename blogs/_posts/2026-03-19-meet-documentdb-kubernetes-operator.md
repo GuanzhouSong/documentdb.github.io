@@ -89,7 +89,7 @@ The public docs are clear that the operator is not yet recommended for productio
 
 - [GitHub repository](https://github.com/documentdb/documentdb-kubernetes-operator) — star the project, file issues, and contribute
 - [Quickstart guide](https://github.com/documentdb/documentdb-kubernetes-operator/blob/main/docs/operator-public-documentation/preview/index.md)
-- [Backup and restore guide](https://github.com/documentdb/documentdb-kubernetes-operator/blob/main/docs/operator-public-documentation/preview/backup-and-restore.md)
+- [Backup and restore guide](https://github.com/documentdb/documentdb-kubernetes-operator/blob/main/docs/operator-public-documentation/preview/operations/backup-and-restore.md)
 - [kubectl-documentdb plugin](https://github.com/documentdb/documentdb-kubernetes-operator/blob/main/docs/operator-public-documentation/preview/kubectl-plugin.md)
 - [TLS configuration guide](https://github.com/documentdb/documentdb-kubernetes-operator/blob/main/docs/operator-public-documentation/preview/configuration/tls.md)
 - [Multi-cloud deployment playground (AKS + GKE + EKS)](https://github.com/documentdb/documentdb-kubernetes-operator/blob/main/documentdb-playground/multi-cloud-deployment/README.md)
