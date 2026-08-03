@@ -40,7 +40,7 @@ export default function VersionsPage() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="font-semibold text-white">
-                                    Current{" "}
+                                    Current{hostedVersions[0] ? ` — ${hostedVersions[0]}` : ""}{" "}
                                     <span className="ml-2 rounded-full bg-blue-500/30 px-2 py-0.5 text-xs font-medium text-blue-200">
                                         latest release
                                     </span>
@@ -58,7 +58,7 @@ export default function VersionsPage() {
                     {hostedVersions.map((version) => (
                         <Link
                             key={version}
-                            href={`/docs/v/${version}`}
+                            href={`/docs/versions/${version}`}
                             className="block rounded-xl border border-neutral-700/60 bg-neutral-800/50 p-5 transition-colors hover:border-neutral-500"
                         >
                             <div className="flex items-center justify-between">

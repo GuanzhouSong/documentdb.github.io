@@ -58,25 +58,30 @@ export default async function VersionedArticlePage({ params }: PageProps) {
         switcherEntries.find((entry) => entry.label.startsWith("Current"))?.href ?? "/docs";
 
     // Every navigation element on this page stays inside the version: the back
-    // link goes to the version home, section links stay under /docs/v/<v>/,
+    // link goes to the version home, section links stay under /docs/versions/<v>/,
     // and only the banner/switcher deliberately exit to current.
     const navItems = navigation.map((item) => {
         const isActive =
             file === "index"
-                ? item.link === `/docs/v/${version}/${section}`
+                ? item.link === `/docs/versions/${version}/${section}`
                 : item.link.endsWith(`/${file}`);
         return { title: item.title, href: item.link, active: isActive };
     });
 
-    const sectionItems = orderSections(getVersionedSections(version)).map((s) => ({
-        title: formatSectionTitle(s),
-        href: `/docs/v/${version}/${s}`,
-        active: s === section,
-    }));
+    const sectionItems = [
+        ...orderSections(getVersionedSections(version)).map((s) => ({
+            title: formatSectionTitle(s),
+            href: `/docs/versions/${version}/${s}`,
+            active: s === section,
+        })),
+        // The API Reference only exists on current docs; keep it visible from
+        // archived context but labeled as an exit from the version.
+        { title: "API Reference (current docs ↗)", href: "/docs/reference", active: false },
+    ];
 
     const sidebarProps = {
         version,
-        backHref: `/docs/v/${version}`,
+        backHref: `/docs/versions/${version}`,
         backLabel: `${version} documentation home`,
         sectionTitle,
         nav: navItems,
@@ -86,11 +91,11 @@ export default async function VersionedArticlePage({ params }: PageProps) {
 
     const breadcrumbs = [
         { title: "Docs", href: "/docs" },
-        { title: version, href: `/docs/v/${version}` },
+        { title: version, href: `/docs/versions/${version}` },
         ...(file === "index"
             ? [{ title: sectionTitle }]
             : [
-                { title: sectionTitle, href: `/docs/v/${version}/${section}` },
+                { title: sectionTitle, href: `/docs/versions/${version}/${section}` },
                 { title: pageTitle },
             ]),
     ];

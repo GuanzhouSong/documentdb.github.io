@@ -19,7 +19,7 @@ interface ContentSource {
    * Additional frozen documentation versions to compile alongside the main
    * branch. Each entry clones the repository at the given ref (tag or branch)
    * and copies the same mappings into versioned/<label>/<target>, which the
-   * /docs/v/<label>/ routes render as an archived snapshot.
+   * /docs/versions/<label>/ routes render as an archived snapshot.
    */
   readonly versions?: ReadonlyArray<{
     readonly label: string;

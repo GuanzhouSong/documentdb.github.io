@@ -8,7 +8,7 @@ import { Link } from '../types/Link';
  * Serves frozen documentation snapshots compiled by scripts/compile-content.tsx
  * into versioned/<label>/. The main (rolling) documentation is served by
  * articleService.ts from articles/; this module only handles archived versions
- * rendered under /docs/v/<label>/.
+ * rendered under /docs/versions/<label>/.
  *
  * Versioned pages render the snapshot content as-is: the editorial overrides
  * that articleService applies to current pages deliberately do not apply here,
@@ -75,7 +75,7 @@ export function getAllVersionedArticlePaths(): { version: string; section: strin
   return paths;
 }
 
-/** Sidebar navigation for a versioned section, with links under /docs/v/<version>/. */
+/** Sidebar navigation for a versioned section, with links under /docs/versions/<version>/. */
 export function getVersionedNavigation(version: string, section: string): Link[] {
   const navPath = path.join(versionArticlesDir(version), section, 'navigation.yml');
 
@@ -92,8 +92,8 @@ export function getVersionedNavigation(version: string, section: string): Link[]
       const file = transformedLink.replace('.md', '');
       transformedLink =
         file === 'index'
-          ? `/docs/v/${version}/${section}`
-          : `/docs/v/${version}/${section}/${file}`;
+          ? `/docs/versions/${version}/${section}`
+          : `/docs/versions/${version}/${section}/${file}`;
     }
 
     return { ...link, link: transformedLink, children: undefined };
@@ -159,21 +159,28 @@ export function getVersionSwitcherEntries(
     return `/docs/${section}`;
   })();
 
+  // Current tracks the latest release, whose tag is the newest snapshot label —
+  // name it so readers can tell what "current" actually is.
+  const versions = getDocVersions();
   const entries: VersionSwitcherEntry[] = [
-    { label: 'Current (latest release)', href: currentTarget, active: viewing === 'current' },
+    {
+      label: versions[0] ? `Current (${versions[0]}, latest)` : 'Current (latest release)',
+      href: currentTarget,
+      active: viewing === 'current',
+    },
   ];
 
-  for (const version of getDocVersions()) {
+  for (const version of versions) {
     const target = (() => {
-      if (!section) return `/docs/v/${version}`;
+      if (!section) return `/docs/versions/${version}`;
       if (!fs.existsSync(path.join(versionArticlesDir(version), section))) {
-        return `/docs/v/${version}`;
+        return `/docs/versions/${version}`;
       }
-      if (!file || file === 'index') return `/docs/v/${version}/${section}`;
+      if (!file || file === 'index') return `/docs/versions/${version}/${section}`;
       if (versionedArticleExists(version, section, file)) {
-        return `/docs/v/${version}/${section}/${file}`;
+        return `/docs/versions/${version}/${section}/${file}`;
       }
-      return `/docs/v/${version}/${section}`;
+      return `/docs/versions/${version}/${section}`;
     })();
 
     entries.push({ label: `${version} (archived)`, href: target, active: viewing === version });

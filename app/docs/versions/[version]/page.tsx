@@ -74,7 +74,7 @@ export default async function VersionLandingPage({ params }: PageProps) {
                     {sections.map((section) => (
                         <Link
                             key={section}
-                            href={`/docs/v/${version}/${section}`}
+                            href={`/docs/versions/${version}/${section}`}
                             className="rounded-xl border border-neutral-700/60 bg-neutral-800/50 p-5 transition-colors hover:border-blue-500/50 hover:bg-neutral-800"
                         >
                             <p className="font-semibold text-white">{formatSectionTitle(section)}</p>
