@@ -83,6 +83,12 @@ export default async function ArticlePage({ params }: PageProps) {
     // Use title from frontmatter if available, otherwise fall back to navigation title or section name
     const pageTitle = frontmatter.title || selectedNavItem?.title || section;
     const showInstallPrimer = section === "getting-started" && file === "index";
+    const isComingSoon = frontmatter.layout === 'coming-soon';
+    // coming-soon pages carry placeholder prose with no markdown heading, so
+    // the h1 has to come from the frontmatter title - otherwise the page ships
+    // with no heading element at all. Guarded in case a future coming-soon page
+    // does start with one.
+    const showComingSoonHeading = isComingSoon && !/^#\s/m.test(content);
     const sectionTitle = capitalCase(section)
         .replace(/documentdb/i, 'DocumentDB')
         .replace(/api/i, 'API');
@@ -184,7 +190,12 @@ export default async function ArticlePage({ params }: PageProps) {
                         </details>
 
                         {/* Coming Soon Component for coming-soon layout */}
-                        {frontmatter.layout === 'coming-soon' && <ComingSoon />}
+                        {showComingSoonHeading && (
+                            <h1 className="text-4xl font-bold text-white mb-4">
+                                {pageTitle}
+                            </h1>
+                        )}
+                        {isComingSoon && <ComingSoon />}
 
                         {showInstallPrimer && (
                             <section className="mb-8 rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-500/10 via-neutral-900/90 to-neutral-900/90 p-6">
