@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import CommandSnippet from "./components/CommandSnippet";
-import { documentdbKubernetesOperatorDocsUrl } from "./services/externalLinks";
+import { documentdbKubernetesOperatorQuickStartUrl } from "./services/externalLinks";
 import { getMetadata } from "./services/metadataService";
 import { withBasePath } from "./services/sitePath";
 
@@ -549,7 +549,7 @@ export default function Home() {
                   Read operator overview
                 </Link>
                 <a
-                  href={documentdbKubernetesOperatorDocsUrl}
+                  href={documentdbKubernetesOperatorQuickStartUrl}
                   className="inline-flex items-center justify-center rounded-md border border-emerald-400/30 bg-emerald-500/10 px-6 py-3 text-sm font-semibold text-emerald-200 transition-colors hover:bg-emerald-500/20"
                 >
                   Open quick start
