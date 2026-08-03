@@ -6,8 +6,14 @@ import { useMemo } from 'react';
 import type { ReactElement } from 'react';
 import Code from './Code';
 import { kebabCase } from 'change-case';
+import { resolveMarkdownLink } from '../lib/markdownLinks';
 
-export default function Markdown({ content }: { content: string }) {
+interface MarkdownProps {
+  content: string;
+  sourcePath: string;
+}
+
+export default function Markdown({ content, sourcePath }: MarkdownProps) {
   const processedContent = useMemo(() => {
     // Split content by H2 headings to group sections
     const sections = content.split(/^## /gm);
@@ -22,7 +28,7 @@ export default function Markdown({ content }: { content: string }) {
           <div key={`intro-${index}`} className="mb-8">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
-              components={getMarkdownComponents()}
+              components={getMarkdownComponents(sourcePath)}
             >
               {section}
             </ReactMarkdown>
@@ -42,7 +48,7 @@ export default function Markdown({ content }: { content: string }) {
             </h2>
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
-              components={getMarkdownComponents()}
+              components={getMarkdownComponents(sourcePath)}
             >
               {sectionContent}
             </ReactMarkdown>
@@ -52,12 +58,12 @@ export default function Markdown({ content }: { content: string }) {
     });
 
     return elements;
-  }, [content]);
+  }, [content, sourcePath]);
 
   return <div className="space-y-8">{processedContent}</div>;
 }
 
-function getMarkdownComponents() {
+function getMarkdownComponents(sourcePath: string) {
   return {
     // H1 headings (main page title from Markdown content)
     h1: ({ children, ...props }: any) => (
@@ -247,10 +253,11 @@ function getMarkdownComponents() {
     // Links: only external links open in a new tab; internal links (/docs/...,
     // /samples, #anchors) navigate in place
     a: ({ children, href, ...props }: any) => {
-      const isExternal = /^https?:\/\//i.test(href ?? '');
+      const resolvedHref = resolveMarkdownLink(href, sourcePath);
+      const isExternal = /^https?:\/\//i.test(resolvedHref ?? '');
       return (
         <a
-          href={href}
+          href={resolvedHref}
           className="text-blue-400 hover:text-blue-300 transition-colors"
           {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
           {...props}
