@@ -16,6 +16,16 @@ const nextConfig: NextConfig = {
         assetPrefix: normalizedBasePath,
       }
     : {}),
+  // NEXT_BASE_PATH is a private build variable, so Next strips it from the
+  // browser bundle. Anything that prefixes a path by hand - a plain anchor to
+  // a route Next does not own, an image src - also runs in client components,
+  // where reading it directly yields one value during the static render and
+  // another after hydration. Republishing the normalized value under a
+  // NEXT_PUBLIC_ name inlines it into both bundles, while deployments keep
+  // setting the single variable they already set.
+  env: {
+    NEXT_PUBLIC_BASE_PATH: normalizedBasePath ?? "",
+  },
 };
 
 export default nextConfig;
