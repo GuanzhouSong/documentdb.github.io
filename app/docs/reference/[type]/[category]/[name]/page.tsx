@@ -47,7 +47,10 @@ export default async function ReferencePage({ params }: { params: Promise<{ type
       <Breadcrumb type={type} category={category} name={pageTitle} />
       
       {/* Markdown Content */}
-      <Markdown content={data.content} />
+      <Markdown
+        content={data.content}
+        sourcePath={`/docs/reference/${type}/${category}/${decodedName}.md`}
+      />
     </article>
   );
 }

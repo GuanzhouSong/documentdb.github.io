@@ -30,7 +30,10 @@ export default function Home() {
         <div className="w-24 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-green-500 rounded-full mb-6"></div>
         {description && (
           <div className="text-gray-400 text-lg mb-6">
-            <Markdown content={description} />
+            <Markdown
+              content={description}
+              sourcePath="/docs/reference/_metadata.description.md"
+            />
           </div>
         )}
       </div>

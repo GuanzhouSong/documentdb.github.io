@@ -322,7 +322,10 @@ export default async function ArticlePage({ params }: PageProps) {
                         )}
 
                         {/* Markdown Content */}
-                        <Markdown content={content} />
+                        <Markdown
+                            content={content}
+                            sourcePath={`/docs/${section}/${file}.md`}
+                        />
                     </div>
                 </div>
             </div>

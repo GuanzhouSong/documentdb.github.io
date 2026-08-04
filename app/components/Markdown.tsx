@@ -2,12 +2,19 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import Link from "next/link";
 import { useMemo } from 'react';
 import type { ReactElement } from 'react';
 import Code from './Code';
 import { kebabCase } from 'change-case';
+import { resolveMarkdownLink } from '../lib/markdownLinks';
 
-export default function Markdown({ content }: { content: string }) {
+interface MarkdownProps {
+  content: string;
+  sourcePath: string;
+}
+
+export default function Markdown({ content, sourcePath }: MarkdownProps) {
   const processedContent = useMemo(() => {
     // Split content by H2 headings to group sections
     const sections = content.split(/^## /gm);
@@ -22,7 +29,7 @@ export default function Markdown({ content }: { content: string }) {
           <div key={`intro-${index}`} className="mb-8">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
-              components={getMarkdownComponents()}
+              components={getMarkdownComponents(sourcePath)}
             >
               {section}
             </ReactMarkdown>
@@ -42,7 +49,7 @@ export default function Markdown({ content }: { content: string }) {
             </h2>
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
-              components={getMarkdownComponents()}
+              components={getMarkdownComponents(sourcePath)}
             >
               {sectionContent}
             </ReactMarkdown>
@@ -52,12 +59,12 @@ export default function Markdown({ content }: { content: string }) {
     });
 
     return elements;
-  }, [content]);
+  }, [content, sourcePath]);
 
   return <div className="space-y-8">{processedContent}</div>;
 }
 
-function getMarkdownComponents() {
+function getMarkdownComponents(sourcePath: string) {
   return {
     // H1 headings (main page title from Markdown content)
     h1: ({ children, ...props }: any) => (
@@ -247,11 +254,28 @@ function getMarkdownComponents() {
     // Links: only external links open in a new tab; internal links (/docs/...,
     // /samples, #anchors) navigate in place
     a: ({ children, href, ...props }: any) => {
-      const isExternal = /^https?:\/\//i.test(href ?? '');
+      const resolvedHref = resolveMarkdownLink(href, sourcePath);
+      const isExternal = /^https?:\/\//i.test(resolvedHref ?? '');
+      const linkClassName = 'text-blue-400 hover:text-blue-300 transition-colors';
+
+      // A rewritten href is a resolved document route, so it is known to be an
+      // internal page and is rendered with next/link. That applies the basePath
+      // from next.config identically on the server and in the browser -
+      // NEXT_BASE_PATH is not readable from the client bundle, so neither this
+      // component nor the resolver may prefix the path itself. Any other href
+      // is left exactly as the author wrote it.
+      if (resolvedHref && resolvedHref !== href) {
+        return (
+          <Link href={resolvedHref} className={linkClassName} {...props}>
+            {children}
+          </Link>
+        );
+      }
+
       return (
         <a
-          href={href}
-          className="text-blue-400 hover:text-blue-300 transition-colors"
+          href={resolvedHref}
+          className={linkClassName}
           {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
           {...props}
         >
