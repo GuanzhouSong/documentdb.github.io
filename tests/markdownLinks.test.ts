@@ -182,11 +182,30 @@ describe('client-reachable modules and the private base path', () => {
         fileURLToPath(new URL(`../${relativePath}`, import.meta.url)),
         'utf8',
       );
-      const code = source.replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, '');
+      // Full-line comments only. Stripping every // would also eat string and
+      // regex literals - 'https://documentdb.invalid' and /^https?:\/\//i each
+      // contain one - truncating the rest of those lines and letting a real
+      // reference hide behind them.
+      const code = source.replace(/^[^\S\n]*\/\/.*$/gm, '');
 
       expect(code).not.toContain('NEXT_BASE_PATH');
       expect(code).not.toContain('sitePath');
       expect(code).not.toContain('withBasePath');
     },
   );
+
+  it('strips comments without swallowing the code after a string or regex literal', async () => {
+    const { readFile } = await import('node:fs/promises');
+    const { fileURLToPath } = await import('node:url');
+    const source = await readFile(
+      fileURLToPath(new URL('../app/lib/markdownLinks.ts', import.meta.url)),
+      'utf8',
+    );
+    const code = source.replace(/^[^\S\n]*\/\/.*$/gm, '');
+
+    // Both survive stripping, so a reference sitting after either one on the
+    // same line would still be seen by the assertions above.
+    expect(code).toContain("'https://documentdb.invalid'");
+    expect(code).toContain('export function resolveMarkdownLink');
+  });
 });

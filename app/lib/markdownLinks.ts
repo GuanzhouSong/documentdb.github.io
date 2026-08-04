@@ -13,9 +13,11 @@ const docsRoot = '/docs/';
 // /docs/reference. Authors write links against the source layout they can see,
 // so a cross-section link naming api-reference has to be mapped onto the
 // section the site actually serves. Every other mapping keeps its folder name.
-const publishedSectionBySourceFolder: Record<string, string> = {
-  'api-reference': 'reference',
-};
+//
+// A Map rather than an object literal: an object would also resolve inherited
+// keys, so a link naming constructor, toString or __proto__ would be treated as
+// a configured mapping and interpolated into the route.
+const publishedSectionBySourceFolder = new Map([['api-reference', 'reference']]);
 
 function applySectionMapping(pathname: string): string {
   if (!pathname.startsWith(docsRoot)) {
@@ -25,7 +27,7 @@ function applySectionMapping(pathname: string): string {
   const rest = pathname.slice(docsRoot.length);
   const separatorIndex = rest.indexOf('/');
   const section = separatorIndex === -1 ? rest : rest.slice(0, separatorIndex);
-  const published = publishedSectionBySourceFolder[section];
+  const published = publishedSectionBySourceFolder.get(section);
 
   if (!published) {
     return pathname;

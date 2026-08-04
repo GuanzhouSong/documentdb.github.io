@@ -47,9 +47,13 @@ export default async function ReferencePage({ params }: { params: Promise<{ type
       <Breadcrumb type={type} category={category} name={pageTitle} />
       
       {/* Markdown Content */}
+      {/* Source path comes from the matched file, not the route: type and
+          category are read from frontmatter and may name a different directory
+          than the one the file sits in, which would resolve sibling links
+          against a directory that does not hold them. */}
       <Markdown
         content={data.content}
-        sourcePath={`/docs/reference/${type}/${category}/${decodedName}.md`}
+        sourcePath={`/docs/reference/${data.reference}.md`}
       />
     </article>
   );

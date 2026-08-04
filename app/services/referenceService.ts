@@ -17,6 +17,11 @@ export type ReferenceArticle = {
   type: string;
   category: string;
   name: string;
+  // Path of the file under reference/, without the .md extension. type and
+  // category come from frontmatter and are allowed to differ from the
+  // directory the file actually sits in, so anything resolving paths relative
+  // to the source has to use this rather than rebuild one from the route.
+  reference: string;
 };
 
 function getAllReferences(): ReferencePage[] {
@@ -155,7 +160,8 @@ export function getReferenceByPath(type: string, category: string, name: string)
     },
     type: frontmatter.type || type,
     category: frontmatter.category || category,
-    name: name
+    name: name,
+    reference: matchingRef.reference
   };
 }
 
