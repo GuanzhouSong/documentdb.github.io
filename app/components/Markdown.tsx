@@ -2,6 +2,7 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import Link from "next/link";
 import { useMemo } from 'react';
 import type { ReactElement } from 'react';
 import Code from './Code';
@@ -255,10 +256,26 @@ function getMarkdownComponents(sourcePath: string) {
     a: ({ children, href, ...props }: any) => {
       const resolvedHref = resolveMarkdownLink(href, sourcePath);
       const isExternal = /^https?:\/\//i.test(resolvedHref ?? '');
+      const linkClassName = 'text-blue-400 hover:text-blue-300 transition-colors';
+
+      // A rewritten href is a resolved document route, so it is known to be an
+      // internal page and is rendered with next/link. That applies the basePath
+      // from next.config identically on the server and in the browser -
+      // NEXT_BASE_PATH is not readable from the client bundle, so neither this
+      // component nor the resolver may prefix the path itself. Any other href
+      // is left exactly as the author wrote it.
+      if (resolvedHref && resolvedHref !== href) {
+        return (
+          <Link href={resolvedHref} className={linkClassName} {...props}>
+            {children}
+          </Link>
+        );
+      }
+
       return (
         <a
           href={resolvedHref}
-          className="text-blue-400 hover:text-blue-300 transition-colors"
+          className={linkClassName}
           {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
           {...props}
         >

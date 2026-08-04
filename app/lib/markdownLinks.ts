@@ -1,5 +1,10 @@
-import { withBasePath } from '../services/sitePath';
-
+// Deliberately free of any base-path handling. This module is reachable from a
+// client component, and NEXT_BASE_PATH is not NEXT_PUBLIC_-prefixed, so its
+// value is stripped from the browser bundle: reading it here would produce a
+// prefixed href during the static render and an unprefixed one after
+// hydration. The route returned below is base-path-relative, and the caller
+// renders it with next/link, which applies the basePath configured in
+// next.config on both the server and the client.
 const markdownOrigin = 'https://documentdb.invalid';
 
 const docsRoot = '/docs/';
@@ -62,7 +67,5 @@ export function resolveMarkdownLink(
 
   const publishedPathname = applySectionMapping(target.pathname);
 
-  // Rendered as a plain anchor rather than next/link, so the base path is not
-  // applied for us - a subpath deployment needs it added here.
-  return `${withBasePath(publishedPathname)}${target.search}${target.hash}`;
+  return `${publishedPathname}${target.search}${target.hash}`;
 }

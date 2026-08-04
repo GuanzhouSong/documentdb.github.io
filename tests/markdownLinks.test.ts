@@ -90,29 +90,33 @@ describe('resolveMarkdownLink', () => {
   });
 });
 
-describe('resolveMarkdownLink with a configured base path', () => {
+// The resolver runs inside a client component. NEXT_BASE_PATH is not
+// NEXT_PUBLIC_-prefixed, so its value is stripped from the browser bundle:
+// anything that reads it here yields a prefixed href during the static render
+// and an unprefixed one after hydration, which is invisible in the exported
+// HTML and only shows up in a browser. The route must therefore stay
+// base-path-relative, and next/link applies the prefix on both sides.
+describe('resolveMarkdownLink under a configured base path', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.resetModules();
   });
 
-  // sitePath reads NEXT_BASE_PATH once at module scope, so the module has to be
-  // re-imported after the environment is stubbed.
   async function importWithBasePath(basePath: string) {
     vi.resetModules();
     vi.stubEnv('NEXT_BASE_PATH', basePath);
     return (await import('../app/lib/markdownLinks')).resolveMarkdownLink;
   }
 
-  it('prefixes the resolved route, since the anchor is not a next/link', async () => {
+  it('returns an unprefixed route, leaving the base path to next/link', async () => {
     const resolve = await importWithBasePath('/preview');
 
     expect(resolve('functions.md', '/docs/postgres-api/index.md')).toBe(
-      '/preview/docs/postgres-api/functions/',
+      '/docs/postgres-api/functions/',
     );
   });
 
-  it('prefixes a mapped cross-section route as well', async () => {
+  it('leaves a mapped cross-section route unprefixed as well', async () => {
     const resolve = await importWithBasePath('/preview');
 
     expect(
@@ -120,15 +124,15 @@ describe('resolveMarkdownLink with a configured base path', () => {
         '../api-reference/operators/aggregation/%24limit.md',
         '/docs/getting-started/index.md',
       ),
-    ).toBe('/preview/docs/reference/operators/aggregation/%24limit/');
+    ).toBe('/docs/reference/operators/aggregation/%24limit/');
   });
 
-  it('keeps the query and fragment after the prefixed path', async () => {
+  it('keeps the query and fragment intact', async () => {
     const resolve = await importWithBasePath('preview');
 
     expect(
       resolve('python-setup.md?view=full#connect', '/docs/getting-started/index.md'),
-    ).toBe('/preview/docs/getting-started/python-setup/?view=full#connect');
+    ).toBe('/docs/getting-started/python-setup/?view=full#connect');
   });
 
   it('leaves links it does not rewrite untouched', async () => {
@@ -139,4 +143,50 @@ describe('resolveMarkdownLink with a configured base path', () => {
       resolve('https://example.com/readme.md', '/docs/getting-started/index.md'),
     ).toBe('https://example.com/readme.md');
   });
+
+  it('produces the same route whether or not a base path is configured', async () => {
+    const withPreview = await importWithBasePath('/preview');
+    const resolvedWithPreview = withPreview(
+      'functions.md',
+      '/docs/postgres-api/index.md',
+    );
+
+    vi.unstubAllEnvs();
+    vi.resetModules();
+    const { resolveMarkdownLink: withoutPreview } = await import(
+      '../app/lib/markdownLinks'
+    );
+
+    expect(resolvedWithPreview).toBe(
+      withoutPreview('functions.md', '/docs/postgres-api/index.md'),
+    );
+  });
+});
+
+// A build-level assertion on the exported HTML cannot catch this: the export is
+// rendered server-side, where the variable is readable, so the emitted markup
+// looks correct and only the hydrated page is wrong. Guard it at the source
+// instead, which is where the mistake is actually made.
+describe('client-reachable modules and the private base path', () => {
+  const clientReachableSources = [
+    'app/lib/markdownLinks.ts',
+    'app/components/Markdown.tsx',
+  ];
+
+  it.each(clientReachableSources)(
+    '%s does not read NEXT_BASE_PATH or import sitePath',
+    async (relativePath) => {
+      const { readFile } = await import('node:fs/promises');
+      const { fileURLToPath } = await import('node:url');
+      const source = await readFile(
+        fileURLToPath(new URL(`../${relativePath}`, import.meta.url)),
+        'utf8',
+      );
+      const code = source.replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, '');
+
+      expect(code).not.toContain('NEXT_BASE_PATH');
+      expect(code).not.toContain('sitePath');
+      expect(code).not.toContain('withBasePath');
+    },
+  );
 });
