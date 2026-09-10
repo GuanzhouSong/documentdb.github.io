@@ -61,17 +61,18 @@ const dockerQuickStartSteps = [
 const vscodeQuickStartSteps = [
   {
     step: "01",
-    description: "Install the DocumentDB extension for Visual Studio Code.",
+    description:
+      "Install or update DocumentDB for VS Code to version 0.10.1 or later.",
   },
   {
     step: "02",
     description:
-      "Open the DocumentDB Local setup and let the extension create and start the container for you.",
+      "Open setup, confirm if prompted, select Continue, then review the defaults and select Start DocumentDB Local.",
   },
   {
     step: "03",
     description:
-      "Browse databases, run queries, and edit documents without leaving the editor.",
+      "When setup finishes, select Open Connection to browse data and run queries.",
   },
 ];
 

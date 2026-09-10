@@ -44,14 +44,6 @@ function StepList({ steps }: { steps: QuickStartStep[] }) {
   );
 }
 
-/**
- * The home page quick start, offering the two ways to get a local DocumentDB running.
- *
- * Docker stays first because it is the path that works everywhere and needs nothing installed
- * beyond Docker itself. The VS Code path is newer and shorter — the extension provisions the
- * container itself — but only pays off for people who already work in VS Code, so it is offered
- * rather than assumed.
- */
 export default function QuickStartTabs({
   dockerCommand,
   dockerSteps,
@@ -131,6 +123,10 @@ export default function QuickStartTabs({
         aria-labelledby="quickstart-tab-vscode"
         hidden={activeTab !== "vscode"}
       >
+        <p className="mb-4 text-sm leading-6 text-gray-400">
+          Requires Docker Engine or Docker Desktop running Linux containers in
+          your VS Code environment.
+        </p>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Link
             href={vscodeMarketplaceUrl}
@@ -140,11 +136,6 @@ export default function QuickStartTabs({
           >
             Get the extension
           </Link>
-          {/*
-           * A `vscode://` link does nothing at all when VS Code is not installed — no error, no
-           * navigation — so it is offered second and never on its own. Someone arriving without
-           * the extension gets the install link first and this becomes the obvious next step.
-           */}
           <Link
             href={vscodeDeepLinkUrl}
             className="inline-flex items-center justify-center rounded-lg border border-blue-400/30 bg-blue-500/20 px-4 py-2.5 text-sm font-semibold text-blue-100 transition-colors hover:bg-blue-500/30"
@@ -153,6 +144,13 @@ export default function QuickStartTabs({
           </Link>
         </div>
         <StepList steps={vscodeSteps} />
+        <p className="mt-4 text-sm leading-6 text-gray-400">
+          If the link does not open setup, run{" "}
+          <strong className="font-semibold text-gray-300">
+            DocumentDB: Set up DocumentDB Local
+          </strong>{" "}
+          from the VS Code Command Palette.
+        </p>
       </div>
     </div>
   );
