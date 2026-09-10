@@ -57,7 +57,7 @@ describe('homepage local quick start', () => {
 
   it('describes the setup actions and provides a Command Palette fallback', () => {
     expect(html).toContain(
-      'Open setup, confirm if prompted, select Continue, then review the defaults and select Start DocumentDB Local.',
+      'Select Open setup when VS Code confirms the link, then Continue, review the defaults, and select Start DocumentDB Local.',
     );
     expect(html).toContain(
       'When setup finishes, select Open Connection to browse data and run queries.',

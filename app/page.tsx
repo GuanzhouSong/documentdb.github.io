@@ -67,7 +67,7 @@ const vscodeQuickStartSteps = [
   {
     step: "02",
     description:
-      "Open setup, confirm if prompted, select Continue, then review the defaults and select Start DocumentDB Local.",
+      "Select Open setup when VS Code confirms the link, then Continue, review the defaults, and select Start DocumentDB Local.",
   },
   {
     step: "03",
