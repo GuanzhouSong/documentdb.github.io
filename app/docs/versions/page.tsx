@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getMetadata } from "../../services/metadataService";
 import { getDocVersions } from "../../services/versionService";
+import { CURRENT_RELEASE_TAG } from "../../lib/currentRelease";
 import DocsBreadcrumb from "../../components/DocsBreadcrumb";
 
 export async function generateMetadata() {
@@ -40,7 +41,7 @@ export default function VersionsPage() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="font-semibold text-white">
-                                    Current{hostedVersions[0] ? ` — ${hostedVersions[0]}` : ""}{" "}
+                                    Current &mdash; {CURRENT_RELEASE_TAG}{" "}
                                     <span className="ml-2 rounded-full bg-blue-500/30 px-2 py-0.5 text-xs font-medium text-blue-200">
                                         latest release
                                     </span>

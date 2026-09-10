@@ -3,6 +3,7 @@ import path from 'path';
 import { load as loadYaml } from 'js-yaml';
 import matter from 'gray-matter';
 import { Link } from '../types/Link';
+import { CURRENT_RELEASE_TAG } from '../lib/currentRelease';
 
 /**
  * Serves frozen documentation snapshots compiled by scripts/compile-content.tsx
@@ -159,12 +160,16 @@ export function getVersionSwitcherEntries(
     return `/docs/${section}`;
   })();
 
-  // Current tracks the latest release, whose tag is the newest snapshot label —
-  // name it so readers can tell what "current" actually is.
+  // Name the release "current" actually describes, so a reader can tell at a
+  // glance whether they are on the docs for the build they installed. This has
+  // to come from the release the site documents - deriving it from the newest
+  // snapshot label instead would print the archive's own version here, which is
+  // by definition an older release, and would render the same number twice in a
+  // switcher whose whole job is telling two versions apart.
   const versions = getDocVersions();
   const entries: VersionSwitcherEntry[] = [
     {
-      label: versions[0] ? `Current (${versions[0]}, latest)` : 'Current (latest release)',
+      label: `Current (${CURRENT_RELEASE_TAG}, latest)`,
       href: currentTarget,
       active: viewing === 'current',
     },
