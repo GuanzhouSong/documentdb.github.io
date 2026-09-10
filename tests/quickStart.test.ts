@@ -10,16 +10,16 @@ import {
 const html = renderToStaticMarkup(createElement(Home));
 
 describe('homepage local quick start', () => {
-  it('preserves the public anchor and Docker as the default tab', () => {
+  it('preserves the public anchor and the terminal path as the default tab', () => {
     expect(html).toContain('id="run-with-docker"');
     expect(html).toMatch(
-      /id="quickstart-tab-docker" aria-selected="true" aria-controls="quickstart-panel-docker" tabindex="0"/,
+      /id="quickstart-tab-terminal" aria-selected="true" aria-controls="quickstart-panel-terminal" tabindex="0"/,
     );
     expect(html).toMatch(
       /id="quickstart-tab-vscode" aria-selected="false" aria-controls="quickstart-panel-vscode" tabindex="-1"/,
     );
     expect(html).toMatch(
-      /id="quickstart-panel-docker" aria-labelledby="quickstart-tab-docker">/,
+      /id="quickstart-panel-terminal" aria-labelledby="quickstart-tab-terminal">/,
     );
     expect(html).toMatch(
       /id="quickstart-panel-vscode" aria-labelledby="quickstart-tab-vscode" hidden=""/,
@@ -31,7 +31,15 @@ describe('homepage local quick start', () => {
     );
   });
 
-  it('offers the marketplace before the supported local setup deep link', () => {
+  it('labels the tabs by interface rather than implying one path avoids Docker', () => {
+    expect(html).toContain('>Terminal</button>');
+    expect(html).toContain('>VS Code</button>');
+    expect(html).toContain(
+      'Both start the same DocumentDB Local container.',
+    );
+  });
+
+  it('leads with installing the extension, then opening setup', () => {
     expect(documentdbVsCodeExtensionMarketplaceUrl).toBe(
       'https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-documentdb',
     );
@@ -46,24 +54,45 @@ describe('homepage local quick start', () => {
     );
     expect(marketplace).toBeGreaterThan(-1);
     expect(setup).toBeGreaterThan(marketplace);
+    expect(html).toContain('Install the extension');
+    expect(html).toContain('Open setup in VS Code');
   });
 
-  it('states the shipped minimum version and Docker prerequisite', () => {
-    expect(html).toContain('version 0.10.1 or later');
+  it('states that the VS Code path still needs Docker and changes nothing else', () => {
     expect(html).toContain(
-      'Requires Docker Engine or Docker Desktop running Linux containers in your VS Code environment.',
+      'Needs Docker Desktop or Docker Engine on the same machine as VS Code.',
     );
+    expect(html).toContain('It never installs Docker or changes your system.');
   });
 
-  it('describes the setup actions and provides a Command Palette fallback', () => {
+  it('describes the setup outcome without pinning an extension version', () => {
     expect(html).toContain(
-      'Select Open setup when VS Code confirms the link, then Continue, review the defaults, and select Start DocumentDB Local.',
+      'Install the free DocumentDB for VS Code extension from the Marketplace.',
     );
     expect(html).toContain(
-      'When setup finishes, select Open Connection to browse data and run queries.',
+      'The wizard starts DocumentDB Local with defaults you can review.',
     );
-    expect(html).toContain('If the link does not open setup, run ');
+    expect(html).toContain(
+      'You get a container on port 10260 with generated credentials.',
+    );
+    // A pinned minimum version on the homepage rots; the guide carries it instead.
+    expect(html).not.toContain('0.10.1');
+  });
+
+  it('gives each path a concrete first query and a full guide', () => {
+    expect(html).toContain(
+      'Connect on port 10260 with mongosh, any MongoDB driver, or your app.',
+    );
+    expect(html).toContain('Run your first query.');
+    expect(html).toContain('href="/docs/getting-started/docker"');
+    expect(html).toContain('Full Docker guide');
+  });
+
+  it('provides a Command Palette fallback that names the likely cause', () => {
+    expect(html).toContain(
+      'If nothing happens, check that the extension is installed and up to',
+    );
     expect(html).toContain('DocumentDB: Set up DocumentDB Local');
-    expect(html).toContain('from the VS Code Command Palette.');
+    expect(html).toContain('from the Command Palette.');
   });
 });

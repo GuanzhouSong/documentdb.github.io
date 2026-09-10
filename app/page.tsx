@@ -46,15 +46,18 @@ const quickRunCommand = `docker run -dt --name documentdb \\
 const dockerQuickStartSteps = [
   {
     step: "01",
-    description: "Run DocumentDB Local with Docker.",
+    description:
+      "Run the command above. Docker pulls the image on the first run, so give it about a minute.",
   },
   {
     step: "02",
-    description: "Connect on port 10260 with your app, shell, or client.",
+    description:
+      "Connect on port 10260 with mongosh, any MongoDB driver, or your app.",
   },
   {
     step: "03",
-    description: "Continue with the docs or Linux packages for the setup you need.",
+    description:
+      "Run your first query. The Docker guide has connection strings and sample data.",
   },
 ];
 
@@ -62,17 +65,17 @@ const vscodeQuickStartSteps = [
   {
     step: "01",
     description:
-      "Install or update DocumentDB for VS Code to version 0.10.1 or later.",
+      "Install the free DocumentDB for VS Code extension from the Marketplace.",
   },
   {
     step: "02",
     description:
-      "Select Open setup when VS Code confirms the link, then Continue, review the defaults, and select Start DocumentDB Local.",
+      "Select Open setup in VS Code and allow it to open the link. The wizard starts DocumentDB Local with defaults you can review.",
   },
   {
     step: "03",
     description:
-      "When setup finishes, select Open Connection to browse data and run queries.",
+      "You get a container on port 10260 with generated credentials. Select Open Connection to browse data and run your first query.",
   },
 ];
 
@@ -338,7 +341,7 @@ export default function Home() {
       <section className="relative overflow-hidden border-b border-neutral-800 bg-gradient-to-b from-neutral-800 via-neutral-900 to-black">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(59,130,246,0.2),_transparent_45%),radial-gradient(circle_at_bottom_left,_rgba(16,185,129,0.18),_transparent_45%)]" />
         <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
-          <div className="grid items-center gap-8 lg:gap-10 xl:grid-cols-[1.15fr_0.85fr]">
+          <div className="grid items-start gap-8 lg:gap-10 xl:grid-cols-[1.15fr_0.85fr]">
             <div className="min-w-0">
               <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-blue-300">
                 Open source document database
@@ -397,8 +400,8 @@ export default function Home() {
                   Run DocumentDB locally
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-gray-400">
-                  Start DocumentDB Local with Docker, or let the VS Code
-                  extension set it up for you.
+                  Run it from your terminal, or let the VS Code extension set it
+                  up for you. Both start the same DocumentDB Local container.
                 </p>
               </div>
               <QuickStartTabs
@@ -407,21 +410,9 @@ export default function Home() {
                 vscodeSteps={vscodeQuickStartSteps}
                 vscodeDeepLinkUrl={documentdbVsCodeLocalQuickStartDeepLink}
                 vscodeMarketplaceUrl={documentdbVsCodeExtensionMarketplaceUrl}
+                dockerDocsUrl="/docs/getting-started/docker"
+                vscodeDocsUrl="/docs/getting-started/vscode-quickstart"
               />
-              <div className="mt-4 flex flex-col gap-2 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
-                <Link
-                  href="/docs/getting-started/docker"
-                  className="font-semibold text-blue-300 transition-colors hover:text-blue-200"
-                >
-                  Docker quick start
-                </Link>
-                <Link
-                  href="/packages"
-                  className="font-semibold text-gray-300 transition-colors hover:text-white"
-                >
-                  Download packages
-                </Link>
-              </div>
             </div>
           </div>
         </div>
