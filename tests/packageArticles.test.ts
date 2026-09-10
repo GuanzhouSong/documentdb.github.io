@@ -5,6 +5,11 @@ import {
   linuxPackagesOperationsContent,
 } from '../app/services/articleService';
 
+function getCodeBlocks(content: string, language: string): string[] {
+  const pattern = new RegExp('```' + language + '\\n([\\s\\S]*?)\\n```', 'g');
+  return Array.from(content.matchAll(pattern), (match) => match[1]);
+}
+
 describe('Linux package articles', () => {
   it('keeps advanced setup details out of the quick start', () => {
     expect(linuxPackagesGuideContent).toContain(
@@ -71,9 +76,60 @@ describe('Linux package articles', () => {
     expect(offlineGuide?.content).toContain(
       'ubuntu24.04-postgresql-18-documentdb_0.117-0_amd64.deb',
     );
+    expect(offlineGuide?.content).toContain(
+      'pass the five packages for the selected PostgreSQL major',
+    );
+    expect(offlineGuide?.content).toContain(
+      'For PostgreSQL 18 only, the optional `documentdb` meta package may be included',
+    );
+    expect(offlineGuide?.content).toContain('`documentdb-common`');
+    expect(offlineGuide?.content).toContain('`documentdb-gateway`');
+    expect(offlineGuide?.content).toContain('`documentdb-postgresql-tools`');
+    expect(offlineGuide?.content).not.toContain('pass all six files');
     expect(linuxPackagesOperationsContent).not.toContain(
       '## Known issues in 0.116',
     );
+  });
+
+  it('keeps package setup rerunnable and reinstall wording data-safe', async () => {
+    const packageBlocks = getCodeBlocks(linuxPackagesGuideContent, 'bash');
+    const mongoRepositoryBlock = packageBlocks.find((block) =>
+      block.includes('https://pgp.mongodb.com/server-8.0.asc'),
+    );
+
+    expect(mongoRepositoryBlock).toContain(
+      'gpg --dearmor --yes -o /usr/share/keyrings/mongodb.gpg',
+    );
+    expect(linuxPackagesOperationsContent).toContain(
+      'Removing packages alone does not',
+    );
+    expect(linuxPackagesOperationsContent).toContain(
+      'package removal preserves PostgreSQL data and in-database content',
+    );
+    expect(linuxPackagesOperationsContent).not.toContain(
+      'remove the earlier packages and perform the current',
+    );
+
+    const { readFile } = await import('node:fs/promises');
+    const { fileURLToPath } = await import('node:url');
+    const packageInstall = await readFile(
+      fileURLToPath(new URL('../PACKAGE-INSTALL.md', import.meta.url)),
+      'utf8',
+    );
+
+    expect(packageInstall).toContain(
+      'five packages for the selected PostgreSQL major',
+    );
+    expect(packageInstall).toContain(
+      'the optional `documentdb` meta package may be included',
+    );
+    expect(packageInstall).toContain(
+      'Removing packages',
+    );
+    expect(packageInstall).toContain(
+      'alone does not create a fresh database',
+    );
+    expect(packageInstall).not.toContain('Pass the whole set');
   });
 
   it('does not list the fixed setup core-version update as a current issue', () => {
@@ -115,6 +171,136 @@ describe('Linux package articles', () => {
     expect(source).not.toContain(
       '5 users, 5 products, 4 orders, and 2',
     );
+  });
+
+  it('keeps executable local Docker recipes on loopback with explicit credentials', async () => {
+    const quickStarts = [
+      'docker',
+      'vscode-quickstart',
+      'nodejs-setup',
+      'python-setup',
+      'mongo-shell-quickstart',
+    ];
+
+    for (const slug of quickStarts) {
+      const article = getArticleByPath('getting-started', [slug]);
+      if (!article) {
+        throw new Error(`Missing curated article getting-started/${slug}`);
+      }
+
+      const dockerBlocks = getCodeBlocks(article.content, 'bash').filter(
+        (block) =>
+          block.includes('docker run') &&
+          block.includes('ghcr.io/documentdb/documentdb/documentdb-local'),
+      );
+
+      expect(dockerBlocks.length, slug).toBeGreaterThan(0);
+      for (const block of dockerBlocks) {
+        expect(block, slug).toContain('-p 127.0.0.1:10260:10260');
+        expect(block, slug).not.toContain('-p 10260:10260');
+        expect(block, slug).not.toContain('--username <YOUR_USERNAME>');
+        expect(block, slug).not.toContain('--password <YOUR_PASSWORD>');
+      }
+    }
+
+    const { readFile } = await import('node:fs/promises');
+    const { fileURLToPath } = await import('node:url');
+    const articleSource = await readFile(
+      fileURLToPath(new URL('../app/services/articleService.ts', import.meta.url)),
+      'utf8',
+    );
+    const packagePageSource = await readFile(
+      fileURLToPath(new URL('../app/packages/page.tsx', import.meta.url)),
+      'utf8',
+    );
+
+    expect(articleSource).toContain(
+      'docker run -dt -p 127.0.0.1:10260:10260 --name documentdb',
+    );
+    expect(articleSource).toContain(
+      "  --username '<YOUR_USERNAME>' --password '<YOUR_PASSWORD>' --init-data true",
+    );
+    expect(articleSource).toContain(
+      '  -p 127.0.0.1:10260:10260 \\\\',
+    );
+    expect(articleSource).toContain(
+      '  -v /path/to/init/scripts:/init_doc_db.d \\\\',
+    );
+    expect(packagePageSource).toContain(
+      '  -p 127.0.0.1:10260:10260 \\\\',
+    );
+    expect(packagePageSource).toContain(
+      "  --username '<YOUR_USERNAME>' \\\\",
+    );
+    expect(packagePageSource).toContain(
+      "  --password '<YOUR_PASSWORD>'",
+    );
+  });
+
+  it('passes Node.js and Python credentials outside connection URIs', () => {
+    const nodeGuide = getArticleByPath('getting-started', ['nodejs-setup']);
+    const pythonGuide = getArticleByPath('getting-started', ['python-setup']);
+
+    if (!nodeGuide || !pythonGuide) {
+      throw new Error('Missing curated driver quick start');
+    }
+
+    const nodeBlocks = getCodeBlocks(nodeGuide.content, 'javascript');
+    const nodeMain = nodeBlocks.find((block) =>
+      block.includes('process.env.DOCUMENTDB_USERNAME'),
+    );
+    const nodeTrusted = nodeBlocks.find((block) =>
+      block.includes('tlsCAFile'),
+    );
+
+    expect(nodeGuide.content).not.toContain(
+      'mongodb://<YOUR_USERNAME>:<YOUR_PASSWORD>',
+    );
+    expect(nodeMain).toContain('process.env.DOCUMENTDB_PASSWORD');
+    expect(nodeMain).toContain('if (!username || !password)');
+    expect(nodeMain).toContain('auth: { username, password }');
+    expect(nodeMain).toContain('authSource: "admin"');
+    expect(nodeMain).toContain('new MongoClient(uri, options)');
+    expect(nodeTrusted).toContain('auth: { username, password }');
+    expect(nodeTrusted).toContain('authSource: "admin"');
+    expect(nodeTrusted).not.toContain('<YOUR_PASSWORD>');
+
+    const pythonBlocks = getCodeBlocks(pythonGuide.content, 'python');
+    const pythonMain = pythonBlocks.find((block) =>
+      block.includes('os.environ.get("DOCUMENTDB_USERNAME")'),
+    );
+    const pythonTrusted = pythonBlocks.find((block) =>
+      block.includes('tlsCAFile'),
+    );
+
+    expect(pythonGuide.content).not.toContain(
+      'mongodb://<YOUR_USERNAME>:<YOUR_PASSWORD>',
+    );
+    expect(pythonMain).toContain('os.environ.get("DOCUMENTDB_PASSWORD")');
+    expect(pythonMain).toContain('if not username or not password:');
+    expect(pythonMain).toContain('username=username');
+    expect(pythonMain).toContain('password=password');
+    expect(pythonTrusted).toContain('username=username');
+    expect(pythonTrusted).toContain('password=password');
+    expect(pythonTrusted).not.toContain('<YOUR_PASSWORD>');
+
+    const nodeDockerBlock = getCodeBlocks(nodeGuide.content, 'bash').find(
+      (block) => block.includes('docker run'),
+    );
+    const pythonDockerBlock = getCodeBlocks(pythonGuide.content, 'bash').find(
+      (block) => block.includes('docker run'),
+    );
+
+    for (const block of [nodeDockerBlock, pythonDockerBlock]) {
+      expect(block).toContain("export DOCUMENTDB_USERNAME='<YOUR_USERNAME>'");
+      expect(block).toContain("export DOCUMENTDB_PASSWORD='<YOUR_PASSWORD>'");
+      expect(block).toContain(
+        '${DOCUMENTDB_USERNAME:?Set DOCUMENTDB_USERNAME}',
+      );
+      expect(block).toContain(
+        '${DOCUMENTDB_PASSWORD:?Set DOCUMENTDB_PASSWORD}',
+      );
+    }
   });
 
   it('keeps Package Finder advanced hints linked and version-agnostic', async () => {

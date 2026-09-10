@@ -25,10 +25,10 @@ type InstallMethod = "docker" | "packages";
 type PackageFamily = "apt" | "rpm";
 
 const dockerCommand = `docker run -dt --name documentdb \\
-  -p 10260:10260 \\
+  -p 127.0.0.1:10260:10260 \\
   ghcr.io/documentdb/documentdb/documentdb-local:latest \\
-  --username <YOUR_USERNAME> \\
-  --password <YOUR_PASSWORD>`;
+  --username '<YOUR_USERNAME>' \\
+  --password '<YOUR_PASSWORD>'`;
 
 const nextGuides = [
   {
