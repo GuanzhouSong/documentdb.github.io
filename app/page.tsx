@@ -38,26 +38,26 @@ type Capability = {
 };
 
 const quickRunCommand = `docker run -dt --name documentdb \\
-  -p 10260:10260 \\
+  -p 127.0.0.1:10260:10260 \\
   ghcr.io/documentdb/documentdb/documentdb-local:latest \\
-  --username <YOUR_USERNAME> \\
-  --password <YOUR_PASSWORD>`;
+  --username '<YOUR_USERNAME>' \\
+  --password '<YOUR_PASSWORD>'`;
 
 const dockerQuickStartSteps = [
   {
     step: "01",
     description:
-      "Run the command above. Docker pulls the image on the first run, so give it about a minute.",
+      "Replace the placeholders with your own username and password, then run the command. The image is around 300 MB, so the first run takes a few minutes.",
   },
   {
     step: "02",
     description:
-      "Connect on port 10260 with mongosh, any MongoDB driver, or your app.",
+      "Connect on 127.0.0.1:10260 with mongosh (TLS flags are in the guide), a MongoDB driver, or your app.",
   },
   {
     step: "03",
     description:
-      "Run your first query. The Docker guide has connection strings and sample data.",
+      "Run your first query. The Docker guide has connection strings and a flag for sample data.",
   },
 ];
 
@@ -70,12 +70,12 @@ const vscodeQuickStartSteps = [
   {
     step: "02",
     description:
-      "Select Open setup in VS Code and allow it to open the link. The wizard starts DocumentDB Local with defaults you can review.",
+      "Select Open setup in VS Code, then confirm both prompts. In the wizard select Continue, review the defaults, and select Start DocumentDB Local.",
   },
   {
     step: "03",
     description:
-      "You get a container on port 10260 with generated credentials. Select Open Connection to browse data and run your first query.",
+      "You get a container on an available port, 10260 unless it is taken, with generated credentials. Select Open Connection to browse data and run your first query.",
   },
 ];
 
@@ -401,7 +401,7 @@ export default function Home() {
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-gray-400">
                   Run it from your terminal, or let the VS Code extension set it
-                  up for you. Both start the same DocumentDB Local container.
+                  up for you. Both run the same DocumentDB Local image.
                 </p>
               </div>
               <QuickStartTabs

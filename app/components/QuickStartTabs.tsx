@@ -22,8 +22,8 @@ type QuickStartTabsProps = {
   vscodeDocsUrl: string;
 };
 
-// "Terminal" rather than "Docker": both paths run the same Docker container, and labelling one
-// of them "Docker" implies the other avoids it.
+// "Terminal" rather than "Docker": both paths run the same Docker image, and labelling one of
+// them "Docker" implies the other avoids Docker.
 const TABS = [
   { id: "terminal", label: "Terminal" },
   { id: "vscode", label: "VS Code" },
@@ -122,7 +122,7 @@ export default function QuickStartTabs({
               // badge next to the "Quick start" chip and the numbered step markers.
               className={`flex-1 rounded-full px-5 py-3 text-sm font-semibold transition-colors sm:flex-none ${
                 isActive
-                  ? "bg-blue-500 text-white"
+                  ? "bg-neutral-700 text-white"
                   : "text-gray-400 hover:text-gray-200"
               }`}
             >
@@ -138,19 +138,28 @@ export default function QuickStartTabs({
         aria-labelledby="quickstart-tab-terminal"
         hidden={activeTab !== "terminal"}
       >
-        <CommandSnippet command={dockerCommand} label="Docker" />
+        <CommandSnippet command={dockerCommand} label="bash" />
         <StepList steps={dockerSteps} />
         <p className="mt-4 text-sm leading-6 text-gray-400">
-          Prefer to set it up from your editor? Use the{" "}
+          Want a GUI? The{" "}
           <button
             type="button"
             onClick={() => selectTab("vscode")}
+            aria-label="Switch to the VS Code tab"
             className="font-semibold text-blue-300 underline-offset-2 transition-colors hover:text-blue-200 hover:underline"
           >
-            VS Code
+            VS Code extension
           </button>{" "}
-          tab.
+          connects to this container too.
         </p>
+        <div className="mt-4 text-sm">
+          <Link
+            href={dockerDocsUrl}
+            className="font-semibold text-blue-300 transition-colors hover:text-blue-200"
+          >
+            Full Docker guide
+          </Link>
+        </div>
       </div>
 
       <div
@@ -160,25 +169,27 @@ export default function QuickStartTabs({
         hidden={activeTab !== "vscode"}
       >
         <p className="mb-4 text-sm leading-6 text-gray-400">
-          Needs Docker Desktop or Docker Engine on the same machine as VS Code.
-          The extension pulls the image, starts it, and saves the connection for
-          you. It never installs Docker or changes your system.
+          This path needs Docker Desktop or Docker Engine, set to Linux
+          containers, running wherever VS Code is: your machine, or your WSL,
+          dev container, or SSH remote. The extension pulls the image, starts
+          it, and saves the connection for you. It never installs Docker, and it
+          changes nothing else on your machine.
         </p>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Link
             href={vscodeMarketplaceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center rounded-lg border border-blue-400/30 bg-blue-500/20 px-4 py-2.5 text-sm font-semibold text-blue-100 transition-colors hover:bg-blue-500/30"
+            className="inline-flex items-center justify-center rounded-md border border-blue-400/30 bg-blue-500/20 px-4 py-2.5 text-sm font-semibold text-blue-100 transition-colors hover:bg-blue-500/30"
           >
             Install the extension
           </Link>
-          <Link
+          <a
             href={vscodeDeepLinkUrl}
-            className="inline-flex items-center justify-center rounded-lg border border-neutral-600 px-4 py-2.5 text-sm font-semibold text-gray-200 transition-colors hover:border-neutral-500 hover:bg-neutral-800"
+            className="inline-flex items-center justify-center rounded-md border border-neutral-600 px-4 py-2.5 text-sm font-semibold text-gray-200 transition-colors hover:border-neutral-500 hover:bg-neutral-800"
           >
             Open setup in VS Code
-          </Link>
+          </a>
         </div>
         <StepList steps={vscodeSteps} />
         <p className="mt-4 text-sm leading-6 text-gray-400">
@@ -189,17 +200,26 @@ export default function QuickStartTabs({
           </strong>{" "}
           from the Command Palette.
         </p>
-      </div>
-
-      <div className="mt-4 text-sm">
-        <Link
-          href={activeTab === "vscode" ? vscodeDocsUrl : dockerDocsUrl}
-          className="font-semibold text-blue-300 transition-colors hover:text-blue-200"
-        >
-          {activeTab === "vscode"
-            ? "Full VS Code guide"
-            : "Full Docker guide"}
-        </Link>
+        <p className="mt-4 text-sm leading-6 text-gray-400">
+          Prefer to start it yourself? The{" "}
+          <button
+            type="button"
+            onClick={() => selectTab("terminal")}
+            aria-label="Switch to the Terminal tab"
+            className="font-semibold text-blue-300 underline-offset-2 transition-colors hover:text-blue-200 hover:underline"
+          >
+            Terminal
+          </button>{" "}
+          tab runs the same image with one command.
+        </p>
+        <div className="mt-4 text-sm">
+          <Link
+            href={vscodeDocsUrl}
+            className="font-semibold text-blue-300 transition-colors hover:text-blue-200"
+          >
+            Full VS Code guide
+          </Link>
+        </div>
       </div>
     </div>
   );
