@@ -349,9 +349,10 @@ The current release publishes PostgreSQL 17 and 18. Install `documentdb-17` or
 ## Upgrading an existing install
 
 > **Warning:** In-place package upgrades from earlier releases are not supported yet. Use a
-> clean host, or remove the earlier packages and perform the
-> current fresh installation. Upgrading only `postgresql-N-documentdb` does not install the
-> gateway, tools, common payload, or `documentdb-N`.
+> clean host or a new, empty PostgreSQL instance for the current fresh installation.
+> Removing packages alone does not create a fresh database: package removal preserves PostgreSQL data and
+> in-database content, and a later setup run reuses an initialized data directory. Upgrading only
+> `postgresql-N-documentdb` does not install the gateway, tools, common payload, or `documentdb-N`.
 
 For a later point release that uses the same multi-package layout, move the entire stack
 together. On a package-managed private PostgreSQL 18 instance:
@@ -453,9 +454,13 @@ ubuntu24.04-postgresql-18-documentdb_0.117-0_amd64.deb
 rhel9-postgresql18-documentdb-0.117.0-1.el9.x86_64.rpm
 ```
 
-Because the packages depend on each other, installing a downloaded meta package on its own
-fails with `Depends: documentdb-18 ... but it is not installable`. Pass the whole set to a
-single command, or just use the repository-backed install above.
+For a full stack, pass the five packages for the selected PostgreSQL major to one command:
+`documentdb-N`, the matching `postgresql-N-documentdb` / `postgresqlN-documentdb` extension,
+`documentdb-common`, `documentdb-gateway`, and `documentdb-postgresql-tools`. For PostgreSQL 18
+only, the optional `documentdb` meta package may be included; it selects `documentdb-18`.
+Local files resolve dependencies only against enabled repositories, so a package whose
+dependencies are not included still fails. Alternatively, use the repository-backed install
+above.
 
 - GitHub Releases: https://github.com/documentdb/documentdb/releases
 - Release metadata: https://documentdb.io/packages/release-info.json

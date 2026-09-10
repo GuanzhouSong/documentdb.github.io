@@ -50,8 +50,8 @@ Then start the container:
 docker run -dt --name documentdb \\
   -p 127.0.0.1:10260:10260 \\
   ghcr.io/documentdb/documentdb/documentdb-local:latest \\
-  --username <YOUR_USERNAME> \\
-  --password <YOUR_PASSWORD> \\
+  --username '<YOUR_USERNAME>' \\
+  --password '<YOUR_PASSWORD>' \\
   --init-data true
 \`\`\`
 
@@ -90,8 +90,8 @@ Use \`mongosh\` to confirm authentication, TLS, and the gateway endpoint are wor
 
 \`\`\`bash
 mongosh localhost:10260 \\
-  -u <YOUR_USERNAME> \\
-  -p <YOUR_PASSWORD> \\
+  -u '<YOUR_USERNAME>' \\
+  -p '<YOUR_PASSWORD>' \\
   --authenticationMechanism SCRAM-SHA-256 \\
   --tls \\
   --tlsAllowInvalidCertificates
@@ -220,7 +220,7 @@ Then install \`mongosh\`, which you need to talk to the endpoint:
 
 \`\`\`bash
 # Ubuntu 24.04
-curl -fsSL https://pgp.mongodb.com/server-8.0.asc | sudo gpg --dearmor -o /usr/share/keyrings/mongodb.gpg
+curl -fsSL https://pgp.mongodb.com/server-8.0.asc | sudo gpg --dearmor --yes -o /usr/share/keyrings/mongodb.gpg
 echo "deb [signed-by=/usr/share/keyrings/mongodb.gpg] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb.list
 sudo apt update && sudo apt install -y mongodb-mongosh
 
@@ -382,9 +382,11 @@ For an adopted instance, use the operator's existing PostgreSQL connection inste
 ## Upgrading
 
 > [!WARNING]
-> In-place package upgrades from earlier releases are not supported yet. Use a clean host,
-> or remove the earlier packages and perform the current
-> [fresh installation](/docs/getting-started/packages). Upgrading only
+> In-place package upgrades from earlier releases are not supported yet. Use a clean host
+> or a new, empty PostgreSQL instance and follow the current
+> [fresh installation](/docs/getting-started/packages). Removing packages alone does not
+> create a fresh database: package removal preserves PostgreSQL data and in-database content,
+> and a later setup run reuses an initialized data directory. Upgrading only
 > \`postgresql-N-documentdb\` does not install the gateway, tools, common payload, or
 > \`documentdb-N\`.
 
@@ -609,7 +611,7 @@ Then continue with [Set up and connect](/docs/getting-started/packages#set-up-an
 If the target already has PostgreSQL, the PGDG extension dependencies (\`postgresql-N-cron\`, \`-pgvector\`, \`-postgis-3\`) and \`jq\`, you do not need a bundle:
 
 - **Extension only, one file** — \`sudo apt install ./ubuntu24.04-postgresql-18-documentdb_0.117-0_amd64.deb\`. No gateway and no \`documentdb-setup\`.
-- **Full stack from the release assets** — pass all six files for your platform to a *single* \`apt install\` / \`dnf install\`. Local files resolve dependencies only against enabled repositories, so the meta package on its own fails with \`Depends: documentdb-18 ... but it is not installable\`.
+- **Full stack from the release assets** — pass the five packages for the selected PostgreSQL major to a *single* \`apt install\` / \`dnf install\`: \`documentdb-N\`, the matching \`postgresql-N-documentdb\` / \`postgresqlN-documentdb\` extension, \`documentdb-common\`, \`documentdb-gateway\`, and \`documentdb-postgresql-tools\`. For PostgreSQL 18 only, the optional \`documentdb\` meta package may be included; it selects \`documentdb-18\`. Local files resolve dependencies only against enabled repositories, so a package whose dependencies are not included still fails.
 `;
 
 const vscodeQuickStartGuideContent = `# Visual Studio Code Quick Start
@@ -639,10 +641,10 @@ For the fastest local setup, start DocumentDB Local with Docker:
 
 \`\`\`bash
 docker run -dt --name documentdb \\
-  -p 10260:10260 \\
+  -p 127.0.0.1:10260:10260 \\
   ghcr.io/documentdb/documentdb/documentdb-local:latest \\
-  --username <YOUR_USERNAME> \\
-  --password <YOUR_PASSWORD>
+  --username '<YOUR_USERNAME>' \\
+  --password '<YOUR_PASSWORD>'
 \`\`\`
 
 If you prefer a host installation instead of Docker, use the [Linux Packages Quick Start](/docs/getting-started/packages) on a distribution in the current release matrix.
@@ -729,14 +731,19 @@ Connect to DocumentDB from Node.js using the official MongoDB driver.
 ## Start DocumentDB Local
 
 \`\`\`bash
+export DOCUMENTDB_USERNAME='<YOUR_USERNAME>'
+export DOCUMENTDB_PASSWORD='<YOUR_PASSWORD>'
+
 docker run -dt --name documentdb \\
-  -p 10260:10260 \\
+  -p 127.0.0.1:10260:10260 \\
   ghcr.io/documentdb/documentdb/documentdb-local:latest \\
-  --username <YOUR_USERNAME> \\
-  --password <YOUR_PASSWORD>
+  --username "\${DOCUMENTDB_USERNAME:?Set DOCUMENTDB_USERNAME}" \\
+  --password "\${DOCUMENTDB_PASSWORD:?Set DOCUMENTDB_PASSWORD}"
 \`\`\`
 
-> Replace \`<YOUR_USERNAME>\` and \`<YOUR_PASSWORD>\` with your own credentials.
+> Replace the placeholder values before running the command. The Node.js process below
+> reads the same two environment variables, so the credentials are passed as raw values
+> rather than embedded in a URI.
 >
 > DocumentDB Local uses a self-signed certificate by default, so the quickest local
 > Node.js connection uses \`tlsAllowInvalidCertificates=true\`.
@@ -757,12 +764,26 @@ Create an \`index.js\` file:
 \`\`\`javascript
 const { MongoClient } = require("mongodb");
 
-const uri =
-  "mongodb://<YOUR_USERNAME>:<YOUR_PASSWORD>@localhost:10260/" +
-  "?authSource=admin&tls=true&tlsAllowInvalidCertificates=true&directConnection=true";
+const username = process.env.DOCUMENTDB_USERNAME;
+const password = process.env.DOCUMENTDB_PASSWORD;
+
+if (!username || !password) {
+  throw new Error(
+    "Set DOCUMENTDB_USERNAME and DOCUMENTDB_PASSWORD before running this script"
+  );
+}
+
+const uri = "mongodb://localhost:10260/";
+const options = {
+  auth: { username, password },
+  authSource: "admin",
+  tls: true,
+  tlsAllowInvalidCertificates: true,
+  directConnection: true
+};
 
 async function main() {
-  const client = new MongoClient(uri);
+  const client = new MongoClient(uri, options);
 
   try {
     await client.connect();
@@ -807,16 +828,21 @@ node index.js
 ## Connect with a trusted local certificate instead
 
 If you want certificate validation instead of \`tlsAllowInvalidCertificates=true\`,
-copy the generated certificate from the container and point the driver at it.
+copy the generated certificate from the container, then replace the \`options\` object
+above with the trusted-certificate version below.
 
 \`\`\`bash
 docker cp documentdb:/home/documentdb/.local/state/documentdb-gateway/tls/cert.pem ~/documentdb-cert.pem
 \`\`\`
 
 \`\`\`javascript
-const uri =
-  "mongodb://<YOUR_USERNAME>:<YOUR_PASSWORD>@localhost:10260/" +
-  "?authSource=admin&tls=true&tlsCAFile=/absolute/path/documentdb-cert.pem&directConnection=true";
+const options = {
+  auth: { username, password },
+  authSource: "admin",
+  tls: true,
+  tlsCAFile: "/absolute/path/documentdb-cert.pem",
+  directConnection: true
+};
 \`\`\`
 
 ## Next steps
@@ -843,15 +869,22 @@ Use PyMongo to connect to DocumentDB, verify authentication and TLS, and run you
 For the fastest local setup, start DocumentDB Local with Docker:
 
 \`\`\`bash
+export DOCUMENTDB_USERNAME='<YOUR_USERNAME>'
+export DOCUMENTDB_PASSWORD='<YOUR_PASSWORD>'
+
 docker run -dt --name documentdb \\
-  -p 10260:10260 \\
+  -p 127.0.0.1:10260:10260 \\
   ghcr.io/documentdb/documentdb/documentdb-local:latest \\
-  --username <YOUR_USERNAME> \\
-  --password <YOUR_PASSWORD>
+  --username "\${DOCUMENTDB_USERNAME:?Set DOCUMENTDB_USERNAME}" \\
+  --password "\${DOCUMENTDB_PASSWORD:?Set DOCUMENTDB_PASSWORD}"
 \`\`\`
 
 If you prefer a host installation instead of Docker, use the [Linux Packages Quick Start](/docs/getting-started/packages) on a distribution in the current release matrix.
 
+> Replace the placeholder values before running the command. The Python process below
+> reads the same two environment variables, so the credentials are passed as raw values
+> rather than embedded in a URI.
+>
 > DocumentDB Local uses a self-signed certificate by default, so the quickest local
 > PyMongo connection uses \`tlsAllowInvalidCertificates=true\`.
 
@@ -877,14 +910,26 @@ python -m pip install pymongo
 Create a \`quickstart.py\` file:
 
 \`\`\`python
+import os
+
 from pymongo import MongoClient
 
-uri = (
-    "mongodb://<YOUR_USERNAME>:<YOUR_PASSWORD>@localhost:10260/"
-    "?tls=true&tlsAllowInvalidCertificates=true"
-)
+username = os.environ.get("DOCUMENTDB_USERNAME")
+password = os.environ.get("DOCUMENTDB_PASSWORD")
 
-client = MongoClient(uri)
+if not username or not password:
+    raise RuntimeError(
+        "Set DOCUMENTDB_USERNAME and DOCUMENTDB_PASSWORD before running this script"
+    )
+
+client = MongoClient(
+    "mongodb://localhost:10260/",
+    username=username,
+    password=password,
+    authSource="admin",
+    tls=True,
+    tlsAllowInvalidCertificates=True,
+)
 
 try:
     client.admin.command("ping")
@@ -934,7 +979,7 @@ for store in client["StoreData"]["stores"].find(
 
 ## Use a trusted local certificate instead
 
-If you want certificate validation instead of \`tlsAllowInvalidCertificates=true\`, copy the generated certificate from the container and pass it to \`MongoClient\`.
+If you want certificate validation instead of \`tlsAllowInvalidCertificates=true\`, copy the generated certificate from the container, then replace the \`MongoClient\` call above with the trusted-certificate version below.
 
 \`\`\`bash
 docker cp documentdb:/home/documentdb/.local/state/documentdb-gateway/tls/cert.pem ~/documentdb-cert.pem
@@ -942,7 +987,11 @@ docker cp documentdb:/home/documentdb/.local/state/documentdb-gateway/tls/cert.p
 
 \`\`\`python
 client = MongoClient(
-    "mongodb://<YOUR_USERNAME>:<YOUR_PASSWORD>@localhost:10260/?tls=true",
+    "mongodb://localhost:10260/",
+    username=username,
+    password=password,
+    authSource="admin",
+    tls=True,
     tlsCAFile="/absolute/path/documentdb-cert.pem",
 )
 \`\`\`
@@ -984,10 +1033,10 @@ For the fastest local setup, start DocumentDB Local with Docker:
 
 \`\`\`bash
 docker run -dt --name documentdb \\
-  -p 10260:10260 \\
+  -p 127.0.0.1:10260:10260 \\
   ghcr.io/documentdb/documentdb/documentdb-local:latest \\
-  --username <YOUR_USERNAME> \\
-  --password <YOUR_PASSWORD>
+  --username '<YOUR_USERNAME>' \\
+  --password '<YOUR_PASSWORD>'
 \`\`\`
 
 If you prefer a host installation instead of Docker, use the [Linux Packages Quick Start](/docs/getting-started/packages) on a distribution in the current release matrix.
@@ -1000,8 +1049,8 @@ If you prefer a host installation instead of Docker, use the [Linux Packages Qui
 
 \`\`\`bash
 mongosh localhost:10260 \\
-  -u <YOUR_USERNAME> \\
-  -p <YOUR_PASSWORD> \\
+  -u '<YOUR_USERNAME>' \\
+  -p '<YOUR_PASSWORD>' \\
   --authenticationMechanism SCRAM-SHA-256 \\
   --tls \\
   --tlsAllowInvalidCertificates
@@ -1062,8 +1111,8 @@ the generated certificate from the container and pass it to \`mongosh\`.
 docker cp documentdb:/home/documentdb/.local/state/documentdb-gateway/tls/cert.pem ~/documentdb-cert.pem
 
 mongosh localhost:10260 \\
-  -u <YOUR_USERNAME> \\
-  -p <YOUR_PASSWORD> \\
+  -u '<YOUR_USERNAME>' \\
+  -p '<YOUR_PASSWORD>' \\
   --authenticationMechanism SCRAM-SHA-256 \\
   --tls \\
   --tlsCAFile ~/documentdb-cert.pem
@@ -1118,9 +1167,9 @@ DocumentDB Local starts **empty**. Pass \`--init-data true\` to seed the \`Store
 with the \`stores\` and \`ratings\` collections:
 
 \`\`\`bash
-docker run -dt -p 10260:10260 --name documentdb \\
+docker run -dt -p 127.0.0.1:10260:10260 --name documentdb \\
   ghcr.io/documentdb/documentdb/documentdb-local:latest \\
-  --username <YOUR_USERNAME> --password <YOUR_PASSWORD> --init-data true
+  --username '<YOUR_USERNAME>' --password '<YOUR_PASSWORD>' --init-data true
 \`\`\`
 
 Seeding happens once per data volume, on a fresh volume. Existing volumes are not migrated
@@ -1140,11 +1189,11 @@ The built-in sample dataset currently includes 41,505 store documents and 2 rati
 
 \`\`\`bash
 docker run -dt --name documentdb \\
-  -p 10260:10260 \\
+  -p 127.0.0.1:10260:10260 \\
   -v /path/to/init/scripts:/init_doc_db.d \\
   ghcr.io/documentdb/documentdb/documentdb-local:latest \\
-  --username <YOUR_USERNAME> \\
-  --password <YOUR_PASSWORD> \\
+  --username '<YOUR_USERNAME>' \\
+  --password '<YOUR_PASSWORD>' \\
   --init-data-path /init_doc_db.d
 \`\`\`
 
@@ -1183,8 +1232,8 @@ Before moving on to application code, confirm that DocumentDB is reachable and y
 docker ps --filter "name=documentdb"
 
 mongosh localhost:10260 \\
-  -u <YOUR_USERNAME> \\
-  -p <YOUR_PASSWORD> \\
+  -u '<YOUR_USERNAME>' \\
+  -p '<YOUR_PASSWORD>' \\
   --authenticationMechanism SCRAM-SHA-256 \\
   --tls \\
   --tlsAllowInvalidCertificates
