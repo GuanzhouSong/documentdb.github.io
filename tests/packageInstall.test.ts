@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  aptServesFullStack,
   aptTargetLabels,
   aptTargetPgVersions,
   buildAptInstallCommand,
   buildRpmInstallCommand,
+  buildSetupCommand,
+  rpmServesFullStack,
   rpmTargetLabels,
 } from '../app/lib/packageInstall';
 import type {
@@ -13,6 +16,10 @@ import type {
   RpmDistro,
   RpmPgVersion,
 } from '../app/lib/packageInstall';
+import {
+  FALLBACK_RELEASE,
+  parseReleaseInfo,
+} from '../app/lib/releaseInfo';
 
 /**
  * These commands are published on /packages for users to copy and paste, so a
@@ -22,23 +29,24 @@ import type {
  * private mapping should have to be made deliberately in two places.
  */
 const expectedPgdgSuites: Record<AptDistro, string> = {
-  ubuntu22: 'jammy',
   ubuntu24: 'noble',
-  deb11: 'bullseye',
-  deb12: 'bookworm',
-  deb13: 'trixie',
 };
 
 const expectedRhelMajors: Record<RpmDistro, string> = {
-  rhel8: '8',
+  rocky9: '9',
   rhel9: '9',
+};
+
+const expectedRpmRepositoryPaths: Record<RpmDistro, string> = {
+  rocky9: 'rhel9',
+  rhel9: 'rhel9',
 };
 
 const aptDistros = Object.keys(aptTargetLabels) as AptDistro[];
 const rpmDistros = Object.keys(rpmTargetLabels) as RpmDistro[];
 const aptArches: AptArch[] = ['amd64', 'arm64'];
 const rpmArches: RpmArch[] = ['x86_64', 'aarch64'];
-const rpmPgVersions: RpmPgVersion[] = ['16', '17', '18'];
+const rpmPgVersions: RpmPgVersion[] = ['17', '18'];
 
 /** Every APT distro/arch/version combination the packages page can offer. */
 const aptMatrix = aptDistros.flatMap((distro) =>
@@ -66,6 +74,38 @@ describe('package metadata', () => {
   });
 });
 
+describe('release metadata', () => {
+  it('uses v0.117-0 for the first paint and feed fallback', () => {
+    expect(FALLBACK_RELEASE).toMatchObject({
+      tagName: 'v0.117-0',
+      aptVersion: '0.117-0',
+      rpmVersion: '0.117.0-1.el9',
+      metaVersion: '0.117.0',
+      metaRpmVersion: '0.117.0-1',
+      releaseUrl: 'https://github.com/documentdb/documentdb/releases/tag/v0.117-0',
+    });
+  });
+
+  it('derives v0.117 package versions from the published asset shapes', () => {
+    expect(parseReleaseInfo({
+      tag_name: 'v0.117-0',
+      html_url: 'https://github.com/documentdb/documentdb/releases/tag/v0.117-0',
+      assets: [
+        { name: 'ubuntu24.04-documentdb_0.117.0_all.deb' },
+        { name: 'ubuntu24.04-postgresql-18-documentdb_0.117-0_amd64.deb' },
+        { name: 'documentdb-0.117.0-1.noarch.rpm' },
+        { name: 'rhel9-postgresql18-documentdb-0.117.0-1.el9.x86_64.rpm' },
+      ],
+    })).toMatchObject({
+      tagName: 'v0.117-0',
+      aptVersion: '0.117-0',
+      rpmVersion: '0.117.0-1.el9',
+      metaVersion: '0.117.0',
+      metaRpmVersion: '0.117.0-1',
+    });
+  });
+});
+
 describe('buildAptInstallCommand', () => {
   it.each(aptMatrix)('produces a complete command for $distro/$arch/pg$pg', ({ distro, arch, pg }) => {
     const command = buildAptInstallCommand(distro, arch, pg);
@@ -80,8 +120,17 @@ describe('buildAptInstallCommand', () => {
   });
 
   it.each(aptArches)('pins the DocumentDB repository to arch %s', (arch) => {
-    const command = buildAptInstallCommand('ubuntu24', arch, '16');
+    const command = buildAptInstallCommand('ubuntu24', arch, '17');
     expect(command).toContain(`[arch=${arch} `);
+  });
+
+  it('resolves the architecture on the host when arch is "auto"', () => {
+    const command = buildAptInstallCommand('ubuntu24', 'auto', '18');
+    // The published doc example must be copy-pasteable on amd64 and arm64
+    // alike, so it shells out rather than baking in an architecture.
+    expect(command).toContain('[arch=$(dpkg --print-architecture) ');
+    expect(command).not.toContain('[arch=amd64 ');
+    expect(command).not.toContain('[arch=arm64 ');
   });
 
   it.each(aptDistros)('uses %s as the DocumentDB repository component', (distro) => {
@@ -89,15 +138,18 @@ describe('buildAptInstallCommand', () => {
     expect(command).toContain(`documentdb.io/deb stable ${distro}`);
   });
 
-  it.each(aptMatrix)('installs postgresql-$pg-documentdb for $distro/$arch', ({ distro, arch, pg }) => {
+  it.each(aptMatrix)('installs the right package for $distro/$arch/pg$pg', ({ distro, arch, pg }) => {
     const command = buildAptInstallCommand(distro, arch, pg);
-    expect(command).toContain(`sudo apt install -y postgresql-${pg}-documentdb`);
+    // Since v0.116-0, Tier-1 targets ship the full package set. There the
+    // per-major stand-alone pulls the whole stack; everywhere else the
+    // repository still serves the extension alone, and offering `documentdb-N`
+    // would be an install command that cannot resolve.
+    const expected = aptServesFullStack(distro, pg)
+      ? `documentdb-${pg}`
+      : `postgresql-${pg}-documentdb`;
+    expect(command).toContain(`sudo apt install -y ${expected}`);
   });
 
-  it('does not offer PostgreSQL 18 on Debian 11', () => {
-    // Documented on the packages page: PGDG bullseye resolves 16 and 17 only.
-    expect(aptTargetPgVersions.deb11).not.toContain('18');
-  });
 });
 
 describe('buildRpmInstallCommand', () => {
@@ -110,30 +162,80 @@ describe('buildRpmInstallCommand', () => {
 
   it.each(rpmDistros)('derives the EL major version for %s', (distro) => {
     const major = expectedRhelMajors[distro];
-    const command = buildRpmInstallCommand(distro, 'x86_64', '16');
+    const command = buildRpmInstallCommand(distro, 'x86_64', '17');
     expect(command).toContain(`epel-release-latest-${major}.noarch.rpm`);
     expect(command).toContain(`EL-${major}-x86_64`);
   });
 
-  it.each(rpmArches)('uses arch %s in the PGDG and CodeReady repository names', (arch) => {
-    const command = buildRpmInstallCommand('rhel9', arch, '16');
+  it.each(rpmArches)('uses arch %s in the PGDG repository name', (arch) => {
+    const command = buildRpmInstallCommand('rocky9', arch, '17');
     expect(command).toContain(`EL-9-${arch}/pgdg-redhat-repo-latest.noarch.rpm`);
-    expect(command).toContain(`codeready-builder-for-rhel-9-${arch}-rpms`);
   });
 
-  it.each(rpmDistros)('points the DocumentDB repository at rpm/%s', (distro) => {
-    const command = buildRpmInstallCommand(distro, 'x86_64', '16');
-    expect(command).toContain(`baseurl=https://documentdb.io/rpm/${distro}`);
+  it('resolves the architecture on the host when arch is "auto"', () => {
+    const command = buildRpmInstallCommand('rhel9', 'auto', '18');
+    expect(command).toContain('EL-9-$(uname -m)/pgdg-redhat-repo-latest.noarch.rpm');
+    expect(command).toContain('codeready-builder-for-rhel-9-$(uname -m)-rpms');
+    expect(command).not.toContain('EL-9-x86_64');
+    expect(command).not.toContain('EL-9-aarch64');
   });
 
-  it.each(rpmMatrix)('installs postgresql$pg-documentdb for $distro/$arch', ({ distro, arch, pg }) => {
+  it.each(rpmDistros)('points %s at the shared EL9 DocumentDB repository', (distro) => {
+    const command = buildRpmInstallCommand(distro, 'x86_64', '17');
+    expect(command).toContain(
+      `baseurl=https://documentdb.io/rpm/${expectedRpmRepositoryPaths[distro]}`,
+    );
+  });
+
+  it.each(rpmMatrix)('installs the right package for $distro/$arch/pg$pg', ({ distro, arch, pg }) => {
     const command = buildRpmInstallCommand(distro, arch, pg);
-    expect(command).toContain(`sudo dnf install -y postgresql${pg}-documentdb`);
+    const expected = rpmServesFullStack(distro, pg)
+      ? `documentdb-${pg}`
+      : `postgresql${pg}-documentdb`;
+    expect(command).toContain(`sudo dnf install -y ${expected}`);
+  });
+
+  it('serves the full stack for every published target', () => {
+    expect(rpmServesFullStack('rocky9', '18')).toBe(true);
+    expect(rpmServesFullStack('rocky9', '17')).toBe(true);
+    expect(rpmServesFullStack('rhel9', '18')).toBe(true);
+    expect(rpmServesFullStack('rhel9', '17')).toBe(true);
+    expect(aptServesFullStack('ubuntu24', '18')).toBe(true);
+    expect(aptServesFullStack('ubuntu24', '17')).toBe(true);
+    expect(buildAptInstallCommand('ubuntu24', 'amd64', '18')).toContain(
+      'sudo apt install -y documentdb-18',
+    );
+  });
+
+  it('uses CRB for Rocky, AlmaLinux, and CentOS Stream', () => {
+    const command = buildRpmInstallCommand('rocky9', 'x86_64', '18');
+    expect(command).toContain('sudo dnf config-manager --set-enabled crb');
+    expect(command).not.toContain('subscription-manager repos --enable');
+    expect(command).not.toContain('codeready-builder-for-rhel');
+  });
+
+  it('uses subscription-manager for registered RHEL', () => {
+    const command = buildRpmInstallCommand('rhel9', 'aarch64', '18');
+    expect(command).toContain(
+      'sudo subscription-manager repos --enable codeready-builder-for-rhel-9-aarch64-rpms',
+    );
+    expect(command).not.toContain('dnf config-manager --set-enabled crb');
   });
 
   it('enables gpgcheck against the DocumentDB signing key', () => {
-    const command = buildRpmInstallCommand('rhel9', 'x86_64', '16');
+    const command = buildRpmInstallCommand('rocky9', 'x86_64', '17');
     expect(command).toContain("'gpgcheck=1'");
     expect(command).toContain("'gpgkey=https://documentdb.io/documentdb-archive-keyring.gpg'");
   });
+});
+
+describe('buildSetupCommand', () => {
+  it.each(['17', '18'] as const)(
+    'pins PostgreSQL %s and creates a fresh private instance',
+    (pgVersion) => {
+      expect(buildSetupCommand(pgVersion)).toBe(
+        `sudo documentdb-setup --pg-version ${pgVersion} --use-new-postgres-instance --admin-user admin`,
+      );
+    },
+  );
 });

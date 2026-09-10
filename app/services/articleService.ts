@@ -4,10 +4,28 @@ import { load as loadYaml } from 'js-yaml';
 import matter from 'gray-matter';
 import { Article } from '../types/Article';
 import { Link } from '../types/Link';
-import { buildAptInstallCommand, buildRpmInstallCommand } from '../lib/packageInstall';
+import {
+  buildAptInstallCommand,
+  buildRpmInstallCommand,
+  buildSetupCommand,
+} from '../lib/packageInstall';
 import { documentdbDiscordUrl } from './externalLinks';
 
 const articlesDirectory = path.join(process.cwd(), 'articles');
+
+// Sections served entirely from this file rather than from the cloned
+// articles/ tree. Getting Started holds quick starts only; the longer-form
+// deployment guides live in their own section, alongside DocumentDB Local.
+const virtualSections: Record<string, { landingTitle: string; pages: { slug: string; title: string }[] }> = {
+  'linux-packages': {
+    landingTitle: 'Linux Packages',
+    pages: [
+      { slug: '', title: 'Operating a Package Install' },
+      { slug: 'offline', title: 'Offline / Air-gapped Install' },
+    ],
+  },
+};
+
 const dockerGuideContent = `# Docker Quick Start
 
 Run DocumentDB locally with Docker and verify the setup before moving to driver code.
@@ -30,17 +48,25 @@ Then start the container:
 
 \`\`\`bash
 docker run -dt --name documentdb \\
-  -p 10260:10260 \\
+  -p 127.0.0.1:10260:10260 \\
   ghcr.io/documentdb/documentdb/documentdb-local:latest \\
   --username <YOUR_USERNAME> \\
-  --password <YOUR_PASSWORD>
+  --password <YOUR_PASSWORD> \\
+  --init-data true
 \`\`\`
 
 > Replace \`<YOUR_USERNAME>\` and \`<YOUR_PASSWORD>\` with your own credentials.
 >
-> DocumentDB Local loads built-in sample data into \`sampledb\` by default. See
-> [DocumentDB Local](/docs/documentdb-local) for \`--skip-init-data\`,
-> \`--init-data-path\`, certificate setup, and additional runtime options.
+> \`-p 127.0.0.1:10260:10260\` keeps the endpoint on loopback. A bare \`-p 10260:10260\`
+> publishes it on **every** interface, which is rarely what you want on a laptop.
+>
+> \`--init-data true\` seeds the built-in sample data into \`StoreData\`, which the
+> verification step below queries. It is **not** enabled by default — without it the
+> container starts with no \`StoreData\` database and \`use StoreData\` returns nothing. The data is
+> seeded once per data volume. Existing volumes are not migrated automatically;
+> re-create the volume to seed again. See
+> [DocumentDB Local](/docs/documentdb-local) for \`--init-data-path\`, certificate setup,
+> and additional runtime options.
 
 ## Verify the container
 
@@ -49,6 +75,14 @@ docker ps --filter "name=documentdb"
 \`\`\`
 
 You should see the container in an \`Up\` state with port \`10260\` published.
+
+> [!IMPORTANT]
+> \`docker ps\` reports \`Up\` well before DocumentDB accepts connections. Wait for the
+> readiness banner, or the first \`mongosh\` call fails with a connection error:
+>
+> \`\`\`bash
+> until docker logs documentdb 2>&1 | grep -q "=== DocumentDB is ready ==="; do sleep 2; done
+> \`\`\`
 
 ## Verify the connection
 
@@ -63,14 +97,14 @@ mongosh localhost:10260 \\
   --tlsAllowInvalidCertificates
 \`\`\`
 
-Then run a quick health check and inspect the built-in sample data:
+Then run a quick health check. The sample data below needs \`--init-data true\` on the \`docker run\` above — without it \`StoreData\` does not exist:
 
 \`\`\`javascript
 db.runCommand({ ping: 1 })
 
-use sampledb
+use StoreData
 
-db.users.find({}, { name: 1, email: 1, _id: 0 }).limit(3)
+db.stores.find({}, { _id: 0, name: 1, city: 1, "sales.revenue": 1 }).limit(3)
 \`\`\`
 
 If you prefer certificate validation instead of \`--tlsAllowInvalidCertificates\`, follow the certificate steps in [DocumentDB Local](/docs/documentdb-local).
@@ -80,10 +114,32 @@ If you prefer certificate validation instead of \`--tlsAllowInvalidCertificates\
 The quick start command above is ideal for disposable local environments. When you need more control:
 
 - Use \`--data-path\` with a mounted host directory to keep data across container restarts
-- Use \`--skip-init-data\` if you want an empty instance instead of the default \`sampledb\` collections
+- Omit \`--init-data true\` if you want an empty instance instead of the \`StoreData\` collections
 - Use \`--init-data-path\` to run your own \`.js\` initialization scripts with \`mongosh\` at startup
 
-The built-in sample dataset includes \`users\`, \`products\`, \`orders\`, and \`analytics\` collections in \`sampledb\`.
+The built-in \`StoreData\` sample dataset includes 41,505 documents in \`stores\` and 2 documents in \`ratings\`.
+
+## Stop, start, and remove
+
+\`\`\`bash
+docker stop documentdb       # stop, keep the data
+docker start documentdb      # bring it back later
+docker restart documentdb
+docker logs documentdb       # gateway and startup output
+\`\`\`
+
+To update the image or start over:
+
+\`\`\`bash
+# DESTROYS the container and its anonymous data volume
+docker rm -fv documentdb
+docker pull ghcr.io/documentdb/documentdb/documentdb-local:latest
+# then run the Start DocumentDB command again
+\`\`\`
+
+Until you remove it, re-running \`docker run --name documentdb\` fails with
+\`Conflict. The container name "/documentdb" is already in use\`. Mount a named volume
+(\`-v documentdb-data:/data\`) before storing anything you want to keep.
 
 ## Troubleshooting and debugging
 
@@ -91,7 +147,7 @@ If something does not work as expected:
 
 - Confirm port \`10260\` is available and that \`docker ps\` shows the container running
 - Inspect startup, authentication, and TLS errors with \`docker logs documentdb\`
-- Restart the container with \`--log-level debug\` for more verbose local diagnostics
+- For more gateway detail, re-create the container with \`-e DOCUMENTDB_LOG_LEVEL=debug\`. The \`--log-level\` flag is validated at startup but does not currently change what the container logs, and environment variables are fixed at \`docker run\` — \`docker restart\` cannot change either.
 - Use the certificate flow in [DocumentDB Local](/docs/documentdb-local) if your client should validate TLS certificates
 - Use [Mongo Shell Quick Start](/docs/getting-started/mongo-shell-quickstart) for a fuller shell walkthrough
 
@@ -106,181 +162,454 @@ If something does not work as expected:
 - [Package Finder](/packages)
 `;
 
-const linuxPackagesGuideContent = `# Linux Packages Quick Start
+export const linuxPackagesGuideContent = `# Linux Packages Quick Start
 
-Install the DocumentDB PostgreSQL extension package on Debian, Ubuntu, or RHEL-compatible hosts.
+Install DocumentDB from the published package repository and get a MongoDB-compatible endpoint on your own host.
 
-## Choose the right package command
+The current official release publishes the full stack — extension, gateway, setup wizard and systemd units — for **Ubuntu 24.04 and EL9, on PostgreSQL 17 or 18**. EL9 includes Rocky Linux, AlmaLinux, CentOS Stream, and registered Red Hat Enterprise Linux; the Package Finder supplies the prerequisite command for each family. Starting with v0.116, this is a deliberately smaller prebuilt matrix than earlier releases. The website repository mirrors only the current release assets and does not carry older packages forward to make other targets appear current.
 
-Use the [Package Finder](/packages) to generate the exact install command for your distro, architecture, and PostgreSQL version.
+> [!NOTE]
+> Need another distribution or PostgreSQL major? We welcome community builds. Check out the matching release tag and use the version-parameterized [packaging scripts](https://github.com/documentdb/documentdb/blob/v0.117-0/packaging/README.md). \`build_packages.sh\` builds the extension, \`gateway/build_gateway_packages.sh\` builds the gateway, and \`build_extra_packages.sh\` builds the common, tools, stand-alone, and meta packages. PostgreSQL 15 is extension-only because the setup tools require PostgreSQL 16 or newer. These builds are on demand and are not official release assets hosted by documentdb.io.
 
-> The generated command installs the PostgreSQL extension package and its PostgreSQL-side dependencies. The published package repository and GitHub Releases do not currently include a gateway package, setup helper, or systemd service.
->
-> The repository-backed install commands currently cover Ubuntu 22.04/24.04, Debian 11/12/13, and RHEL-compatible 8/9 systems. Debian 11 currently resolves PostgreSQL 16 and 17 in the repository-backed flow.
->
-> The package commands assume a regular Linux host where you use \`sudo\`. If you are testing in a clean container that already runs as \`root\`, omit \`sudo\` from the package-install commands.
->
-> On Debian and Ubuntu in a clean container, also run \`export DEBIAN_FRONTEND=noninteractive\` in the shell before the APT commands. Without it, \`tzdata\` (and a few other packages) prompt for input during \`apt install\` and the install hangs with no visible error.
+## If you used an earlier repository target
 
-## Install the packages
+documentdb.io no longer publishes packages for Ubuntu 22.04, Debian 11/12/13, RHEL-compatible 8, or PostgreSQL 16. Existing installations keep running, but receive no package updates and cannot reinstall those packages from documentdb.io.
 
-### APT example
-
-\`\`\`bash
-${buildAptInstallCommand('ubuntu24', 'amd64', '16')}
-\`\`\`
-
-### RPM example
-
-\`\`\`bash
-${buildRpmInstallCommand('rhel9', 'x86_64', '16')}
-\`\`\`
-
-## What the package installs
-
-The packages install the DocumentDB PostgreSQL extension files for the selected PostgreSQL major version. They do not by themselves start a MongoDB-compatible gateway endpoint on port \`10260\`.
-
-Use the Docker quick start when you need the fastest local gateway-backed DocumentDB endpoint:
-
-\`\`\`bash
-docker run -dt --name documentdb \\
-  -p 10260:10260 \\
-  ghcr.io/documentdb/documentdb/documentdb-local:latest \\
-  --username <YOUR_USERNAME> \\
-  --password <YOUR_PASSWORD>
-\`\`\`
-
-If you are operating a host PostgreSQL installation, configure PostgreSQL and run the gateway using the source repository's build/run scripts.
-
-## Verify the package install
-
-Use package-manager metadata to confirm the extension package is installed:
-
-\`\`\`bash
-# APT
-apt-cache policy postgresql-16-documentdb
-dpkg -L postgresql-16-documentdb | grep -E 'documentdb.*\\.(control|sql|so)$' | head
-
-# RPM
-dnf info postgresql16-documentdb
-rpm -ql postgresql16-documentdb | grep -E 'documentdb.*\\.(control|sql|so)$' | head
-\`\`\`
-
-## Turn a package install into a local \`mongosh\` endpoint
-
-If you want to keep PostgreSQL on the host and still connect with \`mongosh\`, install the extension package first and then run the gateway from the source repository against that PostgreSQL instance.
-
-### Prerequisites for the host gateway step
-
-- [Git](https://git-scm.com/)
-- \`curl\`
-- Native build tools for Rust crates that link against OpenSSL
-- A current Rust toolchain via \`rustup\`
-- [mongosh](https://www.mongodb.com/docs/mongodb-shell/install/)
-
-Run the PostgreSQL and gateway steps from an unprivileged user account, not \`root\`. PostgreSQL will not initialize as \`root\`.
-
-If you are following these steps in a clean container that starts as \`root\`, finish the package-install commands as \`root\`, then switch to an unprivileged account such as \`postgres\` before you start PostgreSQL or the gateway.
-
-\`\`\`bash
-# from a root shell inside the container
-su - postgres
-\`\`\`
-
-Install the host prerequisites with your distro package manager before continuing. Examples:
+Empty signed metadata remains at the retired repository URLs so \`apt update\` and \`dnf makecache\` continue to work. Remove the source on a host that will not move to the current matrix:
 
 \`\`\`bash
 # Debian / Ubuntu
-sudo apt install -y git curl build-essential pkg-config libssl-dev
+sudo rm -f /etc/apt/sources.list.d/documentdb.list
+sudo apt update
 
 # RHEL-compatible
-sudo dnf install -y git curl gcc gcc-c++ make pkgconf-pkg-config openssl-devel
+sudo rm -f /etc/yum.repos.d/documentdb.repo
+sudo dnf clean all
 \`\`\`
 
-Install a current Rust toolchain with \`rustup\`, then load it into your shell:
+To remain on an older target, use its GitHub release assets or build from the matching source tag. Neither path is part of the current hosted support matrix.
+
+You do not need PostgreSQL already installed — the setup wizard creates and manages its own instance. The install does add the PGDG repository and pull PostgreSQL, PostGIS and around 160 packages (about 140 MB), so pick a host you are willing to have PGDG on.
+
+## Install
+
+### Ubuntu 24.04, PostgreSQL 18 (APT)
 
 \`\`\`bash
-curl https://sh.rustup.rs -sSf | sh -s -- -y
-. "$HOME/.cargo/env"
+${buildAptInstallCommand('ubuntu24', 'auto', '18')}
 \`\`\`
 
-In a clean container that starts as \`root\`, install the system packages above and install \`mongosh\` while you are still \`root\`. Then switch to the unprivileged user and run the \`rustup\` commands plus the remaining gateway steps from that user's shell.
-
-### Host setup example
-
-Replace \`<PG_MAJOR>\` with the PostgreSQL major version you installed from the package repository, such as \`16\`, \`17\`, or \`18\`.
-
-If you do not already have \`mongosh\`, install it with the official MongoDB shell instructions for your distro before continuing:
-
-- https://www.mongodb.com/docs/mongodb-shell/install/
+### Rocky Linux, AlmaLinux, or CentOS Stream 9, PostgreSQL 18 (RPM)
 
 \`\`\`bash
-git clone https://github.com/documentdb/documentdb.git
-cd documentdb
-
-export PG_VERSION_USED=<PG_MAJOR>
-
-# Required in non-interactive shells (CI, \`docker exec\` without \`-t\`,
-# \`docker exec -d\`, \`nohup\`, background \`&\`). build_and_start_gateway.sh
-# calls \`tput\` for colored output and aborts under \`set -u\` / \`set -e\` if
-# TERM is unset or set to \`dumb\`. Skip this line in a normal interactive
-# terminal where TERM is already \`xterm\`, \`xterm-256color\`, etc.
-export TERM=xterm
-
-./scripts/start_oss_server.sh -c -u <YOUR_USERNAME> -a <YOUR_PASSWORD>
-
-./scripts/build_and_start_gateway.sh -c \\
-  -u <YOUR_USERNAME> \\
-  -p <YOUR_PASSWORD> \\
-  -P 9712
+${buildRpmInstallCommand('rocky9', 'auto', '18')}
 \`\`\`
 
-\`./scripts/start_oss_server.sh -c\` initializes a fresh local PostgreSQL data directory under \`~/.documentdb/data\`. \`./scripts/build_and_start_gateway.sh -c\` forces a clean gateway rebuild; after the first successful build, you can omit \`-c\` on later restarts.
+### Registered Red Hat Enterprise Linux 9, PostgreSQL 18 (RPM)
 
-The first gateway build downloads several hundred Rust crates and typically takes a few minutes on a fresh machine before the gateway begins listening on port \`10260\`. Subsequent runs without \`-c\` are much faster.
-
-Keep the gateway command running in the foreground. It starts the MongoDB-compatible endpoint on port \`10260\` and connects it to PostgreSQL on port \`9712\`.
-
-Then connect with \`mongosh\`:
+This command requires an active Red Hat subscription. RHEL exposes CodeReady Builder through
+\`subscription-manager\`, not through the \`crb\` repository ID used by Rocky-family systems.
 
 \`\`\`bash
-mongosh localhost:10260 \\
-  -u <YOUR_USERNAME> \\
-  -p <YOUR_PASSWORD> \\
-  --authenticationMechanism SCRAM-SHA-256 \\
-  --tls \\
-  --tlsAllowInvalidCertificates
+${buildRpmInstallCommand('rhel9', 'auto', '18')}
 \`\`\`
 
-Use this flow when you want a package-backed host install plus a local MongoDB-compatible endpoint. Use the Docker quick start instead when you want the shortest local setup path.
+For PostgreSQL 17, install \`documentdb-17\`; there is no \`documentdb-16\`. Both EL9 flows enable CodeReady Builder, which supplies \`libqhull_r.so.7\` for PostGIS dependencies.
 
-## Troubleshooting and debugging
+Then install \`mongosh\`, which you need to talk to the endpoint:
 
-If something does not work on the first try:
+\`\`\`bash
+# Ubuntu 24.04
+curl -fsSL https://pgp.mongodb.com/server-8.0.asc | sudo gpg --dearmor -o /usr/share/keyrings/mongodb.gpg
+echo "deb [signed-by=/usr/share/keyrings/mongodb.gpg] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb.list
+sudo apt update && sudo apt install -y mongodb-mongosh
 
-- Confirm the extension package is installed: \`postgresql-<PG>-documentdb\` on APT or \`postgresql<PG>-documentdb\` on RPM
-- Re-run the Package Finder command for the exact distro, architecture, and PostgreSQL version you selected
-- Confirm the PostgreSQL upstream repository was added before the DocumentDB package install
-- If you are running in a clean container as \`root\`, omit \`sudo\` from the package-install commands and switch to an unprivileged user before the gateway steps
-- If \`apt install\` hangs forever in a clean container, run \`export DEBIAN_FRONTEND=noninteractive\` in that shell and re-run the install; the default front-end is waiting for a \`tzdata\` prompt that never gets typed
-- If you use the host gateway flow, confirm \`PG_VERSION_USED\` matches the PostgreSQL major version you installed
-- If \`./scripts/build_and_start_gateway.sh\` exits immediately with \`tput: No value for $TERM\` (or silently with \`set -e\` when \`TERM=dumb\`), set \`export TERM=xterm\` before re-running, or run the script from an interactive shell (for Docker, \`docker exec -it ...\`)
-- If \`./scripts/build_and_start_gateway.sh\` fails, confirm \`git\`, \`curl\`, native build tools, \`pkg-config\`, OpenSSL headers, and a current Rust toolchain are installed on the host
-- If the gateway build fails while reading \`Cargo.lock\`, switch to a current Rust toolchain from \`rustup\` instead of the distro-packaged \`cargo\`
-- If \`mongosh\` cannot connect, confirm the gateway script is still running and listening on port \`10260\`
-- For Debian 11, use PostgreSQL 16 or 17; PostgreSQL 18 is blocked by the upstream Bullseye PostGIS dependency
-- If you need a gateway endpoint, use DocumentDB Local with Docker or build and run the gateway from source
+# EL9
+printf '[mongodb-org-8.0]\\nname=MongoDB\\nbaseurl=https://repo.mongodb.org/yum/redhat/9/mongodb-org/8.0/$basearch/\\ngpgcheck=1\\nenabled=1\\ngpgkey=https://pgp.mongodb.com/server-8.0.asc\\n' | sudo tee /etc/yum.repos.d/mongodb.repo
+sudo dnf install -y mongodb-mongosh
+\`\`\`
 
-## Next steps
+## Set up and connect
 
-- [Docker Quick Start](/docs/getting-started/docker)
-- [Building the packages from source](https://github.com/documentdb/documentdb/blob/main/packaging/README.md)
-- [Mongo Shell Quick Start](/docs/getting-started/mongo-shell-quickstart)
-- [Node.js Quick Start](/docs/getting-started/nodejs-setup)
-- [Python Quick Start](/docs/getting-started/python-setup)
-- [API Reference](/docs/reference)
-- [Samples Gallery](/samples)
-- [Package Finder](/packages)
+> [!IMPORTANT]
+> The wizard binds the gateway on **all interfaces** (\`0.0.0.0:10260\`) with a self-signed certificate. Firewall port \`10260\` before you run it on anything but a private machine, then read [Before exposing it to a network](/docs/linux-packages#before-exposing-it-to-a-network).
+
+Installing the packages puts files on disk; it does not create a database or start the endpoint. The setup wizard does that:
+
+\`\`\`bash
+${buildSetupCommand('18')}
+\`\`\`
+
+It creates a new private PostgreSQL 18 instance, installs the extensions, starts the gateway, and enables it at boot. It **prompts for the admin password**. The explicit major and fresh-instance flags keep another installed PostgreSQL major or an existing system cluster from being selected accidentally.
+
+Sample data is opt-in. Add \`--load-sample-data\` to the setup command to seed the \`StoreData\` database with 41,505 documents in \`stores\` and 2 documents in \`ratings\`. This requires \`mongosh\`; the command above leaves the new instance empty.
+
+For automation, use the complete [unattended setup](/docs/linux-packages#unattended-setup) command. To adopt an existing PostgreSQL instance instead, follow [Adopt an existing PostgreSQL instance](/docs/linux-packages#adopt-an-existing-postgre-sql-instance); brownfield setup intentionally has different lifecycle and restart requirements.
+
+Now open a shell against the endpoint:
+
+\`\`\`bash
+mongosh localhost:10260 -u admin -p '<PASSWORD>' --authenticationMechanism SCRAM-SHA-256 \\
+        --tls --tlsAllowInvalidCertificates
+\`\`\`
+
+A database and collection are created on first write:
+
+\`\`\`javascript
+> db.orders.insertOne({ item: "widget", qty: 5 })
+{ acknowledged: true, insertedId: ObjectId('...') }
+
+> db.orders.find()
+[ { _id: ObjectId('...'), item: 'widget', qty: 5 } ]
+\`\`\`
+
+**That is a working DocumentDB.** Confirm the service state with \`sudo documentdb-setup --status\` and the version with \`documentdb-gateway --version\`.
+
+## Where to go next
+
+- Build an application: [Node.js Quick Start](/docs/getting-started/nodejs-setup) or [Python Quick Start](/docs/getting-started/python-setup)
+- Secure it, manage services, run SQL, upgrade, uninstall, and hosts without systemd: [Operating a package install](/docs/linux-packages)
+- Install without internet access: [Offline / air-gapped install](/docs/linux-packages/offline)
+- Choose between the published distributions, architectures and PostgreSQL majors: [Package Finder](/packages)
+
+## Troubleshooting
+
+- \`Unable to locate package documentdb-18\` (apt) / \`No match for argument: documentdb-18\` (dnf) — the DocumentDB repository was not added, or the host is not in the current release matrix. Check the [Package Finder](/packages)
+- \`documentdb-18 : Depends: postgresql-18 but it is not installable\` — PGDG was not added first
+- \`nothing provides libqhull_r.so.7\` — CRB or CodeReady Builder was not enabled for the selected EL9 family
+- \`MongoServerError: Invalid key\` — empty or wrong password; a bare \`-p\` prompts, so a non-interactive shell sends nothing
+- Anything else — \`sudo documentdb-setup --status\` reports the listener, service states and resolved paths
+
+More failure modes, including hosts without systemd: [Operating a package install](/docs/linux-packages#troubleshooting).
+`;
+
+export const linuxPackagesOperationsContent = `# Operating a package install
+
+Day-2 operations for a DocumentDB installed from Linux packages: securing the endpoint, managing services, running SQL, upgrading, and removal. Install first with the [Linux Packages Quick Start](/docs/getting-started/packages).
+
+## Before exposing it to a network
+
+The gateway binds **all interfaces** (\`0.0.0.0:10260\` and \`[::]:10260\`) by default. The PostgreSQL instance behind it stays on loopback.
+
+Before using this anywhere but a private machine:
+
+- Restrict the listener with \`DOCUMENTDB_LISTEN_ADDR=127.0.0.1:10260\` in \`/etc/documentdb/local/<major>/gateway.env\` and restart the service, or firewall port \`10260\`. **Re-running \`documentdb-setup\` silently resets this to a wildcard bind**, so re-check with \`grep DOCUMENTDB_LISTEN_ADDR /etc/documentdb/local/<major>/gateway.env\` afterwards. A firewall rule is the more durable control.
+- Use a strong admin password and create per-application users rather than sharing \`admin\`.
+
+### Replace the self-signed certificate
+
+\`tlsAllowInvalidCertificates=true\` disables server authentication. To use a real certificate,
+set all three values in \`/etc/documentdb/local/<major>/gateway.env\`:
+
+\`\`\`ini
+DOCUMENTDB_TLS_AUTO_GENERATE=false
+DOCUMENTDB_TLS_CERT_FILE=/etc/documentdb/tls/server.crt
+DOCUMENTDB_TLS_KEY_FILE=/etc/documentdb/tls/server.key
+\`\`\`
+
+The gateway runs as \`documentdb-gateway\`. Every parent directory must be traversable by that
+account; keep the private key restricted but readable, for example
+\`root:documentdb-gateway\` with mode \`0640\`. Restart
+\`documentdb-gateway-local@<major>.service\`, verify it is active, and then remove
+\`tlsAllowInvalidCertificates=true\` from clients.
+
+## Services and paths
+
+\`\`\`bash
+sudo documentdb-setup --status      # gateway listener, service states, resolved paths
+documentdb-gateway --version        # DocumentDB version
+dpkg -l | grep documentdb           # or: rpm -qa | grep documentdb
+\`\`\`
+
+| Thing | Where |
+| --- | --- |
+| Gateway port | \`10260\` |
+| PostgreSQL port | \`9700 + <major>\` (9718 for PG 18), loopback only |
+| Gateway log | systemd: \`journalctl -u documentdb-gateway-local@18.service\` · otherwise \`/var/lib/documentdb-gateway/gateway.log\` |
+| PostgreSQL log | systemd: \`journalctl -u documentdb-postgresql@18.service\` · otherwise \`/var/lib/documentdb-local/<major>/data/pglog.log\` |
+| Setup state / gateway env | \`/etc/documentdb/local/<major>/setup.conf\`, \`.../gateway.env\` |
+
+On a systemd host both services log to the journal; the log **files** above exist only when \`documentdb-setup\` falls back to its non-systemd \`nohup\` mode. \`documentdb-setup --status\` prints whichever applies to your host.
+
+Units are templated per PostgreSQL major:
+
+\`\`\`bash
+sudo systemctl status  documentdb-local@18.target
+sudo systemctl restart documentdb-local@18.target
+sudo systemctl stop    documentdb-local@18.target
+\`\`\`
+
+## Adopt an existing PostgreSQL instance
+
+Use brownfield mode only when PostgreSQL already exists and its service and data remain
+operator-owned. Back up the instance first. The wizard does not create, delete, start, or stop
+that PostgreSQL instance, but it does add managed configuration blocks, create the gateway role,
+install the DocumentDB extensions, and register the gateway.
+
+Identify the instance as \`<major>/<name>\`. On Ubuntu, run \`pg_lsclusters\`; a typical instance
+is \`18/main\`. The standard PGDG layout on EL9 has one instance per major and also uses
+\`18/main\`; add \`--pg-port\` when it listens on a non-default port.
+
+\`\`\`bash
+sudo documentdb-setup --target-postgres-instance 18/main --admin-user admin
+\`\`\`
+
+If \`shared_preload_libraries\` changed, the first run prints a restart handoff instead of
+finishing setup. Restart the operator-managed PostgreSQL service, then re-run the exact setup
+command it prints. Typical service names are \`postgresql@18-main.service\` on Ubuntu and
+\`postgresql-18.service\` on EL9. The wizard intentionally does not restart an adopted
+PostgreSQL instance for you.
+
+The wizard's default \`default_toast_compression\` setting applies to newly written values in
+every database on an adopted instance. If other workloads must retain PostgreSQL's own default,
+prefix both setup runs with \`sudo DOCUMENTDB_TOAST_COMPRESSION=default\`.
+
+## Running SQL against a package-managed private instance
+
+A greenfield PostgreSQL instance runs as the \`documentdb-local\` user on a socket, so a bare
+\`psql\` will not find it:
+
+\`\`\`bash
+sudo -u documentdb-local psql -h /run/documentdb-local/18/postgresql -p 9718 -d postgres
+\`\`\`
+
+\`\`\`sql
+SELECT extname, extversion FROM pg_extension WHERE extname LIKE 'documentdb%';
+\`\`\`
+
+For an adopted instance, use the operator's existing PostgreSQL connection instead.
+
+## Upgrading
+
+> [!WARNING]
+> In-place package upgrades from earlier releases are not supported yet. Use a clean host,
+> or remove the earlier packages and perform the current
+> [fresh installation](/docs/getting-started/packages). Upgrading only
+> \`postgresql-N-documentdb\` does not install the gateway, tools, common payload, or
+> \`documentdb-N\`.
+
+For a later point release that uses the same multi-package layout, move the entire stack
+together. On a package-managed private PostgreSQL 18 instance:
+
+\`\`\`bash
+sudo systemctl stop documentdb-gateway-local@18.service
+
+# Debian / Ubuntu
+sudo apt update
+sudo apt install --only-upgrade documentdb-18 postgresql-18-documentdb \\
+  documentdb-common documentdb-gateway documentdb-postgresql-tools
+
+# EL9: use this instead of the apt commands above
+sudo dnf upgrade documentdb-18 postgresql18-documentdb \\
+  documentdb-common documentdb-gateway documentdb-postgresql-tools
+
+# PostgreSQL has the old shared library loaded until it restarts.
+sudo systemctl restart documentdb-postgresql@18.service
+\`\`\`
+
+Then update the extensions in **every database** that has DocumentDB installed:
+
+\`\`\`sql
+ALTER EXTENSION documentdb_core UPDATE;
+ALTER EXTENSION documentdb UPDATE;
+ALTER EXTENSION documentdb_extended_rum UPDATE;  -- only if installed
+\`\`\`
+
+Finally restart the gateway:
+
+\`\`\`bash
+sudo systemctl start documentdb-gateway-local@18.service
+\`\`\`
+
+PostgreSQL applies intermediate upgrade scripts automatically. Take a backup first. For an
+adopted PostgreSQL instance, restart its operator-managed PostgreSQL service instead of
+\`documentdb-postgresql@18.service\`.
+
+## Remove or reset
+
+### Greenfield: destroy the package-managed instance
+
+\`\`\`bash
+# Reset reads setup.conf before removing it, stops the services, and destroys
+# the package-managed data directory. Do not run --restore first.
+sudo documentdb-local-reset --pg-version 18 --confirm-destroy    # DESTROYS the data directory
+
+# Name the package you installed AND the extension: autoremove does not reap
+# postgresql-18-documentdb, and 'remove' would leave config behind.
+sudo apt purge --autoremove documentdb-18 postgresql-18-documentdb
+sudo dnf remove documentdb-18 postgresql18-documentdb && sudo dnf autoremove
+\`\`\`
+
+### Brownfield: detach from an existing PostgreSQL instance
+
+Before restoring, run \`sudo documentdb-setup --status\` and note the gateway port for the major
+you are removing.
+
+On a systemd host, a scoped restore stops and disables that major's gateway:
+
+\`\`\`bash
+sudo documentdb-setup --restore --pg-version 18
+\`\`\`
+
+On a host without systemd, the current setup tooling cannot safely attribute a nohup gateway process to one
+PostgreSQL major. If only one DocumentDB major is configured, use an unscoped restore so the
+orphan gateway sweep runs:
+
+\`\`\`bash
+sudo documentdb-setup --restore --yes
+\`\`\`
+
+If more than one DocumentDB major is configured without systemd, schedule a maintenance window
+and use the same unscoped restore. It detaches every configured major and stops the nohup
+gateways; re-run setup for the majors you are keeping afterward. A scoped restore alone is not
+sufficient on a no-systemd host.
+
+Restart the adopted PostgreSQL service after restore to apply removal of the managed settings.
+On an unscoped multi-major restore, restart each operator-managed PostgreSQL service involved.
+
+Verify that the target gateway port is no longer listening before removing packages. Substitute
+the port you noted above; the command should produce no output:
+
+\`\`\`bash
+ss -lnt | grep ':10260'
+\`\`\`
+
+Then remove the selected major:
+
+\`\`\`bash
+sudo apt purge --autoremove documentdb-18 postgresql-18-documentdb
+sudo dnf remove documentdb-18 postgresql18-documentdb && sudo dnf autoremove
+\`\`\`
+
+Do not run \`documentdb-local-reset\` for brownfield installations: the PostgreSQL instance and
+its data belong to the operator. Do not run restore before a greenfield reset either; restore
+deletes the state that identifies custom data directories and protects adopted clusters.
+
+On a systemd multi-major host, remove one major at a time and re-check the survivor:
+\`documentdb-common\` owns the shared tooling and only \`documentdb-N\` holds it.
+
+## Known package-install issues
+
+These are defects in this release, not expected behaviour. Most need a host without systemd to hit; the status issue also affects systemd hosts.
+
+| Area | Issue | Affects |
+| --- | --- | --- |
+| Status | \`documentdb-setup --status\` can report "active" for any process holding port 10260 | **any host** |
+| Restart | Re-running \`documentdb-setup\` to restart can hang; redirecting output to a file avoids it | no systemd |
+| Stop | A scoped \`documentdb-setup --restore --pg-version N\` cannot stop a nohup gateway; follow the no-systemd brownfield removal steps above | no systemd |
+| Minimal RHEL | Install \`procps-ng\` first, or \`--restore\` reports success while the gateway keeps serving and a later run fails with \`Port 10260 is already in use\` | no systemd |
+
+**Prefer a systemd host for anything you care about**, where the service lifecycle is managed by systemd rather than by the setup script.
+
+## Multiple PostgreSQL majors
+
+Install the matching \`documentdb-N\` for every major you configure. \`documentdb-setup\` refuses a major whose extension package is missing:
+
+\`\`\`text
+ERROR: The DocumentDB extension package is not installed for PostgreSQL 17
+(/usr/share/postgresql/17/extension/documentdb.control is missing).
+\`\`\`
+
+Each major also needs its own gateway port — the second one fails on \`Gateway port 10260 is already in use\` unless you pass \`--gateway-port\`:
+
+\`\`\`bash
+sudo documentdb-setup --pg-version 17 --use-new-postgres-instance \\
+  --gateway-port 10261 --admin-user admin
+\`\`\`
+
+## Troubleshooting
+
+Failure modes beyond the four in the [quick start](/docs/getting-started/packages#troubleshooting):
+
+- \`Bad GPG signature\` on \`pgdg-common\` — wrong architecture in the PGDG repository URL
+- \`apt install\` hangs in a container — \`export DEBIAN_FRONTEND=noninteractive\` first, and drop the leading \`sudo\` when running as \`root\` (minimal images often have no \`sudo\`). Keep \`sudo -u <user>\`, which switches user; \`su documentdb-local -c\` fails because that account has \`/usr/sbin/nologin\`, so use \`su -s /bin/bash documentdb-local -c '...'\`
+- \`ss: command not found\` on a minimal EL9 host — install \`iproute\`; the DocumentDB packages do not pull it in
+- \`db.version()\` and \`buildInfo\` in \`mongosh\` report the emulated MongoDB wire version, not DocumentDB's — use \`documentdb-gateway --version\`
+
+## Unattended setup
+
+\`documentdb-setup\` prompts for the admin password. For servers and CI, provide exactly one
+password source and pass \`--yes\`. For a new private instance:
+
+\`\`\`bash
+printf '%s' "$ADMIN_PW" | sudo documentdb-setup --pg-version 18 \\
+  --use-new-postgres-instance --admin-user admin --admin-password-stdin --yes
+\`\`\`
+
+For brownfield adoption, replace \`--pg-version 18 --use-new-postgres-instance\` with
+\`--target-postgres-instance 18/main\`. You can use
+\`--admin-password-file /path/to/protected/file\` instead of stdin.
+`;
+
+const linuxPackagesOfflineContent = `# Offline / air-gapped install
+
+An air-gapped host has no route to PGDG either, and DocumentDB pulls PostgreSQL, \`pg_cron\`, \`pgvector\` and PostGIS from there — the release assets alone are not enough. Stage the full dependency closure on a connected machine with the **same distribution, release and architecture** as the target.
+
+For a connected host, use the [Linux Packages Quick Start](/docs/getting-started/packages) instead.
+
+## Stage the bundle (connected machine)
+
+Configure the repositories exactly as for an online install: run the whole [Install](/docs/getting-started/packages#install) block for your distribution **except the final \`sudo apt install -y documentdb-18\` / \`sudo dnf install -y documentdb-18\` line** — delete that line and the \`&& \\\` that precedes it. On RHEL the DocumentDB repository is written by the \`tee /etc/yum.repos.d/documentdb.repo\` line near the end, so stopping earlier leaves \`dnf download\` with nothing to find. Then:
+
+\`\`\`bash
+# Debian / Ubuntu
+sudo apt-get install -y dpkg-dev
+mapfile -t PKGS < <(apt-cache depends --recurse --no-recommends --no-suggests \\
+    --no-conflicts --no-breaks --no-replaces --no-enhances documentdb-18 \\
+  | grep '^[a-zA-Z0-9]' | sort -u)
+mkdir -p bundle && cd bundle
+apt-get download "\${PKGS[@]}"
+dpkg-scanpackages . /dev/null > Packages && gzip -k Packages
+\`\`\`
+
+\`\`\`bash
+# RHEL-compatible
+sudo dnf install -y dnf-plugins-core createrepo_c
+mkdir -p bundle
+sudo dnf download --resolve --alldeps --destdir bundle documentdb-18
+createrepo_c bundle
+\`\`\`
+
+> [!NOTE]
+> **Use the full-closure flags, not \`--download-only\`.** \`apt-get install --download-only\` and a bare \`dnf download --resolve\` skip whatever is already installed on the staging machine; the bundle looks complete and the target dies with \`Depends: adduser but it is not installable\`.
+
+Expect ~200 packages / 200 MB (DEB) or ~270 / 170 MB (RPM), mostly PostGIS and GDAL. That is more than an online install downloads, because the closure includes packages already present on the staging machine. The \`unsandboxed as root\` and \`dpkg-scanpackages ... override file\` warnings are harmless.
+
+## Install from the bundle (air-gapped target)
+
+Copy \`bundle/\` across — including the \`Packages\`/\`Packages.gz\` or \`repodata/\` index inside it, which is what makes the next step resolve — and point the package manager at it:
+
+\`\`\`bash
+# Debian / Ubuntu
+echo "deb [trusted=yes] file:///path/to/bundle ./" \\
+  | sudo tee /etc/apt/sources.list.d/documentdb-offline.list
+sudo apt-get update
+sudo apt install -y documentdb-18
+\`\`\`
+
+\`\`\`bash
+# RHEL-compatible
+printf '%s\\n' '[documentdb-offline]' 'name=DocumentDB offline bundle' \\
+  'baseurl=file:///path/to/bundle' 'enabled=1' 'gpgcheck=0' \\
+  | sudo tee /etc/yum.repos.d/documentdb-offline.repo
+sudo dnf install -y --disablerepo='*' --enablerepo=documentdb-offline documentdb-18
+\`\`\`
+
+> [!IMPORTANT]
+> The \`--disablerepo\`/\`--enablerepo\` pair is not optional. DNF **aborts the whole transaction** if any enabled repository is unreachable, and every RHEL-compatible image ships \`baseos\`, \`appstream\` and \`extras\` enabled — so without it the install fails with \`Error: Failed to download metadata for repo 'baseos'\` even though your bundle is perfectly good. APT differs here: it only warns about unreachable sources and continues.
+
+\`[trusted=yes]\` / \`gpgcheck=0\` accept the unsigned local directory. Upstream signatures were verified at staging time; \`sha256sum\` the transfer if it crosses an untrusted boundary.
+
+Then continue with [Set up and connect](/docs/getting-started/packages#set-up-and-connect) — \`documentdb-setup\` needs no network.
+
+\`mongosh\` is **not** part of the bundle and the target cannot reach the MongoDB repository, so stage it in the same pass if you want to verify from the air-gapped host — add \`mongodb-mongosh\` to the package list after configuring the MongoDB repository shown in the quick start. Otherwise verify with \`sudo documentdb-setup --status\` and connect from a machine that does have \`mongosh\`.
+
+## Smaller offline cases
+
+If the target already has PostgreSQL, the PGDG extension dependencies (\`postgresql-N-cron\`, \`-pgvector\`, \`-postgis-3\`) and \`jq\`, you do not need a bundle:
+
+- **Extension only, one file** — \`sudo apt install ./ubuntu24.04-postgresql-18-documentdb_0.117-0_amd64.deb\`. No gateway and no \`documentdb-setup\`.
+- **Full stack from the release assets** — pass all six files for your platform to a *single* \`apt install\` / \`dnf install\`. Local files resolve dependencies only against enabled repositories, so the meta package on its own fails with \`Depends: documentdb-18 ... but it is not installable\`.
 `;
 
 const vscodeQuickStartGuideContent = `# Visual Studio Code Quick Start
@@ -316,7 +645,7 @@ docker run -dt --name documentdb \\
   --password <YOUR_PASSWORD>
 \`\`\`
 
-If you prefer a host installation instead of Docker, use [Linux Packages Quick Start](/docs/getting-started/packages) for the PostgreSQL extension package and run the gateway from source.
+If you prefer a host installation instead of Docker, use the [Linux Packages Quick Start](/docs/getting-started/packages) on a distribution in the current release matrix.
 
 ## Add a local connection in VS Code
 
@@ -332,8 +661,8 @@ If you prefer a host installation instead of Docker, use [Linux Packages Quick S
 
 Once connected:
 
-1. Expand the connection and open \`sampledb\` if you started with DocumentDB Local sample data.
-2. Open a collection such as \`users\` or \`products\`.
+1. Expand the connection and open \`StoreData\`. This exists only if you started the container with \`--init-data true\`; without it DocumentDB Local starts empty.
+2. Open the \`stores\` or \`ratings\` collection.
 3. Switch between the **Table**, **Tree**, and **JSON** views to confirm the extension is reading data correctly.
 4. Create your own database and collection from the context menu, then add a test document like:
 
@@ -392,7 +721,7 @@ Connect to DocumentDB from Node.js using the official MongoDB driver.
 
 ## Prerequisites
 
-- Node.js 18 or later
+- Node.js 20.19 or later (required by the current \`mongodb\` driver)
 - npm
 - [Docker](https://www.docker.com/)
 - Basic familiarity with JavaScript
@@ -481,7 +810,7 @@ If you want certificate validation instead of \`tlsAllowInvalidCertificates=true
 copy the generated certificate from the container and point the driver at it.
 
 \`\`\`bash
-docker cp documentdb:/home/documentdb/gateway/pg_documentdb_gw/cert.pem ~/documentdb-cert.pem
+docker cp documentdb:/home/documentdb/.local/state/documentdb-gateway/tls/cert.pem ~/documentdb-cert.pem
 \`\`\`
 
 \`\`\`javascript
@@ -521,7 +850,7 @@ docker run -dt --name documentdb \\
   --password <YOUR_PASSWORD>
 \`\`\`
 
-If you prefer a host installation instead of Docker, use [Linux Packages Quick Start](/docs/getting-started/packages) for the PostgreSQL extension package and run the gateway from source.
+If you prefer a host installation instead of Docker, use the [Linux Packages Quick Start](/docs/getting-started/packages) on a distribution in the current release matrix.
 
 > DocumentDB Local uses a self-signed certificate by default, so the quickest local
 > PyMongo connection uses \`tlsAllowInvalidCertificates=true\`.
@@ -593,14 +922,14 @@ You should see the recent movie documents printed after a successful \`ping\`.
 
 ## Explore the built-in sample data
 
-If you started with DocumentDB Local sample data, add this snippet after \`client.admin.command("ping")\`:
+Sample data is **opt-in** — this needs a container started with \`--init-data true\`. Without it \`StoreData\` does not exist and the query returns nothing. Add this snippet after \`client.admin.command("ping")\`:
 
 \`\`\`python
-for user in client["sampledb"]["users"].find(
+for store in client["StoreData"]["stores"].find(
     {},
-    {"_id": 0, "name": 1, "email": 1},
+    {"_id": 0, "name": 1, "city": 1, "sales.revenue": 1},
 ).limit(3):
-    print(user)
+    print(store)
 \`\`\`
 
 ## Use a trusted local certificate instead
@@ -608,7 +937,7 @@ for user in client["sampledb"]["users"].find(
 If you want certificate validation instead of \`tlsAllowInvalidCertificates=true\`, copy the generated certificate from the container and pass it to \`MongoClient\`.
 
 \`\`\`bash
-docker cp documentdb:/home/documentdb/gateway/pg_documentdb_gw/cert.pem ~/documentdb-cert.pem
+docker cp documentdb:/home/documentdb/.local/state/documentdb-gateway/tls/cert.pem ~/documentdb-cert.pem
 \`\`\`
 
 \`\`\`python
@@ -661,11 +990,11 @@ docker run -dt --name documentdb \\
   --password <YOUR_PASSWORD>
 \`\`\`
 
-If you prefer a host installation instead of Docker, use [Linux Packages Quick Start](/docs/getting-started/packages) for the PostgreSQL extension package and run the gateway from source.
+If you prefer a host installation instead of Docker, use the [Linux Packages Quick Start](/docs/getting-started/packages) on a distribution in the current release matrix.
 
 > Replace \`<YOUR_USERNAME>\` and \`<YOUR_PASSWORD>\` with your own credentials.
 >
-> DocumentDB Local loads built-in sample data into \`sampledb\` by default. It also uses a self-signed certificate by default, so the fastest local \`mongosh\` connection adds \`--tlsAllowInvalidCertificates\`.
+> DocumentDB Local starts **empty** — pass \`--init-data true\` on the \`docker run\` above to seed the \`StoreData\` sample data used below. It also uses a self-signed certificate by default, so the fastest local \`mongosh\` connection adds \`--tlsAllowInvalidCertificates\`.
 
 ## Connect and verify the connection
 
@@ -690,20 +1019,17 @@ Successful output confirms authentication, TLS, and the gateway endpoint are wor
 
 ## Explore the built-in sample data
 
-DocumentDB Local loads sample collections into \`sampledb\` by default.
+Sample data is **opt-in**: this section needs a container started with \`--init-data true\`. Without it \`StoreData\` does not exist and these queries return nothing.
 
 \`\`\`javascript
-use sampledb
+use StoreData
 
-db.users.find(
+db.stores.find(
   {},
-  { name: 1, email: 1, _id: 0 }
+  { _id: 0, name: 1, city: 1, "sales.revenue": 1 }
 ).limit(3)
 
-db.products.find(
-  { category: "Electronics" },
-  { name: 1, price: 1, _id: 0 }
-)
+db.ratings.find({}, { _id: 1, rating: 1 }).limit(2)
 \`\`\`
 
 ## Create your own collection
@@ -733,7 +1059,7 @@ If you want certificate validation instead of \`--tlsAllowInvalidCertificates\`,
 the generated certificate from the container and pass it to \`mongosh\`.
 
 \`\`\`bash
-docker cp documentdb:/home/documentdb/gateway/pg_documentdb_gw/cert.pem ~/documentdb-cert.pem
+docker cp documentdb:/home/documentdb/.local/state/documentdb-gateway/tls/cert.pem ~/documentdb-cert.pem
 
 mongosh localhost:10260 \\
   -u <YOUR_USERNAME> \\
@@ -765,21 +1091,50 @@ If \`mongosh\` does not connect on the first try:
 - [Samples Gallery](/samples)
 `;
 
-const documentdbLocalDataInitializationContent = `## Data initialization
+const documentdbLocalDataInitializationContent = `## Container image tags
 
-DocumentDB Local starts with built-in sample data by default. The container creates a
-\`sampledb\` database with the \`users\`, \`products\`, \`orders\`, and \`analytics\`
-collections so you can explore queries right away.
+The \`latest\` tag is a convenience alias. Pin an explicit tag for anything reproducible:
+
+| Tag | Contents |
+|---|---|
+| \`ghcr.io/documentdb/documentdb/documentdb-local:pg18-0.117.0\` | DocumentDB 0.117.0 on PostgreSQL 18 |
+| \`…:pg17-0.117.0\` | DocumentDB 0.117.0 on PostgreSQL 17 |
+| \`…:pg16-0.117.0\` · \`…:pg15-0.117.0\` | PostgreSQL 16 and 15 |
+| \`…:latest\` | Currently identical to \`pg17-0.117.0\` |
+
+> \`latest\` tracks **PostgreSQL 17**, while the \`documentdb\` package on Linux pins
+> **PostgreSQL 18**. If you evaluate in Docker and then deploy from packages, you change
+> major version unless you pin the tag deliberately.
+
+Every image records what it was built from:
+
+\`\`\`bash
+docker run --rm --entrypoint cat ghcr.io/documentdb/documentdb/documentdb-local:pg18-0.117.0 /version.txt
+\`\`\`
+
+## Data initialization
+
+DocumentDB Local starts **empty**. Pass \`--init-data true\` to seed the \`StoreData\` database
+with the \`stores\` and \`ratings\` collections:
+
+\`\`\`bash
+docker run -dt -p 10260:10260 --name documentdb \\
+  ghcr.io/documentdb/documentdb/documentdb-local:latest \\
+  --username <YOUR_USERNAME> --password <YOUR_PASSWORD> --init-data true
+\`\`\`
+
+Seeding happens once per data volume, on a fresh volume. Existing volumes are not migrated
+automatically; re-create the volume to seed again.
 
 ### Control initialization behavior
 
 | Requirement | Arg | Env | Default | Description |
 |---|---|---|---|---|
-| Skip built-in sample data | \`--skip-init-data\` | \`SKIP_INIT_DATA\` | \`false\` | Start without loading the default sample collections. |
+| Load built-in sample data | \`--init-data [true\\|false]\` | \`INIT_DATA\` | \`false\` | Seed the \`StoreData\` sample collections on a fresh data volume. |
+| Skip built-in sample data | \`--skip-init-data\` | \`SKIP_INIT_DATA\` | — | Legacy alias for \`--init-data false\`. Does not affect \`--init-data-path\`. |
 | Run custom initialization scripts | \`--init-data-path [PATH]\` | \`INIT_DATA_PATH\` | \`/init_doc_db.d\` | Execute every \`.js\` file in the mounted directory with \`mongosh\`. |
 
-The built-in sample dataset currently includes 5 users, 5 products, 4 orders, and 2
-analytics records.
+The built-in sample dataset currently includes 41,505 store documents and 2 rating documents.
 
 ### Use custom initialization scripts
 
@@ -851,7 +1206,7 @@ If setup does not work on the first try:
 - Confirm the container is running and port \`10260\` is published with \`docker ps\`.
 - Inspect startup, authentication, and TLS errors with \`docker logs documentdb\`.
 - If you want certificate validation instead of \`tlsAllowInvalidCertificates=true\`, follow the certificate steps in [DocumentDB Local](/docs/documentdb-local).
-- For more verbose local diagnostics, restart DocumentDB Local with \`--log-level debug\`; the available runtime options are documented in [DocumentDB Local](/docs/documentdb-local).
+- For more verbose local diagnostics, re-create DocumentDB Local with \`-e DOCUMENTDB_LOG_LEVEL=debug\` (the \`--log-level\` flag is currently a no-op); the available runtime options are documented in [DocumentDB Local](/docs/documentdb-local).
 - If you are installing on a host instead of Docker, use [Linux Packages Quick Start](/docs/getting-started/packages) or the [Package Finder](/packages) to get the correct apt or rpm flow.
 `;
 
@@ -937,6 +1292,10 @@ function normalizeArticle(section: string, file: string, frontmatter: Record<str
     normalizedContent = updateGettingStartedIndexContent(normalizedContent);
   }
 
+  if (section === 'getting-started' && file === 'prebuilt-packages') {
+    normalizedContent = updatePrebuiltPackagesContent(normalizedContent);
+  }
+
   if (section === 'getting-started' && file === 'azure-setup') {
     normalizedContent = normalizedContent.replace(/Micrtosoft/g, 'Microsoft');
   }
@@ -1014,6 +1373,15 @@ function updateGettingStartedIndexContent(content: string): string {
   return updatedContent;
 }
 
+function updatePrebuiltPackagesContent(content: string): string {
+  const legacyClaim =
+    'Everything else — PostgreSQL 15/16, Debian 11/12/13, Ubuntu 22.04, RHEL-compatible 8 — is not built by first-party CI for this release. The [package repository](https://documentdb.io/packages) serves those targets the extension package from an earlier release, or build from the tag with the scripts in [`packaging/`](https://github.com/documentdb/documentdb/blob/main/packaging/README.md). PostgreSQL 15 is extension-only: `documentdb-setup` needs 16 or newer.';
+  const currentPolicy =
+    'Everything else — PostgreSQL 15/16, Debian 11/12/13, Ubuntu 22.04, RHEL-compatible 8 — is not built by first-party CI or hosted by documentdb.io for this release. Starting with v0.116, packages from earlier releases are not carried forward. Build from the matching tag with the [`packaging/` scripts](https://github.com/documentdb/documentdb/blob/v0.117-0/packaging/README.md); PostgreSQL 15 remains extension-only because `documentdb-setup` requires 16 or newer.';
+
+  return content.replace(legacyClaim, currentPolicy);
+}
+
 function updateDocumentDbLocalContent(content: string): string {
   if (/## Data initialization/i.test(content)) {
     return content;
@@ -1032,10 +1400,32 @@ function updateDocumentDbLocalContent(content: string): string {
 export function getArticleContent(): Article {
   const contentPath = path.join(articlesDirectory, 'content.yml');
   const fileContents = fs.readFileSync(contentPath, 'utf8');
-  return loadYaml(fileContents) as Article;
+  const article = loadYaml(fileContents) as Article;
+
+  // content.yml is cloned from the docs repo and does not know about sections
+  // served from this file, so surface them on the landing page here.
+  if (!article.landing.links.some((link) => link.link === '/docs/linux-packages')) {
+    const localIndex = article.landing.links.findIndex((link) => link.link === '/docs/documentdb-local');
+    const linuxPackagesLink = { title: 'Linux Packages', link: '/docs/linux-packages' };
+    article.landing.links.splice(
+      localIndex >= 0 ? localIndex + 1 : article.landing.links.length,
+      0,
+      linuxPackagesLink,
+    );
+  }
+
+  return article;
 }
 
 export function getArticleNavigation(section: string): Link[] {
+  const virtual = virtualSections[section];
+  if (virtual) {
+    return virtual.pages.map(page => ({
+      title: page.title,
+      link: page.slug ? `/docs/${section}/${page.slug}` : `/docs/${section}`,
+    }));
+  }
+
   const navPath = path.join(articlesDirectory, section, 'navigation.yml');
 
   if (!fs.existsSync(navPath)) {
@@ -1105,7 +1495,7 @@ export function getAllSections(): string[] {
     .filter(dirent => dirent.isDirectory())
     .map(dirent => dirent.name);
 
-  return sections;
+  return [...sections, ...Object.keys(virtualSections)];
 }
 
 export function getAllArticlePaths(): { section: string; slug: string[] }[] {
@@ -1113,6 +1503,14 @@ export function getAllArticlePaths(): { section: string; slug: string[] }[] {
   const paths: { section: string; slug: string[] }[] = [];
 
   sections.forEach(section => {
+    const virtual = virtualSections[section];
+    if (virtual) {
+      virtual.pages.forEach(page => {
+        paths.push({ section, slug: page.slug ? [page.slug] : [] });
+      });
+      return;
+    }
+
     const sectionPath = path.join(articlesDirectory, section);
     const files = fs.readdirSync(sectionPath, { withFileTypes: true })
       .filter(dirent => dirent.isFile() && dirent.name.endsWith('.md'))
@@ -1154,6 +1552,32 @@ export function getArticleByPath(section: string, slug: string[] = []): {
 } | null {
   const file = slug.length > 0 ? slug[slug.length - 1] : 'index';
   const navigation = getArticleNavigation(section);
+
+  if (section === 'linux-packages' && file === 'index') {
+    return {
+      content: linuxPackagesOperationsContent,
+      frontmatter: {
+        title: 'Operating a Package Install',
+        description: 'Secure, manage, upgrade and remove a DocumentDB installed from Linux packages, including known package-install issues.',
+      },
+      navigation,
+      section,
+      file,
+    };
+  }
+
+  if (section === 'linux-packages' && file === 'offline') {
+    return {
+      content: linuxPackagesOfflineContent,
+      frontmatter: {
+        title: 'Offline / Air-gapped Install',
+        description: 'Stage a full dependency closure on a connected machine and install DocumentDB on a host with no internet access.',
+      },
+      navigation,
+      section,
+      file,
+    };
+  }
 
   if (section === 'getting-started' && file === 'docker') {
     return {

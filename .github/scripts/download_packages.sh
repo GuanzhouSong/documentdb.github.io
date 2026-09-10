@@ -4,11 +4,11 @@ set -e
 REPO="documentdb/documentdb"
 OUT_DIR="out"
 DOCUMENTDB_VERSION="${DOCUMENTDB_VERSION:-latest}"
-MULTI_VERSION="${MULTI_VERSION:-true}"
 SUITE="${SUITE:-stable}"
 COMPONENTS="${COMPONENTS:-main}"
 ORIGIN="${ORIGIN:-DocumentDB}"
 DESCRIPTION="${DESCRIPTION:-DocumentDB APT and YUM Repository}"
+APT_METADATA_COMPONENTS="main deb11 deb12 deb13 ubuntu22 ubuntu24"
 
 sign_deb_package() {
   local package_file="$1"
@@ -73,26 +73,143 @@ generate_hashes() {
 
 echo "Downloading packages from $REPO releases"
 
-if [ "$DOCUMENTDB_VERSION" = "latest" ]; then
-  if release=$(curl -fqs "https://api.github.com/repos/${REPO}/releases" | python3 -c "import sys, json; releases = json.load(sys.stdin); print(json.dumps(releases[0])) if releases else sys.exit(1)")
-  then
-    tag="$(echo "$release" | python3 -c "import sys, json; print(json.load(sys.stdin)['tag_name'])")"
-    echo "Using latest release: $tag"
-  else
-    echo "Error: Could not fetch latest release information"
-    exit 1
-  fi
-else
-  tag="$DOCUMENTDB_VERSION"
-  if ! release=$(curl -fqs "https://api.github.com/repos/${REPO}/releases/tags/$tag")
-  then
-    echo "Error: Version $tag not found in releases"
-    exit 1
-  fi
-  echo "Using specified release: $tag"
+# ---------------------------------------------------------------------------
+# Release selection
+#
+# The selected release is the package repository's single source of truth.
+# Older releases must not fill gaps: those combinations are on-demand builds,
+# not assets of the current official release, and mixing them into the pool
+# makes stale versions look supported.
+# ---------------------------------------------------------------------------
+
+RELEASES_JSON=$(mktemp)
+if ! curl -fqs "https://api.github.com/repos/${REPO}/releases?per_page=100" > "$RELEASES_JSON"; then
+  echo "Error: Could not fetch release list"
+  exit 1
 fi
 
+# Select exactly one published release. Drafts and prereleases are skipped.
+SELECTED_TAG=$(DOCUMENTDB_VERSION="$DOCUMENTDB_VERSION" python3 - "$RELEASES_JSON" <<'PY'
+import json, os, sys
+
+releases = json.load(open(sys.argv[1]))
+published = [r for r in releases if not r.get("draft") and not r.get("prerelease")]
+if not published:
+    sys.exit("Error: no published releases found")
+
+requested = os.environ.get("DOCUMENTDB_VERSION", "latest")
+if requested != "latest":
+    selected = next((r for r in published if r["tag_name"] == requested), None)
+    if selected is None:
+        sys.exit(f"Error: Version {requested} not found in releases")
+else:
+    selected = published[0]
+
+print(selected["tag_name"])
+PY
+)
+
+PRIMARY_TAG="$SELECTED_TAG"
+echo "Primary release: $PRIMARY_TAG"
+
+# Packages already placed, keyed by "pool|name|arch". A newer release always
+# wins; an older release contributes only packages the newer ones do not
+# provide at all. That is what keeps `postgresql-16-documentdb` alive on
+# ubuntu24/rhel9 after v0.116-0 narrowed Tier 1 to PostgreSQL 17/18, instead of
+# silently deleting a package the install docs still tell people to use.
+# The paragraph above describes the removed gap-fill implementation. The
+# current implementation accepts assets only from PRIMARY_TAG and preserves
+# retired URLs with empty metadata rather than stale packages.
+SEEN_FILE=$(mktemp)
+
+is_claimed() { case " $1 " in *" $2 "*) return 0 ;; *) return 1 ;; esac; }
+
+# "name|arch" identity of a package file, independent of its version.
+#   postgresql-16-documentdb_0.114-0_amd64.deb   -> postgresql-16-documentdb|amd64
+#   documentdb_0.116.0_all.deb                   -> documentdb|all
+#   postgresql16-documentdb-0.114.0-1.el8.x86_64.rpm -> postgresql16-documentdb|x86_64
+#   documentdb-17-0.116.0-1.noarch.rpm           -> documentdb-17|noarch
+package_identity() {
+  local f="$1"
+  case "$f" in
+    *.deb)
+      printf '%s|%s' "${f%%_*}" "$(printf '%s' "$f" | sed -E 's/.*_([^_]+)\.deb$/\1/')"
+      ;;
+    *.rpm)
+      local base="${f%.rpm}"
+      local arch="${base##*.}"
+      local nvr="${base%.*}"
+      # Drop the trailing VERSION and RELEASE fields to leave the package name.
+      printf '%s|%s' "$(printf '%s' "$nvr" | sed -E 's/-[^-]+-[^-]+$//')" "$arch"
+      ;;
+  esac
+}
+
+claim_package() {
+  # claim_package <pool> <filename> -> 0 when this is a new package for the pool
+  local key="$1|$(package_identity "$2")"
+  if grep -qxF "$key" "$SEEN_FILE" 2>/dev/null; then
+    return 1
+  fi
+  printf '%s\n' "$key" >> "$SEEN_FILE"
+  return 0
+}
+
+# Map an asset filename to its APT component, or empty when it is not a
+# distribution-prefixed .deb. Any DocumentDB package for that distribution
+# matches - the extension, the gateway, the tools, documentdb-common, the
+# per-major stand-alone and the meta package - because the v0.116-0 packaging
+# redesign ships all of them and an extension-only filter would silently drop
+# every package that makes `apt install documentdb` resolve.
+deb_component_for() {
+  case "$1" in
+    *dbgsym*)        echo "" ;;
+    deb11-*.deb)     echo "deb11" ;;
+    deb12-*.deb)     echo "deb12" ;;
+    deb13-*.deb)     echo "deb13" ;;
+    ubuntu22.04-*.deb) echo "ubuntu22" ;;
+    ubuntu24.04-*.deb) echo "ubuntu24" ;;
+    *)               echo "" ;;
+  esac
+}
+
+deb_pool_for() {
+  case "$1" in
+    deb11)    echo "$DEB_POOL_DEB11" ;;
+    deb12)    echo "$DEB_POOL_DEB12" ;;
+    deb13)    echo "$DEB_POOL_DEB13" ;;
+    ubuntu22) echo "$DEB_POOL_UBUNTU22" ;;
+    ubuntu24) echo "$DEB_POOL_UBUNTU24" ;;
+  esac
+}
+
+# RPM naming is less uniform than DEB. The extension RPMs carry a distro
+# prefix (rhel9-...), the gateway carries a dist tag (....el9.x86_64.rpm), and
+# the meta / per-major / common / tools RPMs are noarch with NO dist tag at
+# all, so they cannot be routed by name. Those EL-agnostic packages are placed
+# in exactly the pools this release populated via its prefixed assets - never
+# into a pool served by a different release, where their >= dependencies on a
+# same-version documentdb-N would be unsatisfiable.
+rpm_pool_for() {
+  case "$1" in
+    *debuginfo*|*debugsource*) echo "" ;;
+    rhel8-*.rpm)  echo "rhel8" ;;
+    rhel9-*.rpm)  echo "rhel9" ;;
+    *.el8.*.rpm)  echo "rhel8" ;;
+    *.el9.*.rpm)  echo "rhel9" ;;
+    *)            echo "" ;;
+  esac
+}
+
 mkdir -p out/packages
+
+for tag in "$PRIMARY_TAG"; do
+
+  if ! release=$(curl -fqs "https://api.github.com/repos/${REPO}/releases/tags/$tag"); then
+    echo "::error::Could not fetch selected release $tag"
+    exit 1
+  fi
+
   ASSETS_FILE=$(mktemp)
   echo "$release" | python3 -c "
 import sys, json
@@ -101,73 +218,99 @@ for asset in data.get('assets', []):
     print(f\"{asset['name']}|{asset['browser_download_url']}\")
 " > "$ASSETS_FILE"
 
-  # Process each asset
-  while IFS='|' read -r filename download_url
-  do
-    if [ -z "$filename" ]; then
-      continue
-    fi
-    
-    if [[ "$filename" == *.deb ]]; then
-      wget -q -P out/packages "$download_url"
-      
-      if [[ "$filename" =~ ^deb11-postgresql-[0-9]+-documentdb.*\.deb$ ]]; then
-        GOT_DEB=1
-        mkdir -p "$DEB_POOL_DEB11"
-        clean_name=$(echo "$filename" | sed 's/^deb11-//')
-        cp "out/packages/$filename" "$DEB_POOL_DEB11/$clean_name"
-        sign_deb_package "$DEB_POOL_DEB11/$clean_name"
-      elif [[ "$filename" =~ ^deb12-postgresql-[0-9]+-documentdb.*\.deb$ ]]; then
-        GOT_DEB=1
-        mkdir -p "$DEB_POOL_DEB12"
-        clean_name=$(echo "$filename" | sed 's/^deb12-//')
-        cp "out/packages/$filename" "$DEB_POOL_DEB12/$clean_name"
-        sign_deb_package "$DEB_POOL_DEB12/$clean_name"
-      elif [[ "$filename" =~ ^deb13-postgresql-[0-9]+-documentdb.*\.deb$ ]]; then
-        GOT_DEB=1
-        mkdir -p "$DEB_POOL_DEB13"
-        clean_name=$(echo "$filename" | sed 's/^deb13-//')
-        cp "out/packages/$filename" "$DEB_POOL_DEB13/$clean_name"
-        sign_deb_package "$DEB_POOL_DEB13/$clean_name"
-      elif [[ "$filename" =~ ^ubuntu22\.04-postgresql-[0-9]+-documentdb.*\.deb$ ]]; then
-        GOT_DEB=1
-        mkdir -p "$DEB_POOL_UBUNTU22"
-        clean_name=$(echo "$filename" | sed 's/^ubuntu22\.04-//')
-        cp "out/packages/$filename" "$DEB_POOL_UBUNTU22/$clean_name"
-        sign_deb_package "$DEB_POOL_UBUNTU22/$clean_name"
-      elif [[ "$filename" =~ ^ubuntu24\.04-postgresql-[0-9]+-documentdb.*\.deb$ ]]; then
-        GOT_DEB=1
-        mkdir -p "$DEB_POOL_UBUNTU24"
-        clean_name=$(echo "$filename" | sed 's/^ubuntu24\.04-//')
-        cp "out/packages/$filename" "$DEB_POOL_UBUNTU24/$clean_name"
-        sign_deb_package "$DEB_POOL_UBUNTU24/$clean_name"
-      fi
-    elif [[ "$filename" == *.rpm ]]; then
-      echo "Processing RPM: $filename"
-      wget -q -P out/packages "$download_url"
-      
-      if [[ "$filename" =~ ^rhel8-postgresql[0-9]+-documentdb.*\.rpm$ ]]; then
-        GOT_RPM=1
-        mkdir -p "$RPM_POOL_RHEL8"
-        clean_name=$(echo "$filename" | sed 's/^rhel8-//')
-        echo "  Adding to RHEL 8: $filename -> $clean_name"
-        cp "out/packages/$filename" "$RPM_POOL_RHEL8/$clean_name"
-      elif [[ "$filename" =~ ^rhel9-postgresql[0-9]+-documentdb.*\.rpm$ ]]; then
-        GOT_RPM=1
-        mkdir -p "$RPM_POOL_RHEL9"
-        clean_name=$(echo "$filename" | sed 's/^rhel9-//')
-        echo "  Adding to RHEL 9: $filename -> $clean_name"
-        cp "out/packages/$filename" "$RPM_POOL_RHEL9/$clean_name"
-      else
-        echo "  Skipping RPM (does not match patterns): $filename"
-      fi
-    else
-      wget -q -P out/packages "$download_url"
-    fi
+  # First pass: which RPM pools does this release populate? Needed to route the
+  # EL-agnostic noarch packages, which carry no distro hint in their names.
+  serve_rpm=""
+  while IFS='|' read -r filename _; do
+    [ -z "$filename" ] && continue
+    case "$filename" in
+      *.rpm)
+        pool=$(rpm_pool_for "$filename")
+        if [ -n "$pool" ] && ! is_claimed "$serve_rpm" "$pool"; then
+          serve_rpm="$serve_rpm $pool"
+        fi ;;
+    esac
   done < "$ASSETS_FILE"
-  
-rm -f "$ASSETS_FILE"
 
+  added=0
+  while IFS='|' read -r filename download_url; do
+    [ -z "$filename" ] && continue
+
+    case "$filename" in
+      *.deb)
+        comp=$(deb_component_for "$filename")
+        [ -z "$comp" ] && continue
+        claim_package "$comp" "$filename" || continue
+        wget -q -P out/packages "$download_url" || {
+          echo "::error::Download failed: $filename"
+          exit 1
+        }
+        GOT_DEB=1
+        pool=$(deb_pool_for "$comp")
+        mkdir -p "$pool"
+        # The distro prefix disambiguates release assets; it is not part of
+        # the package name and must not survive into the pool.
+        clean_name=$(echo "$filename" | sed -E 's/^(deb1[123]|ubuntu2[24]\.04)-//')
+        cp "out/packages/$filename" "$pool/$clean_name"
+        sign_deb_package "$pool/$clean_name"
+        added=$((added + 1)) ;;
+
+      *.rpm)
+        pool_name=$(rpm_pool_for "$filename")
+        if [ -n "$pool_name" ]; then
+          targets="$pool_name"
+        else
+          case "$filename" in
+            *.noarch.rpm) targets="$serve_rpm" ;;
+            *) targets="" ;;
+          esac
+        fi
+        [ -z "$targets" ] && continue
+
+        downloaded=0
+        clean_name=$(echo "$filename" | sed -E 's/^rhel[89]-//')
+        for t in $targets; do
+          claim_package "$t" "$filename" || continue
+          case "$t" in
+            rhel8) dest="$RPM_POOL_RHEL8" ;;
+            rhel9) dest="$RPM_POOL_RHEL9" ;;
+            *) continue ;;
+          esac
+          if [ "$downloaded" -eq 0 ]; then
+            wget -q -P out/packages "$download_url" || {
+              echo "::error::Download failed: $filename"
+              exit 1
+            }
+            downloaded=1
+            GOT_RPM=1
+          fi
+          mkdir -p "$dest"
+          echo "  Adding to ${t}: $filename -> $clean_name"
+          cp "out/packages/$filename" "$dest/$clean_name"
+          added=$((added + 1))
+        done ;;
+
+      *)
+        # Non-package assets (SHA256SUMS, manifest.txt, ...) are mirrored only
+        # for the primary release, which is what the site links to.
+        if [ "$tag" = "$PRIMARY_TAG" ]; then
+          wget -q -P out/packages "$download_url" || {
+            echo "::error::Download failed: $filename"
+            exit 1
+          }
+        fi ;;
+    esac
+  done < "$ASSETS_FILE"
+
+  echo "Release $tag contributed $added package file(s)"
+  rm -f "$ASSETS_FILE"
+done
+
+rm -f "$RELEASES_JSON" "$SEEN_FILE"
+
+# release-info.json describes the primary release only: it is the "what is the
+# current version" feed for the site, not an inventory of the pool.
+release=$(curl -fqs "https://api.github.com/repos/${REPO}/releases/tags/${PRIMARY_TAG}")
 echo "$release" | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
@@ -199,7 +342,7 @@ for pool in "$RPM_POOL_RHEL8" "$RPM_POOL_RHEL9"; do
 done
 
 if [ "$GOT_DEB" = "1" ]; then
-  echo "Building APT repository with multiple distribution components..."
+  echo "Building APT repository with active and retired compatibility components..."
   pushd out/deb >/dev/null
   
     if [ -d "pool/ubuntu22" ] && [ "$(ls -A pool/ubuntu22/*.deb 2>/dev/null)" ]; then
@@ -318,25 +461,25 @@ if [ "$GOT_DEB" = "1" ]; then
     dpkg-scanpackages --arch arm64 pool/ubuntu24/ > "${DEB_DISTS_UBUNTU24_ARM64}/Packages"
     gzip -k -f "${DEB_DISTS_UBUNTU24_ARM64}/Packages"
   fi
+
+  # Keep retired component URLs valid without retaining packages from older
+  # releases. Existing apt sources can refresh cleanly, but package lookup
+  # returns no stale binaries.
+  for component in $APT_METADATA_COMPONENTS; do
+    for arch in amd64 arm64; do
+      metadata_dir="${DEB_DISTS}/${component}/binary-${arch}"
+      packages_file="${metadata_dir}/Packages"
+      mkdir -p "$metadata_dir"
+      if [ ! -f "$packages_file" ]; then
+        : > "$packages_file"
+        gzip -k -f "$packages_file"
+      fi
+    done
+  done
   
   pushd "${DEB_DISTS}" >/dev/null
   
   echo "Creating Release file"
-  # Determine which components we actually have
-  AVAILABLE_COMPONENTS=""
-  [ -d "${COMPONENTS}/binary-amd64" ] && AVAILABLE_COMPONENTS="${AVAILABLE_COMPONENTS} ${COMPONENTS}"
-  [ -d "deb11/binary-amd64" ] && AVAILABLE_COMPONENTS="${AVAILABLE_COMPONENTS} deb11"
-  [ -d "deb12/binary-amd64" ] && AVAILABLE_COMPONENTS="${AVAILABLE_COMPONENTS} deb12"
-  [ -d "deb13/binary-amd64" ] && AVAILABLE_COMPONENTS="${AVAILABLE_COMPONENTS} deb13"
-  [ -d "ubuntu22/binary-amd64" ] && AVAILABLE_COMPONENTS="${AVAILABLE_COMPONENTS} ubuntu22"
-  [ -d "ubuntu24/binary-amd64" ] && AVAILABLE_COMPONENTS="${AVAILABLE_COMPONENTS} ubuntu24"
-  AVAILABLE_COMPONENTS=$(echo $AVAILABLE_COMPONENTS | sed 's/^ *//')
-  
-  # Determine available architectures
-  AVAILABLE_ARCHITECTURES=""
-  [ -d "${COMPONENTS}/binary-amd64" ] || [ -d "deb11/binary-amd64" ] || [ -d "deb12/binary-amd64" ] || [ -d "deb13/binary-amd64" ] || [ -d "ubuntu22/binary-amd64" ] || [ -d "ubuntu24/binary-amd64" ] && AVAILABLE_ARCHITECTURES="${AVAILABLE_ARCHITECTURES} amd64"
-  [ -d "${COMPONENTS}/binary-arm64" ] || [ -d "deb11/binary-arm64" ] || [ -d "deb12/binary-arm64" ] || [ -d "deb13/binary-arm64" ] || [ -d "ubuntu22/binary-arm64" ] || [ -d "ubuntu24/binary-arm64" ] && AVAILABLE_ARCHITECTURES="${AVAILABLE_ARCHITECTURES} arm64"
-  AVAILABLE_ARCHITECTURES=$(echo $AVAILABLE_ARCHITECTURES | sed 's/^ *//')
   
   {
     echo "Origin: ${ORIGIN}"
@@ -344,9 +487,9 @@ if [ "$GOT_DEB" = "1" ]; then
     echo "Suite: ${SUITE}"
     echo "Codename: ${SUITE}"
     echo "Version: 1.0"
-    echo "Architectures: ${AVAILABLE_ARCHITECTURES}"
-    echo "Components: ${AVAILABLE_COMPONENTS}"
-    echo "Description: ${DESCRIPTION} - Multiple distributions supported"
+    echo "Architectures: amd64 arm64"
+    echo "Components: ${APT_METADATA_COMPONENTS}"
+    echo "Description: ${DESCRIPTION}"
     echo "Date: $(date -Ru)"
     generate_hashes MD5Sum md5sum
     generate_hashes SHA1 sha1sum
@@ -372,7 +515,7 @@ if [ "$GOT_DEB" = "1" ]; then
   popd >/dev/null
 
 
-  echo "APT repository built successfully with multiple distribution support"
+  echo "APT repository built successfully"
 fi
 
 if [ "$GOT_RPM" = "1" ]; then
@@ -390,52 +533,48 @@ if [ "$GOT_RPM" = "1" ]; then
   fi
   
   for POOL in "$RHEL8_POOL" "$RHEL9_POOL"; do
-    if [ -d "$POOL" ] && [ "$(find "$POOL" -name "*.rpm" -type f | wc -l)" -gt 0 ]; then
-      echo "Processing YUM repository: $POOL"
-      pushd "$POOL" >/dev/null
-      
-      if [ -n "$GPG_FINGERPRINT" ]; then
-        for rpm_file in *.rpm; do
-          rpm --define "%_signature gpg" --define "%_gpg_name ${GPG_FINGERPRINT}" --addsign "$rpm_file" 2>/dev/null || true
-        done
-      fi
-      
-      echo "Running createrepo_c in $(pwd)"
-      if createrepo_c .; then
-        echo "Repository metadata created successfully"
-        ls -la repodata/ 2>/dev/null || echo "No repodata directory found"
-      else
-        echo "ERROR: createrepo_c failed for $POOL"
-      fi
-      
-      if [ -n "$GPG_FINGERPRINT" ] && [ -f repodata/repomd.xml ]; then
-        gpg --default-key "$GPG_FINGERPRINT" --detach-sign --armor repodata/repomd.xml 2>/dev/null || true
-      fi
-      
-      popd >/dev/null
-    else
-      echo "Skipping $POOL: directory not found or no RPM files"
+    mkdir -p "$POOL"
+    echo "Processing YUM repository: $POOL"
+    pushd "$POOL" >/dev/null
+
+    if [ -n "$GPG_FINGERPRINT" ]; then
+      for rpm_file in *.rpm; do
+        [ -f "$rpm_file" ] || continue
+        rpm --define "%_signature gpg" --define "%_gpg_name ${GPG_FINGERPRINT}" --addsign "$rpm_file"
+        signature=$(rpm -qp --qf '%{RSAHEADER:pgpsig}' "$rpm_file" 2>/dev/null)
+        if [ -z "$signature" ] || [ "$signature" = "(none)" ]; then
+          echo "::error::$rpm_file was not signed"
+          exit 1
+        fi
+      done
     fi
+
+    echo "Running createrepo_c in $(pwd)"
+    createrepo_c .
+
+    if [ -n "$GPG_FINGERPRINT" ]; then
+      gpg --batch --yes --default-key "$GPG_FINGERPRINT" \
+        --detach-sign --armor repodata/repomd.xml
+    fi
+
+    popd >/dev/null
   done
   
-  # Create main repository for backward compatibility
-  if [ -d "$RHEL8_POOL" ] && [ "$(find "$RHEL8_POOL" -name "*.rpm" -type f | wc -l)" -gt 0 ]; then
-    echo "Creating main YUM repository"
-    mkdir -p "$MAIN_POOL"
+  # Keep the legacy main URL valid. It mirrors RHEL 8 only when the selected
+  # release actually contains RHEL 8 packages; otherwise it is an empty
+  # compatibility repository.
+  echo "Creating main YUM compatibility repository"
+  mkdir -p "$MAIN_POOL"
+  if [ "$(find "$RHEL8_POOL" -name "*.rpm" -type f | wc -l)" -gt 0 ]; then
     cp "$RHEL8_POOL"/*.rpm "$MAIN_POOL"/ 2>/dev/null || true
-    pushd "$MAIN_POOL" >/dev/null
-    echo "Running createrepo_c for main repository in $(pwd)"
-    if createrepo_c .; then
-      echo "Main repository metadata created successfully"
-      ls -la repodata/ 2>/dev/null || echo "No repodata directory found"
-    else
-      echo "ERROR: createrepo_c failed for main repository"
-    fi
-    if [ -n "$GPG_FINGERPRINT" ] && [ -f repodata/repomd.xml ]; then
-      gpg --default-key "$GPG_FINGERPRINT" --detach-sign --armor repodata/repomd.xml 2>/dev/null || true
-    fi
-    popd >/dev/null
   fi
+  pushd "$MAIN_POOL" >/dev/null
+  createrepo_c .
+  if [ -n "$GPG_FINGERPRINT" ]; then
+    gpg --batch --yes --default-key "$GPG_FINGERPRINT" \
+      --detach-sign --armor repodata/repomd.xml
+  fi
+  popd >/dev/null
   
   echo "YUM repositories built successfully"
 fi
@@ -444,6 +583,7 @@ fi
 echo "Package repository setup complete!"
 echo ""
 echo "Repository URLs:"
-echo "  APT: https://documentdb.io/deb stable main"
-echo "  YUM: https://documentdb.io/rpm/rhel8 (or /rhel9, /main)"
+echo "  APT: https://documentdb.io/deb stable ubuntu24"
+echo "  YUM: https://documentdb.io/rpm/rhel9"
+echo "  Retired URLs retain empty metadata for package-manager compatibility."
 echo "  Browse: https://documentdb.io/packages/"
