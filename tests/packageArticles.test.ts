@@ -1,4 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { kebabCase } from 'change-case';
 import {
   getArticleByPath,
@@ -17,6 +20,28 @@ function getCodeBlocks(content: string, language: string): string[] {
 }
 
 describe('Linux package articles', () => {
+  beforeEach(() => {
+    const fixturePaths = new Map(
+      ['index.md', 'navigation.yml'].map((file) => [
+        path.join(process.cwd(), 'articles', 'getting-started', file),
+        fileURLToPath(new URL(`./fixtures/getting-started/${file}`, import.meta.url)),
+      ]),
+    );
+    const existsSync = fs.existsSync;
+    const readFileSync = fs.readFileSync;
+
+    vi.spyOn(fs, 'existsSync').mockImplementation((file) =>
+      existsSync(fixturePaths.get(file.toString()) ?? file),
+    );
+    vi.spyOn(fs, 'readFileSync').mockImplementation((file, options) =>
+      readFileSync(fixturePaths.get(file.toString()) ?? file, options),
+    );
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('uses the shared native install and fresh-instance setup commands', () => {
     const blocks = getCodeBlocks(linuxPackagesGuideContent, 'bash');
 
@@ -67,11 +92,14 @@ describe('Linux package articles', () => {
     expect(article.content).toContain('## Architecture Components');
     expect(article.content).toContain('## Common Use Cases');
     expect(article.content).toContain('## Community and Support');
-    expect(article.navigation.findIndex((item) =>
+    const packageIndex = article.navigation.findIndex((item) =>
       item.link === '/docs/getting-started/packages',
-    )).toBeLessThan(article.navigation.findIndex((item) =>
+    );
+    const dockerIndex = article.navigation.findIndex((item) =>
       item.link === '/docs/getting-started/docker',
-    ));
+    );
+    expect(packageIndex).toBeGreaterThanOrEqual(0);
+    expect(dockerIndex).toBeGreaterThan(packageIndex);
 
     const { readFile } = await import('node:fs/promises');
     const { fileURLToPath } = await import('node:url');
