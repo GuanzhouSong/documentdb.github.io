@@ -15,10 +15,14 @@ type QuickStartTabsProps = {
   vscodeSteps: QuickStartStep[];
   /** Deep link that opens the extension's DocumentDB Local setup wizard. */
   vscodeDeepLinkUrl: string;
-  /** Marketplace page, for visitors who do not have the extension yet. */
+  /** Marketplace page, linked from the caption so the install is explained, not hidden. */
   vscodeMarketplaceUrl: string;
   /** Full guide for each path, linked from the footer of the matching panel. */
   dockerDocsUrl: string;
+  /**
+   * The guide's setup section, which lists every other way to open the wizard. This is the
+   * only place the panel points at when the deep link does nothing.
+   */
   vscodeDocsUrl: string;
 };
 
@@ -49,6 +53,16 @@ function StepList({ steps }: { steps: QuickStartStep[] }) {
   );
 }
 
+/**
+ * Shown only after the setup button is used. VS Code's install-on-link can fail with
+ * "No extension gallery service configured" when the link is also what starts VS Code and a
+ * managed marketplace policy delays the gallery until the account is verified; a second
+ * click once VS Code is up succeeds. Rendering this after the click keeps that caveat out of
+ * the happy path for everyone who has not clicked yet.
+ */
+export const setupRetryHint =
+  "VS Code should now open and offer to install the extension. If VS Code had to start first, it can report an error before it is ready. Select Set up in VS Code again once it has loaded.";
+
 export default function QuickStartTabs({
   dockerCommand,
   dockerSteps,
@@ -59,6 +73,7 @@ export default function QuickStartTabs({
   vscodeDocsUrl,
 }: QuickStartTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>("terminal");
+  const [setupOpened, setSetupOpened] = useState(false);
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   const selectTab = (id: TabId) => {
@@ -168,37 +183,69 @@ export default function QuickStartTabs({
         aria-labelledby="quickstart-tab-vscode"
         hidden={activeTab !== "vscode"}
       >
-        <p className="mb-4 text-sm leading-6 text-gray-400">
-          This path needs Docker Desktop or Docker Engine, set to Linux
-          containers, running wherever VS Code is: your machine, or your WSL,
-          dev container, or SSH remote. The extension pulls the image, starts
-          it, and saves the connection for you. It never installs Docker, and it
-          changes nothing else on your machine.
+        {/*
+          No Docker prerequisite here. Both paths need Docker and the Terminal tab does not say
+          so, so saying it only here made the guided path look like the one with extra
+          requirements. The guide covers Docker properly, readiness states included.
+        */}
+        <p className="mb-4 text-sm leading-6 text-gray-300">
+          <strong className="font-semibold text-white">
+            Choose this for the smoothest experience.
+          </strong>{" "}
+          VS Code sets up DocumentDB Local and creates a ready-to-use connection
+          for you. One click, then follow the wizard.
         </p>
-        <div className="flex flex-col gap-2 sm:flex-row">
+        {/*
+          One button carries the whole flow. VS Code itself offers to install a missing
+          extension when a vscode:// link targets it, then re-opens the link, so a separate
+          "Install the extension" action was a step the visitor never has to take.
+        */}
+        <a
+          href={vscodeDeepLinkUrl}
+          aria-describedby="quickstart-vscode-setup-caption"
+          onClick={() => setSetupOpened(true)}
+          className="inline-flex w-full items-center justify-center rounded-md bg-blue-500 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-400 sm:w-auto"
+        >
+          Set up in VS Code
+        </a>
+        <p
+          id="quickstart-vscode-setup-caption"
+          className="mt-2.5 text-sm leading-6 text-gray-400"
+        >
+          Opens VS Code, asks to install the{" "}
           <Link
             href={vscodeMarketplaceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center rounded-md border border-blue-400/30 bg-blue-500/20 px-4 py-2.5 text-sm font-semibold text-blue-100 transition-colors hover:bg-blue-500/30"
+            className="font-semibold text-gray-300 underline decoration-neutral-600 underline-offset-2 transition-colors hover:text-white"
           >
-            Install the extension
-          </Link>
-          <a
-            href={vscodeDeepLinkUrl}
-            className="inline-flex items-center justify-center rounded-md border border-neutral-600 px-4 py-2.5 text-sm font-semibold text-gray-200 transition-colors hover:border-neutral-500 hover:bg-neutral-800"
+            DocumentDB for VS Code
+          </Link>{" "}
+          extension if you do not have it yet, and launches the wizard.
+        </p>
+        {setupOpened && (
+          <p
+            role="status"
+            className="mt-3 rounded-md border border-blue-400/20 bg-blue-500/10 px-3.5 py-2.5 text-sm leading-6 text-gray-200"
           >
-            Open setup in VS Code
-          </a>
-        </div>
+            {setupRetryHint}
+          </p>
+        )}
         <StepList steps={vscodeSteps} />
+        {/*
+          Troubleshooting stays out of the happy path: a link, after the steps, rather than a
+          "if nothing happens" paragraph in front of someone who has not clicked yet.
+        */}
         <p className="mt-4 text-sm leading-6 text-gray-400">
-          If nothing happens, check that the extension is installed and up to
-          date, then run{" "}
-          <strong className="font-semibold text-gray-300">
-            DocumentDB: Set up DocumentDB Local
-          </strong>{" "}
-          from the Command Palette.
+          Not working in VS Code? The{" "}
+          <Link
+            href={vscodeDocsUrl}
+            className="font-semibold text-blue-300 transition-colors hover:text-blue-200"
+          >
+            setup guide
+          </Link>{" "}
+          shows how to open the wizard from the activity bar or the Command
+          Palette.
         </p>
         <p className="mt-4 text-sm leading-6 text-gray-400">
           Prefer to start it yourself? The{" "}
@@ -212,14 +259,6 @@ export default function QuickStartTabs({
           </button>{" "}
           tab runs the same image with one command.
         </p>
-        <div className="mt-4 text-sm">
-          <Link
-            href={vscodeDocsUrl}
-            className="font-semibold text-blue-300 transition-colors hover:text-blue-200"
-          >
-            Full VS Code guide
-          </Link>
-        </div>
       </div>
     </div>
   );

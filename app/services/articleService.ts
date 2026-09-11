@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { kebabCase } from 'change-case';
 import path from 'path';
 import { load as loadYaml } from 'js-yaml';
 import matter from 'gray-matter';
@@ -614,6 +615,14 @@ If the target already has PostgreSQL, the PGDG extension dependencies (\`postgre
 - **Full stack from the release assets** — pass the five packages for the selected PostgreSQL major to a *single* \`apt install\` / \`dnf install\`: \`documentdb-N\`, the matching \`postgresql-N-documentdb\` / \`postgresqlN-documentdb\` extension, \`documentdb-common\`, \`documentdb-gateway\`, and \`documentdb-postgresql-tools\`. For PostgreSQL 18 only, the optional \`documentdb\` meta package may be included; it selects \`documentdb-18\`. Local files resolve dependencies only against enabled repositories, so a package whose dependencies are not included still fails.
 `;
 
+/**
+ * The guide section the homepage quick start links to when the deep link does nothing. The
+ * anchor is derived exactly as Markdown.tsx derives H2 anchors, so a retitled heading moves
+ * the link with it instead of silently breaking it.
+ */
+const vscodeSetupSectionTitle = 'Set up DocumentDB Local';
+export const vscodeSetupSectionAnchor = kebabCase(vscodeSetupSectionTitle);
+
 const vscodeQuickStartGuideContent = `# Visual Studio Code Quick Start
 
 Use DocumentDB for VS Code to set up a local DocumentDB instance, browse sample data, and create your first database without leaving the editor.
@@ -639,14 +648,14 @@ code --install-extension ms-azuretools.vscode-documentdb
 
 If VS Code prompts you to reload after installation, do that before creating a connection.
 
-## Set up DocumentDB Local
+## ${vscodeSetupSectionTitle}
 
 This is the fastest path, and it leaves no Docker commands for you to run.
 
 1. Open setup using any of these:
    - Select the DocumentDB icon in the activity bar, expand **Your own DocumentDB** in the Connections view, and select **Set up DocumentDB Local**.
    - Run **DocumentDB: Set up DocumentDB Local** from the Command Palette.
-   - Paste \`vscode://ms-azuretools.vscode-documentdb/local\` into your browser address bar and confirm both prompts. This needs extension version 0.10.1 or later.
+   - Open \`vscode://ms-azuretools.vscode-documentdb/local\` from your browser and confirm the prompts. If the extension is not installed, VS Code offers to install it first. This needs extension version 0.10.1 or later.
 2. On the **Introduction** step, select **Continue**. Nothing is downloaded or created until the next step.
 3. On the **Configure** step, review the defaults and select **Start DocumentDB Local**. The defaults give you an available port (starting at \`10260\`), generated credentials, the \`latest\` official image, and optional sample data. Expand the advanced options to set the port, image tag, or credentials yourself.
 4. Wait for setup to finish. The extension creates a container named \`vscode-documentdb-local\` with a persistent volume, then waits until the database accepts connections.
@@ -713,6 +722,7 @@ After the connection works, the extension can help you continue without leaving 
 If setup or the connection does not work on the first try:
 
 - If the browser link does nothing, confirm the extension is installed and up to date, then run **DocumentDB: Set up DocumentDB Local** from the Command Palette instead
+- If VS Code reports **No extension gallery service configured**, it could not reach a marketplace to install the extension for you. On managed devices whose policy points VS Code at a private marketplace, the gallery is unavailable until VS Code has verified your account, so the first click can fail when it is also what starts VS Code. Select the button again once VS Code has loaded, or install the extension yourself with \`code --install-extension ms-azuretools.vscode-documentdb\` and then open the link again
 - If setup reports that Docker is unreachable, fix what it names (Docker not running, or Docker set to Windows containers rather than Linux) and select **Continue setup**; nothing has been created at that point
 - Verify the extension is installed and reload VS Code if the DocumentDB view does not appear
 - Confirm your local DocumentDB instance is actually running before you connect

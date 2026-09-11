@@ -6,6 +6,7 @@ import {
   documentdbVsCodeExtensionMarketplaceUrl,
   documentdbVsCodeLocalQuickStartDeepLink,
 } from "./services/externalLinks";
+import { vscodeSetupSectionAnchor } from "./services/articleService";
 import { getMetadata } from "./services/metadataService";
 import {
   documentdbGitHubForks,
@@ -61,21 +62,19 @@ const dockerQuickStartSteps = [
   },
 ];
 
+// Two steps against Terminal's three: the guided path should look shorter at a glance.
+// Installing the extension is not a step, because VS Code offers to do it when the deep
+// link is opened; the caption under the button says so.
 const vscodeQuickStartSteps = [
   {
     step: "01",
     description:
-      "Install the free DocumentDB for VS Code extension from the Marketplace.",
+      "Once VS Code loads the wizard, select Continue, review the defaults, then select Start DocumentDB Local.",
   },
   {
     step: "02",
     description:
-      "Select Open setup in VS Code, then confirm both prompts. In the wizard select Continue, review the defaults, and select Start DocumentDB Local.",
-  },
-  {
-    step: "03",
-    description:
-      "You get a container on an available port, 10260 unless it is taken, with generated credentials. Select Open Connection to browse data and run your first query.",
+      "Select Open Connection to browse your data and run your first query. Sample data is included.",
   },
 ];
 
@@ -411,7 +410,7 @@ export default function Home() {
                 vscodeDeepLinkUrl={documentdbVsCodeLocalQuickStartDeepLink}
                 vscodeMarketplaceUrl={documentdbVsCodeExtensionMarketplaceUrl}
                 dockerDocsUrl="/docs/getting-started/docker"
-                vscodeDocsUrl="/docs/getting-started/vscode-quickstart"
+                vscodeDocsUrl={`/docs/getting-started/vscode-quickstart#${vscodeSetupSectionAnchor}`}
               />
             </div>
           </div>
