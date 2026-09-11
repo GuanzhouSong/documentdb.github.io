@@ -153,8 +153,12 @@ jobs:
         # /documentdb.github.io/, which GitHub Pages then 301-redirects back
         # to the root on every request and leaves the prefixed URL visible in
         # the address bar after client-side navigation.
+        # FORK PREVIEW ONLY, never merge: this fork deploys as a project page
+        # at https://guanzhousong.github.io/documentdb.github.io/, so unlike
+        # the upstream org-domain deployment the base path must be set.
         env:
-          JEKYLL_BASE_PATH: /blogs
+          NEXT_BASE_PATH: documentdb.github.io
+          JEKYLL_BASE_PATH: /documentdb.github.io/blogs
         run: npm run build
       - name: Verify exported documentation pages
         # A partially failed content compile must never reach production as a
