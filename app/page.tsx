@@ -6,7 +6,7 @@ import {
   documentdbVsCodeExtensionMarketplaceUrl,
   documentdbVsCodeLocalQuickStartDeepLink,
 } from "./services/externalLinks";
-import { vscodeSetupSectionAnchor } from "./services/articleService";
+import { vscodeSetupSectionAnchor } from "./lib/docsAnchors";
 import { getMetadata } from "./services/metadataService";
 import {
   documentdbGitHubForks,
@@ -74,7 +74,7 @@ const vscodeQuickStartSteps = [
   {
     step: "02",
     description:
-      "Select Open Connection to browse your data and run your first query. Sample data is included.",
+      "Select Open Connection to browse your data and run your first query. Sample data is loaded by default.",
   },
 ];
 
