@@ -2,7 +2,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import Home from '../app/page';
-import { setupRetryHint } from '../app/components/QuickStartTabs';
+import { setupRetryLead } from '../app/components/QuickStartTabs';
 import {
   getArticleByPath,
   vscodeSetupSectionAnchor,
@@ -92,9 +92,9 @@ describe('homepage local quick start', () => {
       /<a href="vscode:[^"]*" aria-describedby="quickstart-vscode-setup-caption"/,
     );
     const caption = vscode.slice(vscode.indexOf('id="quickstart-vscode-setup-caption"'));
-    expect(caption).toContain('asks to install the');
+    expect(caption).toContain('Opens VS Code and its setup wizard.');
     expect(caption).toContain(`href="${documentdbVsCodeExtensionMarketplaceUrl}"`);
-    expect(caption).toContain('launches the wizard');
+    expect(caption).toContain('extension first if you need it.');
 
     expect(vscode).toContain('Choose this for the smoothest experience.');
   });
@@ -153,10 +153,11 @@ describe('homepage local quick start', () => {
   it('keeps troubleshooting out of the happy path', () => {
     const vscode = panel('vscode');
     expect(vscode).not.toContain('If nothing happens');
-    // The retry hint exists only after the button is used; it must not be in the first paint.
-    expect(setupRetryHint).toContain('Select Set up in VS Code again');
-    expect(vscode).not.toContain('again once it has loaded');
-    expect(vscode).not.toContain('role="status"');
+    // The retry line appears only some seconds after the button is used. The live region is
+    // mounted from the first paint so it is announced when filled, but it starts empty.
+    expect(setupRetryLead).toBe('Nothing happened?');
+    expect(vscode).not.toContain(setupRetryLead);
+    expect(vscode).toContain('<div role="status"></div>');
     expect(vscode).not.toContain('DocumentDB: Set up DocumentDB Local');
 
     // A short link after the steps, not a paragraph of doubt in front of someone who has
@@ -164,7 +165,9 @@ describe('homepage local quick start', () => {
     const fallback = vscode.indexOf('Not working in VS Code?');
     expect(fallback).toBeGreaterThan(vscode.lastIndexOf('</ol>'));
     expect(vscode.slice(fallback)).toContain(`href="${vscodeGuideUrl}"`);
-    expect(vscode.slice(fallback)).toContain('>setup guide</a>');
+    // Same link text shape as the Terminal panel's "Full Docker guide", so the two panels
+    // rhyme and a successful visitor still has a neutral route to the guide.
+    expect(vscode.slice(fallback)).toContain('>full VS Code guide</a>');
     expect(vscode.slice(fallback)).toContain('activity bar or the Command');
   });
 });

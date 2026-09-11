@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import CommandSnippet from "./CommandSnippet";
 
 export type QuickStartStep = {
@@ -54,14 +54,14 @@ function StepList({ steps }: { steps: QuickStartStep[] }) {
 }
 
 /**
- * Shown only after the setup button is used. VS Code's install-on-link can fail with
- * "No extension gallery service configured" when the link is also what starts VS Code and a
- * managed marketplace policy delays the gallery until the account is verified; a second
- * click once VS Code is up succeeds. Rendering this after the click keeps that caveat out of
- * the happy path for everyone who has not clicked yet.
+ * How long after the setup button is used before the retry line appears. Long enough for
+ * VS Code to open and take focus on a normal machine, so people for whom it worked never
+ * read it; short enough that someone still looking at the page finds it.
  */
-export const setupRetryHint =
-  "VS Code should now open and offer to install the extension. If VS Code had to start first, it can report an error before it is ready. Select Set up in VS Code again once it has loaded.";
+const RETRY_HINT_DELAY_MS = 4000;
+
+/** Lead of the retry line; exported so the test can assert it is absent from the first paint. */
+export const setupRetryLead = "Nothing happened?";
 
 export default function QuickStartTabs({
   dockerCommand,
@@ -74,6 +74,20 @@ export default function QuickStartTabs({
 }: QuickStartTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>("terminal");
   const [setupOpened, setSetupOpened] = useState(false);
+  const [showRetry, setShowRetry] = useState(false);
+
+  // The deep link can do nothing visible: no VS Code installed, or on managed devices whose
+  // policy sets a private marketplace, a cold-started VS Code fails the install with "No
+  // extension gallery service configured" and a second click succeeds. A retry line shown
+  // only after a delay reaches those people without putting doubt in front of the majority
+  // for whom VS Code is already opening.
+  useEffect(() => {
+    if (!setupOpened) {
+      return;
+    }
+    const timer = window.setTimeout(() => setShowRetry(true), RETRY_HINT_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [setupOpened]);
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   const selectTab = (id: TabId) => {
@@ -212,7 +226,7 @@ export default function QuickStartTabs({
           id="quickstart-vscode-setup-caption"
           className="mt-2.5 text-sm leading-6 text-gray-400"
         >
-          Opens VS Code, asks to install the{" "}
+          Opens VS Code and its setup wizard. Installs the{" "}
           <Link
             href={vscodeMarketplaceUrl}
             target="_blank"
@@ -221,16 +235,32 @@ export default function QuickStartTabs({
           >
             DocumentDB for VS Code
           </Link>{" "}
-          extension if you do not have it yet, and launches the wizard.
+          extension first if you need it.
         </p>
-        {setupOpened && (
-          <p
-            role="status"
-            className="mt-3 rounded-md border border-blue-400/20 bg-blue-500/10 px-3.5 py-2.5 text-sm leading-6 text-gray-200"
-          >
-            {setupRetryHint}
-          </p>
-        )}
+        {/* Always mounted so the live region exists before its content arrives. */}
+        <div role="status">
+          {showRetry && (
+            <p className="mt-3 text-sm leading-6 text-gray-400">
+              {setupRetryLead} Try{" "}
+              <a
+                href={vscodeDeepLinkUrl}
+                className="font-semibold text-blue-300 transition-colors hover:text-blue-200"
+              >
+                Set up in VS Code
+              </a>{" "}
+              again, or install the extension from the{" "}
+              <Link
+                href={vscodeMarketplaceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-blue-300 transition-colors hover:text-blue-200"
+              >
+                Marketplace
+              </Link>{" "}
+              first.
+            </p>
+          )}
+        </div>
         <StepList steps={vscodeSteps} />
         {/*
           Troubleshooting stays out of the happy path: a link, after the steps, rather than a
@@ -242,7 +272,7 @@ export default function QuickStartTabs({
             href={vscodeDocsUrl}
             className="font-semibold text-blue-300 transition-colors hover:text-blue-200"
           >
-            setup guide
+            full VS Code guide
           </Link>{" "}
           shows how to open the wizard from the activity bar or the Command
           Palette.
