@@ -2,11 +2,11 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import Home from '../app/page';
-import { SetupRetryHint } from '../app/components/QuickStartTabs';
+import Markdown from '../app/components/Markdown';
 import {
   headingAnchor,
-  vscodeSetupSectionAnchor,
-  vscodeSetupSectionTitle,
+  vscodeExistingConnectionSectionAnchor,
+  vscodeExistingConnectionSectionTitle,
 } from '../app/lib/docsAnchors';
 import { getArticleByPath } from '../app/services/articleService';
 import {
@@ -15,182 +15,217 @@ import {
 } from '../app/services/externalLinks';
 
 const html = renderToStaticMarkup(createElement(Home));
+const cardStart = html.indexOf('id="run-with-docker"');
+const card = html.slice(cardStart, html.indexOf('</section>', cardStart));
+const vscodeGuideUrl = '/docs/getting-started/vscode-quickstart';
+const existingConnectionUrl = `${vscodeGuideUrl}#${vscodeExistingConnectionSectionAnchor}`;
 
-/** The quick start card only, so assertions cannot be satisfied by unrelated page content. */
-const card = html.slice(html.indexOf('id="run-with-docker"'));
-
-/** One tab panel only: bounded by the next panel, or by the end of the hero section. */
-function panel(id: 'terminal' | 'vscode') {
+function panel(id: 'command' | 'guided') {
   const start = card.indexOf(`id="quickstart-panel-${id}"`);
+  const end = card.indexOf(
+    id === 'command'
+      ? 'id="quickstart-panel-guided"'
+      : 'id="quickstart-existing-connection"',
+    start + 1,
+  );
   expect(start).toBeGreaterThan(-1);
-  const candidates = [
-    card.indexOf('id="quickstart-panel-vscode"', start + 1),
-    card.indexOf('</section>', start),
-  ].filter((index) => index > start);
-  expect(candidates.length).toBeGreaterThan(0);
-  return card.slice(start, Math.min(...candidates));
+  expect(end).toBeGreaterThan(start);
+  return card.slice(start, end);
 }
 
-const vscodeGuideUrl = `/docs/getting-started/vscode-quickstart#${vscodeSetupSectionAnchor}`;
+const guide = getArticleByPath('getting-started', ['vscode-quickstart']);
+if (!guide) {
+  throw new Error('The VS Code quick-start guide must exist');
+}
+const guideContent = guide.content;
+const guideHtml = renderToStaticMarkup(
+  createElement(Markdown, {
+    content: guideContent,
+    sourcePath: 'getting-started/vscode-quickstart.md',
+  }),
+);
 
 describe('homepage local quick start', () => {
-  it('preserves the public anchor and the terminal path as the default tab', () => {
-    expect(html).toContain('id="run-with-docker"');
+  it('preserves the public anchor and selects the Docker command by default', () => {
+    expect(cardStart).toBeGreaterThan(-1);
 
-    // Asserted attribute by attribute: matching a fixed attribute sequence would fail on a
-    // no-op JSX prop reorder while telling us nothing extra.
-    for (const attr of [
-      'id="quickstart-tab-terminal"',
-      'aria-selected="true"',
-      'aria-controls="quickstart-panel-terminal"',
-      'id="quickstart-panel-terminal"',
-      'aria-labelledby="quickstart-tab-terminal"',
-      'id="quickstart-tab-vscode"',
-      'aria-controls="quickstart-panel-vscode"',
-      'id="quickstart-panel-vscode"',
-      'aria-labelledby="quickstart-tab-vscode"',
-    ]) {
-      expect(card).toContain(attr);
+    for (const id of ['command', 'guided']) {
+      const selected = id === 'command';
+      const tab = card.match(
+        new RegExp(`<button\\b[^>]*id="quickstart-tab-${id}"[^>]*>`),
+      )?.[0];
+      expect(tab).toBeDefined();
+      expect(tab).toContain(`aria-selected="${selected}"`);
+      expect(tab).toContain(`aria-controls="quickstart-panel-${id}"`);
+      expect(tab).toContain(`tabindex="${selected ? 0 : -1}"`);
+
+      const panelTag = card.match(
+        new RegExp(`<div\\b[^>]*id="quickstart-panel-${id}"[^>]*>`),
+      )?.[0];
+      expect(panelTag).toContain('role="tabpanel"');
+      expect(panelTag).toContain(`aria-labelledby="quickstart-tab-${id}"`);
+      if (selected) {
+        expect(panelTag).not.toContain('hidden=""');
+      } else {
+        expect(panelTag).toContain('hidden=""');
+      }
     }
-
-    // The VS Code panel is the one hidden on first paint, and its tab is out of the tab order.
-    expect(card).toMatch(/id="quickstart-panel-vscode"[^>]*hidden=""/);
-    expect(card).not.toMatch(/id="quickstart-panel-terminal"[^>]*hidden=""/);
   });
 
-  it('ships a command that is safe to publish and actually parses in a shell', () => {
-    // A bare -p publishes on every interface; the guide this card links to calls that out.
-    expect(card).toContain('-p 127.0.0.1:10260:10260');
-    expect(card).not.toContain('-p 10260:10260 ');
-    // Unquoted <PLACEHOLDER> is parsed as a redirection, so the pasted command is a syntax error.
-    expect(card).toContain("--username &#x27;&lt;YOUR_USERNAME&gt;&#x27;");
-    expect(card).toContain("--password &#x27;&lt;YOUR_PASSWORD&gt;&#x27;");
-    expect(card).toContain(
-      'ghcr.io/documentdb/documentdb/documentdb-local:latest',
+  it('preserves the loopback binding, quoted placeholders, and official image', () => {
+    const command = panel('command');
+    expect(command).toContain('-p 127.0.0.1:10260:10260');
+    expect(command).not.toContain('-p 10260:10260 ');
+    expect(command).toContain("--username &#x27;&lt;YOUR_USERNAME&gt;&#x27;");
+    expect(command).toContain("--password &#x27;&lt;YOUR_PASSWORD&gt;&#x27;");
+    expect(command).toContain('ghcr.io/documentdb/documentdb/documentdb-local:latest');
+    expect(command).not.toContain('--init-data');
+  });
+
+  it('labels setup workflows and identifies the extension before selection', () => {
+    const selector = card.slice(
+      card.indexOf('role="tablist"'),
+      card.indexOf('role="tabpanel"'),
     );
+    expect(selector).toContain('Docker command');
+    expect(selector).toContain('Run it yourself');
+    expect(selector).toContain('Guided setup');
+    expect(selector).toContain('VS Code extension');
+    expect(selector).not.toContain('>Terminal<');
+    expect(selector).not.toContain('>VS Code<');
+    expect(card).not.toContain('Want a GUI?');
+    expect(card).not.toContain('connects to this container too');
   });
 
-  it('labels the tabs by interface and says the paths share an image, not a container', () => {
-    expect(card).toContain('>Terminal</button>');
-    expect(card).toContain('>VS Code</button>');
-    expect(card).toContain('Both run the same DocumentDB Local image.');
+  it('states the shared Docker requirement once, outside either panel', () => {
+    const requirement = 'Both options require Docker and use the DocumentDB Local image.';
+    expect(card.split(requirement)).toHaveLength(2);
+    expect(card.indexOf(requirement)).toBeLessThan(card.indexOf('role="tablist"'));
+    expect(panel('command')).not.toContain(requirement);
+    expect(panel('guided')).not.toContain(requirement);
+    expect(panel('guided')).not.toContain('Linux containers');
   });
 
-  it('carries the whole VS Code flow on one button, with the install explained underneath', () => {
+  it('explains manual control and guided provisioning rather than editor choice', () => {
+    expect(panel('command')).toContain('Run the container yourself');
+    expect(panel('guided')).toContain(
+      'create your local database, generate credentials, and save a ready-to-use connection',
+    );
+    expect(card).not.toContain('smoothest experience');
+    expect(card).not.toContain('One click');
+    expect(card).not.toContain('300 MB');
+  });
+
+  it('offers one guided launch action with an honest editor and extension caption', () => {
     expect(documentdbVsCodeLocalQuickStartDeepLink).toBe(
       'vscode://ms-azuretools.vscode-documentdb/local',
     );
-    const vscode = panel('vscode');
+    const guided = panel('guided');
+    const launch = guided.match(
+      /<a\b[^>]*>Set up in VS Code<\/a>/,
+    )?.[0];
+    expect(launch).toContain(`href="${documentdbVsCodeLocalQuickStartDeepLink}"`);
+    expect(launch).toContain('aria-describedby="quickstart-vscode-setup-caption"');
+    expect(card.split(`href="${documentdbVsCodeLocalQuickStartDeepLink}"`)).toHaveLength(2);
 
-    // VS Code offers to install a missing extension when the deep link targets it, so a
-    // separate "Install the extension" action was a step the visitor never has to take.
-    // Attribute by attribute rather than as one sequence, so a JSX prop reorder cannot fail it.
-    const button = vscode.slice(0, vscode.indexOf('>Set up in VS Code</a>'));
-    expect(button).toContain(`href="${documentdbVsCodeLocalQuickStartDeepLink}"`);
-    expect(button).toContain('aria-describedby="quickstart-vscode-setup-caption"');
-    expect(vscode).not.toContain('Install the extension');
-    expect(vscode).not.toContain('Open setup in VS Code');
-
-    // The caption is what the button is described by, and it is where the Marketplace link
-    // lives now: explained, not hidden, but not a second button.
-    const captionStart = vscode.indexOf('id="quickstart-vscode-setup-caption"');
-    const caption = vscode.slice(captionStart, vscode.indexOf('</p>', captionStart));
-    expect(caption).toContain('Opens VS Code and its setup wizard.');
+    const captionStart = guided.indexOf('id="quickstart-vscode-setup-caption"');
+    const caption = guided.slice(captionStart, guided.indexOf('</p>', captionStart));
+    expect(caption).toContain('Requires');
+    expect(caption).toContain('href="https://code.visualstudio.com/"');
+    expect(caption).toContain('VS Code may prompt you to install');
     expect(caption).toContain(`href="${documentdbVsCodeExtensionMarketplaceUrl}"`);
-    // VS Code offers; the visitor confirms. "Installs" promised more than the flow does.
-    expect(caption).toContain('VS Code offers to install it first.');
-
-    expect(vscode).toContain('Choose this for the smoothest experience.');
+    expect(guided).not.toContain('>Install the extension</');
   });
 
-  it('does not put a Docker prerequisite only under the guided path', () => {
-    // Both paths need Docker and the Terminal tab does not say so; saying it only under VS
-    // Code made the guided path look like the one with extra requirements.
-    expect(panel('vscode')).not.toMatch(/docker/i);
-    expect(panel('vscode')).not.toContain('Linux containers');
+  it('keeps the guided steps focused on setup and using the result', () => {
+    expect(panel('command').match(/<li\b/g)).toHaveLength(3);
+    expect(panel('guided').match(/<li\b/g)).toHaveLength(2);
+    expect(panel('guided')).toContain('Confirm the prompts');
+    expect(panel('guided')).toContain('select Continue');
+    expect(panel('guided')).toContain('select Start DocumentDB Local');
+    expect(panel('guided')).toContain('When setup finishes, select Open Connection');
+    expect(panel('guided')).toContain('Sample data is enabled by default.');
   });
 
-  it('shows the guided path as two steps, the wizard and the payoff', () => {
-    expect(panel('terminal').match(/<li\b/g)).toHaveLength(3);
-    expect(panel('vscode').match(/<li\b/g)).toHaveLength(2);
-    expect(panel('vscode')).toContain('select Continue');
-    expect(panel('vscode')).toContain('select Start DocumentDB Local');
-    // loadSampleData defaults to true in the extension's quickStartTypes.ts.
-    expect(panel('vscode')).toContain('Sample data is loaded by default.');
-  });
-
-  it('carries no pinned extension version, which the guide owns instead', () => {
-    // Matched by shape rather than by one literal, so bumping the pin to 0.10.2 is caught
-    // too. Deliberately not a bare \d+\.\d+\.\d+, which would match the 127.0.0.1 in the
-    // command and the loopback address in the steps.
+  it('leaves extension versions in the guide, not the homepage', () => {
     expect(card).not.toMatch(/version \d+\.\d+\.\d+/i);
     expect(card).not.toMatch(/\d+\.\d+\.\d+ or (later|newer|above)/i);
     expect(card).not.toMatch(/\bv\d+\.\d+\.\d+\b/);
   });
 
-  it('links both guides from inside their own panels', () => {
-    // Conditionally rendering one link left the VS Code guide out of the exported HTML
-    // entirely, since the server renders with the terminal tab active.
-    expect(panel('terminal')).toContain('href="/docs/getting-started/docker"');
-    expect(panel('terminal')).toContain('Full Docker guide');
-    expect(panel('vscode')).toContain(`href="${vscodeGuideUrl}"`);
-  });
-
-  it('points the VS Code fallback at a section the guide actually has', () => {
-    // Markdown.tsx anchors each H2 with kebabCase(title); the link must land on the section
-    // that lists the other ways to open the wizard, not at the top of the page.
-    const guide = getArticleByPath('getting-started', ['vscode-quickstart']);
-    expect(guide?.content).toContain(`## ${vscodeSetupSectionTitle}`);
-    expect(vscodeSetupSectionAnchor).toBe(headingAnchor('Set up DocumentDB Local'));
-    expect(vscodeSetupSectionAnchor).toBe('set-up-document-db-local');
-    expect(guide?.content).toContain('VS Code offers to install it first');
-    // The install-on-link flow fails on machines whose policy points VS Code at a private
-    // marketplace before the account check completes; the guide names that error verbatim.
-    expect(guide?.content).toContain('No extension gallery service configured');
-    expect(guide?.content).toContain('code --install-extension ms-azuretools.vscode-documentdb');
-  });
-
-  it('offers a labelled route between the two paths', () => {
-    expect(card).toContain('aria-label="Switch to the VS Code tab"');
-    expect(card).toContain('aria-label="Switch to the Terminal tab"');
-  });
-
-  it('keeps troubleshooting out of the happy path', () => {
-    const vscode = panel('vscode');
-    expect(vscode).not.toContain('If nothing happens');
-    // The retry line appears only some seconds after the button is used. The live region is
-    // mounted from the first paint so it is announced when filled, but it starts empty, and
-    // it sits below the steps so its arrival never shifts what is being read.
-    expect(vscode).not.toContain('Nothing happened?');
-    expect(vscode).toMatch(/<div role="status">\s*<\/div>/);
-    expect(vscode.search(/<div role="status">/)).toBeGreaterThan(vscode.lastIndexOf('</ol>'));
-    expect(vscode).not.toContain('DocumentDB: Set up DocumentDB Local');
-
-    // A short link after the steps, not a paragraph of doubt in front of someone who has
-    // not clicked yet.
-    const fallback = vscode.indexOf('Not working in VS Code?');
-    expect(fallback).toBeGreaterThan(vscode.lastIndexOf('</ol>'));
-    expect(vscode.slice(fallback)).toContain(`href="${vscodeGuideUrl}"`);
-    // Same link text shape as the Terminal panel's "Full Docker guide", so the two panels
-    // rhyme and a successful visitor still has a neutral route to the guide.
-    expect(vscode.slice(fallback)).toContain('>full VS Code guide</a>');
-    expect(vscode.slice(fallback)).toContain('activity bar or the Command');
-  });
-
-  it('repeats the deep link as the retry control once the hint is visible', () => {
-    const hint = renderToStaticMarkup(
-      createElement(SetupRetryHint, {
-        visible: true,
-        deepLinkUrl: documentdbVsCodeLocalQuickStartDeepLink,
-        marketplaceUrl: documentdbVsCodeExtensionMarketplaceUrl,
-      }),
+  it('exports a permanent full-guide link for each path without timed retry UI', () => {
+    expect(panel('command')).toContain('href="/docs/getting-started/docker"');
+    expect(panel('command')).toContain('Docker setup guide');
+    expect(panel('guided')).toContain(`href="${vscodeGuideUrl}"`);
+    expect(panel('guided')).toContain('VS Code setup guide');
+    expect(panel('guided').indexOf('>VS Code setup guide</a>')).toBeGreaterThan(
+      panel('guided').lastIndexOf('</ol>'),
     );
-    expect(hint).toContain('Nothing happened?');
-    // The second click is the one that works on managed devices, so it is one action away.
-    expect(hint).toContain(`href="${documentdbVsCodeLocalQuickStartDeepLink}"`);
-    expect(hint).toContain('>Set up in VS Code</a>');
-    expect(hint).toContain(`href="${documentdbVsCodeExtensionMarketplaceUrl}"`);
-    // Nothing about the error itself: that explanation belongs in the guide.
-    expect(hint).not.toMatch(/error/i);
+    expect(card).not.toContain('Nothing happened?');
+    expect(card).not.toContain('Not working in VS Code?');
+    expect(card).not.toContain('role="status"');
+  });
+
+  it('separates existing-instance connection from both provisioning panels', () => {
+    const footer = card.slice(card.indexOf('id="quickstart-existing-connection"'));
+    expect(footer).toContain('Already running DocumentDB?');
+    expect(footer).toContain('Connect your existing instance in VS Code.');
+    expect(footer).toContain(`href="${existingConnectionUrl}"`);
+    expect(footer).not.toContain(documentdbVsCodeLocalQuickStartDeepLink);
+    expect(panel('command')).not.toContain(existingConnectionUrl);
+    expect(panel('guided')).not.toContain(existingConnectionUrl);
+  });
+});
+
+describe('VS Code quick-start guide', () => {
+  it('renders the existing-instance destination using the shared heading algorithm', () => {
+    expect(vscodeExistingConnectionSectionAnchor).toBe(
+      headingAnchor(vscodeExistingConnectionSectionTitle),
+    );
+    expect(vscodeExistingConnectionSectionAnchor).toBe('connect-an-existing-instance');
+    expect(guideHtml).toContain(`id="${vscodeExistingConnectionSectionAnchor}"`);
+    expect(guideHtml).toContain('id="set-up-document-db-local"');
+  });
+
+  it('keeps guided setup first and connects an existing instance without provisioning', () => {
+    const setup = guideContent.indexOf('## Set up DocumentDB Local');
+    const manual = guideContent.indexOf('## Alternative: start the container yourself');
+    const connect = guideContent.indexOf(`## ${vscodeExistingConnectionSectionTitle}`);
+    expect(setup).toBeGreaterThan(-1);
+    expect(manual).toBeGreaterThan(setup);
+    expect(connect).toBeGreaterThan(manual);
+    const instructions = guideContent.slice(
+      connect,
+      guideContent.indexOf('## Verify the connection in the extension'),
+    );
+    expect(instructions).toContain('instance that is already running');
+    expect(instructions).toContain('do not need to run the setup wizard or create another container');
+    expect(instructions).toContain('New Local Connection');
+    expect(instructions).toContain("your instance's port");
+    expect(instructions).not.toContain('docker run');
+  });
+
+  it('explains both sample-data defaults without assuming a specific database exists', () => {
+    const verification = guideContent.slice(
+      guideContent.indexOf('## Verify the connection in the extension'),
+      guideContent.indexOf('## Import, export, and querying'),
+    );
+    expect(verification).toContain('Guided setup loads sample data by default unless you turn that option off');
+    expect(verification).toContain('manual Docker command above starts without sample data');
+    expect(verification).toContain('An empty instance is expected when sample data is disabled');
+    expect(verification).toContain('add a test document');
+    expect(verification).not.toContain('StoreData');
+    expect(verification).not.toContain('sampledb');
+  });
+
+  it('retains prerequisites and launch recovery in the guide', () => {
+    expect(guideContent).toContain('## Prerequisites');
+    expect(guideContent).toContain('Docker Desktop or Docker Engine');
+    expect(guideContent).toContain('container and persistent data volume');
+    expect(guideContent).toContain('It does not install Docker.');
+    expect(guideContent).not.toContain('changes nothing else on your machine');
+    expect(guideContent).toContain('DocumentDB: Set up DocumentDB Local');
+    expect(guideContent).toContain('No extension gallery service configured');
+    expect(guideContent).toContain('code --install-extension ms-azuretools.vscode-documentdb');
   });
 });

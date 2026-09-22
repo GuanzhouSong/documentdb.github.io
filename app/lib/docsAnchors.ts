@@ -8,6 +8,5 @@ export function headingAnchor(title: string): string {
   return kebabCase(title);
 }
 
-/** The guide section the homepage quick start points at when the VS Code deep link does nothing. */
-export const vscodeSetupSectionTitle = 'Set up DocumentDB Local';
-export const vscodeSetupSectionAnchor = headingAnchor(vscodeSetupSectionTitle);
+export const vscodeExistingConnectionSectionTitle = 'Connect an existing instance';
+export const vscodeExistingConnectionSectionAnchor = headingAnchor(vscodeExistingConnectionSectionTitle);

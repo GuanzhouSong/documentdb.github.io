@@ -1,6 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import { vscodeSetupSectionTitle } from '../lib/docsAnchors';
+import {
+  vscodeExistingConnectionSectionAnchor,
+  vscodeExistingConnectionSectionTitle,
+} from '../lib/docsAnchors';
 import { load as loadYaml } from 'js-yaml';
 import matter from 'gray-matter';
 import { Article } from '../types/Article';
@@ -619,7 +622,9 @@ const vscodeQuickStartGuideContent = `# Visual Studio Code Quick Start
 
 Use DocumentDB for VS Code to set up a local DocumentDB instance, browse sample data, and create your first database without leaving the editor.
 
-The extension can create the instance for you: it pulls the official image, starts the container, waits until the database accepts connections, and saves the connection. It never installs Docker, and it changes nothing else on your machine.
+The extension can create the instance for you: it pulls the official image, creates a container and persistent data volume, generates credentials, waits until the database accepts connections, and saves the connection. It does not install Docker.
+
+Already running DocumentDB? Skip provisioning and [connect your existing instance](#${vscodeExistingConnectionSectionAnchor}).
 
 ## Prerequisites
 
@@ -640,9 +645,9 @@ code --install-extension ms-azuretools.vscode-documentdb
 
 If VS Code prompts you to reload after installation, do that before creating a connection.
 
-## ${vscodeSetupSectionTitle}
+## Set up DocumentDB Local
 
-This is the fastest path, and it leaves no Docker commands for you to run.
+Use guided setup to let the extension provision DocumentDB Local and save its connection. There are no Docker commands for you to run.
 
 1. Open setup using any of these:
    - Select the DocumentDB icon in the activity bar, expand **Your own DocumentDB** in the Connections view, and select **Set up DocumentDB Local**.
@@ -653,13 +658,15 @@ This is the fastest path, and it leaves no Docker commands for you to run.
 4. Wait for setup to finish. The extension creates a container named \`vscode-documentdb-local\` with a persistent volume, then waits until the database accepts connections.
 5. Select **Open Connection** to reveal the saved connection, then expand it to browse databases and collections.
 
-If you keep the sample data option, a \`sampledb\` database is created with \`users\`, \`products\`, \`orders\`, and \`analytics\` collections.
+Sample data is enabled by default. If you keep it enabled, expand the saved connection to browse the sample database and collections.
 
 Right-click the DocumentDB Local entry to **Start**, **Stop**, **Restart**, or **Delete Container**, and to **Copy Connection String**, **Copy Password**, or **View Logs**. Stopping and starting preserves your data; deleting removes the volume and the generated credentials permanently.
 
 ## Alternative: start the container yourself
 
-Use this if you already run DocumentDB Local outside VS Code, or you want to manage the container yourself. Start it with Docker:
+Use this if you want to manage the container yourself. If DocumentDB is already running, skip this step and [connect your existing instance](#${vscodeExistingConnectionSectionAnchor}).
+
+Start it with Docker:
 
 \`\`\`bash
 docker run -dt --name documentdb \\
@@ -671,11 +678,13 @@ docker run -dt --name documentdb \\
 
 If you prefer a host installation instead of Docker, use the [Linux Packages Quick Start](/docs/getting-started/packages) on a distribution in the current release matrix.
 
-Then add the connection by hand:
+## ${vscodeExistingConnectionSectionTitle}
+
+Use this for a DocumentDB instance that is already running. You only add a connection; you do not need to run the setup wizard or create another container. Have the instance's port, username, and password ready.
 
 1. Open the **DocumentDB** view in the VS Code activity bar.
 2. In the local connection area, select **DocumentDB Local** and start the **New Local Connection** flow.
-3. Enter port \`10260\`, your username, and your password.
+3. Enter your instance's port (\`10260\` for the command above), username, and password.
 4. At the TLS/SSL prompt:
    - Choose **Disable TLS/SSL (Not recommended)** if you are using the default self-signed local setup and have not configured trust for the certificate yet.
    - Keep **Enable TLS/SSL (Default)** if you already configured a trusted local certificate.
@@ -683,12 +692,11 @@ Then add the connection by hand:
 
 ## Verify the connection in the extension
 
-Once connected:
+Guided setup loads sample data by default unless you turn that option off. The manual Docker command above starts without sample data; the [Docker Quick Start](/docs/getting-started/docker) shows how to enable it.
 
-1. Expand the connection and open \`StoreData\`. This exists only if you started the container with \`--init-data true\`; without it DocumentDB Local starts empty.
-2. Open the \`stores\` or \`ratings\` collection.
-3. Switch between the **Table**, **Tree**, and **JSON** views to confirm the extension is reading data correctly.
-4. Create your own database and collection from the context menu, then add a test document like:
+1. Expand your saved connection. If sample data was loaded, open a sample database and collection to browse the documents.
+2. Create your own database and collection from the context menu. An empty instance is expected when sample data is disabled.
+3. In your own collection, add a test document like:
 
 \`\`\`json
 {
@@ -697,6 +705,8 @@ Once connected:
   "status": "connected"
 }
 \`\`\`
+
+Switch between the **Table**, **Tree**, and **JSON** views to confirm the extension can read the document.
 
 If you prefer to validate outside the extension first, use [Mongo Shell Quick Start](/docs/getting-started/mongo-shell-quickstart).
 
