@@ -113,7 +113,7 @@ export default function Navbar() {
             <span>DocumentDB</span>
           </Link>
 
-          <div className="hidden items-center space-x-6 md:flex lg:space-x-8">
+          <div className="hidden items-center space-x-6 xl:flex xl:space-x-8">
             {navItems.map((item) =>
               renderNavItem(
                 item,
@@ -124,7 +124,7 @@ export default function Navbar() {
 
           <button
             type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-neutral-700 text-gray-200 transition-colors hover:border-blue-400 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 md:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-neutral-700 text-gray-200 transition-colors hover:border-blue-400 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 xl:hidden"
             aria-expanded={isMenuOpen}
             aria-controls="mobile-navigation"
             aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
@@ -143,7 +143,7 @@ export default function Navbar() {
         </div>
 
         {isMenuOpen ? (
-          <div id="mobile-navigation" className="border-t border-neutral-800 py-3 md:hidden">
+          <div id="mobile-navigation" className="border-t border-neutral-800 py-3 xl:hidden">
             <div className="flex flex-col gap-1">
               {navItems.map((item) =>
                 renderNavItem(
