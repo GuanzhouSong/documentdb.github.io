@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import CommandSnippet from "./CommandSnippet";
 
 export type QuickStartStep = {
@@ -12,25 +12,17 @@ export type QuickStartStep = {
 type QuickStartTabsProps = {
   dockerCommand: string;
   dockerSteps: QuickStartStep[];
-  vscodeSteps: QuickStartStep[];
-  /** Deep link that opens the extension's DocumentDB Local setup wizard. */
+  guidedSteps: QuickStartStep[];
   vscodeDeepLinkUrl: string;
-  /** Marketplace page, linked from the caption so the install is explained, not hidden. */
   vscodeMarketplaceUrl: string;
-  /** Full Docker guide, linked from the Terminal panel's footer. */
   dockerDocsUrl: string;
-  /**
-   * The VS Code guide's setup section, which lists every other way to open the wizard.
-   * Linked from the VS Code panel's footer.
-   */
   vscodeDocsUrl: string;
+  existingConnectionDocsUrl: string;
 };
 
-// "Terminal" rather than "Docker": both paths run the same Docker image, and labelling one of
-// them "Docker" implies the other avoids Docker.
 const TABS = [
-  { id: "terminal", label: "Terminal" },
-  { id: "vscode", label: "VS Code" },
+  { id: "command", label: "Docker command", description: "Run it yourself" },
+  { id: "guided", label: "Guided setup", description: "VS Code extension" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -53,87 +45,24 @@ function StepList({ steps }: { steps: QuickStartStep[] }) {
   );
 }
 
-/**
- * How long after the setup button is used before the retry line appears. Long enough for
- * VS Code to open and take focus on a normal machine; short enough that someone still
- * looking at the page finds it. It is phrased so it does no harm if setup did work.
- */
-const RETRY_HINT_DELAY_MS = 4000;
-
-/**
- * The retry line under the VS Code steps. The deep link can do nothing visible: no VS Code
- * installed, or on managed devices whose policy sets a private marketplace, a cold-started
- * VS Code fails the install and a second click succeeds. The live region is always mounted
- * so it exists before its content arrives, which is what makes the arrival announced.
- * Exported so the visible state can be rendered in a test without a DOM library.
- */
-export function SetupRetryHint({
-  visible,
-  deepLinkUrl,
-  marketplaceUrl,
-}: {
-  visible: boolean;
-  deepLinkUrl: string;
-  marketplaceUrl: string;
-}) {
-  return (
-    <div role="status">
-      {visible && (
-        <p className="mt-4 text-sm leading-6 text-gray-400">
-          Nothing happened? Try{" "}
-          <a
-            href={deepLinkUrl}
-            className="font-semibold text-blue-300 transition-colors hover:text-blue-200"
-          >
-            Set up in VS Code
-          </a>{" "}
-          again, or install the extension from the{" "}
-          <Link
-            href={marketplaceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-semibold text-blue-300 transition-colors hover:text-blue-200"
-          >
-            Marketplace
-          </Link>{" "}
-          first.
-        </p>
-      )}
-    </div>
-  );
-}
-
 export default function QuickStartTabs({
   dockerCommand,
   dockerSteps,
-  vscodeSteps,
+  guidedSteps,
   vscodeDeepLinkUrl,
   vscodeMarketplaceUrl,
   dockerDocsUrl,
   vscodeDocsUrl,
+  existingConnectionDocsUrl,
 }: QuickStartTabsProps) {
-  const [activeTab, setActiveTab] = useState<TabId>("terminal");
-  // Deliberately never reset on a tab switch: the advice stays true once the link was used.
-  const [setupOpened, setSetupOpened] = useState(false);
-  const [showRetry, setShowRetry] = useState(false);
-  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-
-  useEffect(() => {
-    if (!setupOpened) {
-      return;
-    }
-    const timer = window.setTimeout(() => setShowRetry(true), RETRY_HINT_DELAY_MS);
-    return () => window.clearTimeout(timer);
-  }, [setupOpened]);
+  const [activeTab, setActiveTab] = useState<TabId>("command");
+  const tabRefs = useRef<Partial<Record<TabId, HTMLButtonElement | null>>>({});
 
   const selectTab = (id: TabId) => {
     setActiveTab(id);
     tabRefs.current[id]?.focus();
   };
 
-  // Arrow keys move between tabs, which is what a tablist is expected to do; without it the
-  // only way through is Tab, and that leaves the panel. Home/End jump to the ends, per the
-  // ARIA authoring practices for tabs.
   const onTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
     const currentIndex = TABS.findIndex((tab) => tab.id === activeTab);
 
@@ -162,8 +91,8 @@ export default function QuickStartTabs({
     <div>
       <div
         role="tablist"
-        aria-label="Ways to run DocumentDB locally"
-        className="mb-4 flex w-full rounded-full border border-neutral-700 bg-neutral-900/80 p-1 sm:inline-flex sm:w-auto"
+        aria-label="Ways to set up DocumentDB locally"
+        className="mb-4 grid grid-cols-2 gap-1 rounded-2xl border border-neutral-700 bg-neutral-900/80 p-1"
       >
         {TABS.map((tab) => {
           const isActive = tab.id === activeTab;
@@ -179,19 +108,19 @@ export default function QuickStartTabs({
               id={`quickstart-tab-${tab.id}`}
               aria-selected={isActive}
               aria-controls={`quickstart-panel-${tab.id}`}
-              // Only the selected tab is in the tab order; arrow keys move between them.
               tabIndex={isActive ? 0 : -1}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => selectTab(tab.id)}
               onKeyDown={onTabKeyDown}
-              // Solid active state so the tablist reads as a control rather than as another
-              // badge next to the "Quick start" chip and the numbered step markers.
-              className={`flex-1 rounded-full px-5 py-3 text-sm font-semibold transition-colors sm:flex-none ${
+              className={`min-h-14 min-w-0 rounded-xl px-3 py-3 text-left text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300 ${
                 isActive
                   ? "bg-neutral-700 text-white"
                   : "text-gray-400 hover:text-gray-200"
               }`}
             >
               {tab.label}
+              <span className="mt-1 block text-xs font-normal text-gray-300">
+                {tab.description}
+              </span>
             </button>
           );
         })}
@@ -199,62 +128,39 @@ export default function QuickStartTabs({
 
       <div
         role="tabpanel"
-        id="quickstart-panel-terminal"
-        aria-labelledby="quickstart-tab-terminal"
-        hidden={activeTab !== "terminal"}
+        id="quickstart-panel-command"
+        aria-labelledby="quickstart-tab-command"
+        hidden={activeTab !== "command"}
       >
+        <p className="mb-4 text-sm leading-6 text-gray-300">
+          Run the container yourself, then connect with your preferred client.
+        </p>
         <CommandSnippet command={dockerCommand} label="bash" />
         <StepList steps={dockerSteps} />
-        <p className="mt-4 text-sm leading-6 text-gray-400">
-          Want a GUI? The{" "}
-          <button
-            type="button"
-            onClick={() => selectTab("vscode")}
-            aria-label="Switch to the VS Code tab"
-            className="font-semibold text-blue-300 underline-offset-2 transition-colors hover:text-blue-200 hover:underline"
-          >
-            VS Code extension
-          </button>{" "}
-          connects to this container too.
-        </p>
         <div className="mt-4 text-sm">
           <Link
             href={dockerDocsUrl}
             className="font-semibold text-blue-300 transition-colors hover:text-blue-200"
           >
-            Full Docker guide
+            Docker setup guide
           </Link>
         </div>
       </div>
 
       <div
         role="tabpanel"
-        id="quickstart-panel-vscode"
-        aria-labelledby="quickstart-tab-vscode"
-        hidden={activeTab !== "vscode"}
+        id="quickstart-panel-guided"
+        aria-labelledby="quickstart-tab-guided"
+        hidden={activeTab !== "guided"}
       >
-        {/*
-          No Docker prerequisite here. Both paths need Docker and the Terminal tab does not say
-          so, so saying it only here made the guided path look like the one with extra
-          requirements. The guide covers Docker properly, readiness states included.
-        */}
         <p className="mb-4 text-sm leading-6 text-gray-300">
-          <strong className="font-semibold text-white">
-            Choose this for the smoothest experience.
-          </strong>{" "}
-          VS Code sets up DocumentDB Local and creates a ready-to-use connection
-          for you. One click, confirm the prompts, then follow the wizard.
+          Let the VS Code extension create your local database, generate
+          credentials, and save a ready-to-use connection.
         </p>
-        {/*
-          One button carries the whole flow. VS Code itself offers to install a missing
-          extension when a vscode:// link targets it, then re-opens the link, so a separate
-          "Install the extension" action was a step the visitor never has to take.
-        */}
         <a
           href={vscodeDeepLinkUrl}
           aria-describedby="quickstart-vscode-setup-caption"
-          onClick={() => setSetupOpened(true)}
-          className="inline-flex w-full items-center justify-center rounded-md bg-blue-500 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-400 sm:w-auto"
+          className="inline-flex w-full items-center justify-center rounded-md bg-blue-500 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300 sm:w-auto"
         >
           Set up in VS Code
         </a>
@@ -262,52 +168,48 @@ export default function QuickStartTabs({
           id="quickstart-vscode-setup-caption"
           className="mt-3 text-sm leading-6 text-gray-400"
         >
-          Opens VS Code and its setup wizard. If you do not have the{" "}
+          Requires{" "}
+          <Link
+            href="https://code.visualstudio.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-blue-300 transition-colors hover:text-blue-200"
+          >
+            VS Code
+          </Link>
+          . Opens the setup wizard; VS Code may prompt you to install the{" "}
           <Link
             href={vscodeMarketplaceUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="font-semibold text-blue-300 transition-colors hover:text-blue-200"
           >
-            DocumentDB for VS Code
-          </Link>{" "}
-          extension, VS Code offers to install it first.
+            DocumentDB extension
+          </Link>
+          .
         </p>
-        <StepList steps={vscodeSteps} />
-        {/*
-          Troubleshooting stays out of the happy path: below the steps, so its arrival never
-          shifts what is being read, and after a delay, so people for whom VS Code is already
-          opening are not shown doubt.
-        */}
-        <SetupRetryHint
-          visible={showRetry}
-          deepLinkUrl={vscodeDeepLinkUrl}
-          marketplaceUrl={vscodeMarketplaceUrl}
-        />
-        <p className="mt-4 text-sm leading-6 text-gray-400">
-          Not working in VS Code? The{" "}
+        <StepList steps={guidedSteps} />
+        <div className="mt-4 text-sm">
           <Link
             href={vscodeDocsUrl}
             className="font-semibold text-blue-300 transition-colors hover:text-blue-200"
           >
-            full VS Code guide
-          </Link>{" "}
-          shows how to open the wizard from the activity bar or the Command
-          Palette.
-        </p>
-        <p className="mt-4 text-sm leading-6 text-gray-400">
-          Prefer to start it yourself? The{" "}
-          <button
-            type="button"
-            onClick={() => selectTab("terminal")}
-            aria-label="Switch to the Terminal tab"
-            className="font-semibold text-blue-300 underline-offset-2 transition-colors hover:text-blue-200 hover:underline"
-          >
-            Terminal
-          </button>{" "}
-          tab runs the same image with one command.
-        </p>
+            VS Code setup guide
+          </Link>
+        </div>
       </div>
+      <p
+        id="quickstart-existing-connection"
+        className="mt-5 border-t border-neutral-800 pt-4 text-sm leading-6 text-gray-400"
+      >
+        Already running DocumentDB?{" "}
+        <Link
+          href={existingConnectionDocsUrl}
+          className="font-semibold text-blue-300 transition-colors hover:text-blue-200"
+        >
+          Connect your existing instance in VS Code.
+        </Link>
+      </p>
     </div>
   );
 }

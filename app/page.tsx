@@ -6,7 +6,7 @@ import {
   documentdbVsCodeExtensionMarketplaceUrl,
   documentdbVsCodeLocalQuickStartDeepLink,
 } from "./services/externalLinks";
-import { vscodeSetupSectionAnchor } from "./lib/docsAnchors";
+import { vscodeExistingConnectionSectionAnchor } from "./lib/docsAnchors";
 import { getMetadata } from "./services/metadataService";
 import {
   documentdbGitHubForks,
@@ -48,33 +48,30 @@ const dockerQuickStartSteps = [
   {
     step: "01",
     description:
-      "Replace the placeholders with your own username and password, then run the command. The image is around 300 MB, so the first run takes a few minutes.",
+      "Replace the username and password, then run the command. The first run downloads the image.",
   },
   {
     step: "02",
     description:
-      "Connect on 127.0.0.1:10260 with mongosh (TLS flags are in the guide), a MongoDB driver, or your app.",
+      "Connect on 127.0.0.1:10260 with your app, driver, or mongosh. See the Docker guide for connection and TLS settings.",
   },
   {
     step: "03",
     description:
-      "Run your first query. The Docker guide has connection strings and a flag for sample data.",
+      "Run your first query.",
   },
 ];
 
-// Two steps against Terminal's three: the guided path should look shorter at a glance.
-// Installing the extension is not a step, because VS Code offers to do it when the deep
-// link is opened; the caption under the button says so.
-const vscodeQuickStartSteps = [
+const guidedQuickStartSteps = [
   {
     step: "01",
     description:
-      "Once VS Code loads the wizard, select Continue, review the defaults, then select Start DocumentDB Local.",
+      "Confirm the prompts. In the wizard, select Continue, review the defaults, then select Start DocumentDB Local.",
   },
   {
     step: "02",
     description:
-      "Select Open Connection to browse your data and run your first query. Sample data is loaded by default.",
+      "When setup finishes, select Open Connection to explore your data. Sample data is enabled by default.",
   },
 ];
 
@@ -398,19 +395,22 @@ export default function Home() {
                 <h2 className="mt-4 text-xl font-semibold text-white sm:text-2xl">
                   Run DocumentDB locally
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-gray-400">
-                  Run it from your terminal, or let the VS Code extension set it
-                  up for you. Both run the same DocumentDB Local image.
+                <p className="mt-2 text-sm leading-6 text-gray-300">
+                  Choose how to set up your local database.
+                </p>
+                <p className="mt-1 text-sm leading-6 text-gray-400">
+                  Both options require Docker and use the DocumentDB Local image.
                 </p>
               </div>
               <QuickStartTabs
                 dockerCommand={quickRunCommand}
                 dockerSteps={dockerQuickStartSteps}
-                vscodeSteps={vscodeQuickStartSteps}
+                guidedSteps={guidedQuickStartSteps}
                 vscodeDeepLinkUrl={documentdbVsCodeLocalQuickStartDeepLink}
                 vscodeMarketplaceUrl={documentdbVsCodeExtensionMarketplaceUrl}
                 dockerDocsUrl="/docs/getting-started/docker"
-                vscodeDocsUrl={`/docs/getting-started/vscode-quickstart#${vscodeSetupSectionAnchor}`}
+                vscodeDocsUrl="/docs/getting-started/vscode-quickstart"
+                existingConnectionDocsUrl={`/docs/getting-started/vscode-quickstart#${vscodeExistingConnectionSectionAnchor}`}
               />
             </div>
           </div>
