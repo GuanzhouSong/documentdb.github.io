@@ -1,5 +1,9 @@
 import fs from 'fs';
 import path from 'path';
+import {
+  vscodeExistingConnectionSectionAnchor,
+  vscodeExistingConnectionSectionTitle,
+} from '../lib/docsAnchors';
 import { load as loadYaml } from 'js-yaml';
 import matter from 'gray-matter';
 import { Article } from '../types/Article';
@@ -616,14 +620,20 @@ If the target already has PostgreSQL, the PGDG extension dependencies (\`postgre
 
 const vscodeQuickStartGuideContent = `# Visual Studio Code Quick Start
 
-Use DocumentDB for VS Code to connect to a local DocumentDB instance, browse sample data, and create your first database without leaving the editor.
+Use DocumentDB for VS Code to set up a local DocumentDB instance, browse sample data, and create your first database without leaving the editor.
+
+The extension can create the instance for you: it pulls the official image, creates a container and persistent data volume, generates credentials, waits until the database accepts connections, and saves the connection. It does not install Docker.
+
+Already running DocumentDB? Skip provisioning and [connect your existing instance](#${vscodeExistingConnectionSectionAnchor}).
 
 ## Prerequisites
 
 - [Visual Studio Code](https://code.visualstudio.com/)
 - The [DocumentDB for VS Code extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-documentdb)
-- A local DocumentDB instance from [Docker Quick Start](/docs/getting-started/docker) or a host setup with a running DocumentDB gateway
+- Docker Desktop or Docker Engine, set to Linux containers, running wherever VS Code is
 - Optional: [mongosh](https://www.mongodb.com/docs/mongodb-shell/install/) for independent connection checks
+
+Docker must be reachable from the environment VS Code runs in. If you work in WSL, a dev container, an SSH remote, or Codespaces, Docker needs to be available there rather than only on your host machine. Setup runs a readiness check and explains what to fix if it cannot reach Docker.
 
 ## Install the extension
 
@@ -635,9 +645,28 @@ code --install-extension ms-azuretools.vscode-documentdb
 
 If VS Code prompts you to reload after installation, do that before creating a connection.
 
-## Start DocumentDB first
+## Set up DocumentDB Local
 
-For the fastest local setup, start DocumentDB Local with Docker:
+Use guided setup to let the extension provision DocumentDB Local and save its connection. There are no Docker commands for you to run.
+
+1. Open setup using any of these:
+   - Select the DocumentDB icon in the activity bar, expand **Your own DocumentDB** in the Connections view, and select **Set up DocumentDB Local**.
+   - Run **DocumentDB: Set up DocumentDB Local** from the Command Palette.
+   - Open \`vscode://ms-azuretools.vscode-documentdb/local\` from your browser and confirm the prompts. If the extension is not installed, VS Code offers to install it first. This needs extension version 0.10.1 or later.
+2. On the **Introduction** step, select **Continue**. Nothing is downloaded or created until the next step.
+3. On the **Configure** step, review the defaults and select **Start DocumentDB Local**. The defaults give you an available port (starting at \`10260\`), generated credentials, the \`latest\` official image, and optional sample data. Expand the advanced options to set the port, image tag, or credentials yourself.
+4. Wait for setup to finish. The extension creates a container named \`vscode-documentdb-local\` with a persistent volume, then waits until the database accepts connections.
+5. Select **Open Connection** to reveal the saved connection, then expand it to browse databases and collections.
+
+Sample data is enabled by default. If you keep it enabled, expand the saved connection to browse the sample database and collections.
+
+Right-click the DocumentDB Local entry to **Start**, **Stop**, **Restart**, or **Delete Container**, and to **Copy Connection String**, **Copy Password**, or **View Logs**. Stopping and starting preserves your data; deleting removes the volume and the generated credentials permanently.
+
+## Alternative: start the container yourself
+
+Use this if you want to manage the container yourself. If DocumentDB is already running, skip this step and [connect your existing instance](#${vscodeExistingConnectionSectionAnchor}).
+
+Start it with Docker:
 
 \`\`\`bash
 docker run -dt --name documentdb \\
@@ -649,11 +678,13 @@ docker run -dt --name documentdb \\
 
 If you prefer a host installation instead of Docker, use the [Linux Packages Quick Start](/docs/getting-started/packages) on a distribution in the current release matrix.
 
-## Add a local connection in VS Code
+## ${vscodeExistingConnectionSectionTitle}
+
+Use this for a DocumentDB instance that is already running. You only add a connection; you do not need to run the setup wizard or create another container. Have the instance's port, username, and password ready.
 
 1. Open the **DocumentDB** view in the VS Code activity bar.
 2. In the local connection area, select **DocumentDB Local** and start the **New Local Connection** flow.
-3. Enter port \`10260\`, your username, and your password.
+3. Enter your instance's port (\`10260\` for the command above), username, and password.
 4. At the TLS/SSL prompt:
    - Choose **Disable TLS/SSL (Not recommended)** if you are using the default self-signed local setup and have not configured trust for the certificate yet.
    - Keep **Enable TLS/SSL (Default)** if you already configured a trusted local certificate.
@@ -661,12 +692,11 @@ If you prefer a host installation instead of Docker, use the [Linux Packages Qui
 
 ## Verify the connection in the extension
 
-Once connected:
+Guided setup loads sample data by default unless you turn that option off. The manual Docker command above starts without sample data; the [Docker Quick Start](/docs/getting-started/docker) shows how to enable it.
 
-1. Expand the connection and open \`StoreData\`. This exists only if you started the container with \`--init-data true\`; without it DocumentDB Local starts empty.
-2. Open the \`stores\` or \`ratings\` collection.
-3. Switch between the **Table**, **Tree**, and **JSON** views to confirm the extension is reading data correctly.
-4. Create your own database and collection from the context menu, then add a test document like:
+1. Expand your saved connection. If sample data was loaded, open a sample database and collection to browse the documents.
+2. Create your own database and collection from the context menu. An empty instance is expected when sample data is disabled.
+3. In your own collection, add a test document like:
 
 \`\`\`json
 {
@@ -675,6 +705,8 @@ Once connected:
   "status": "connected"
 }
 \`\`\`
+
+Switch between the **Table**, **Tree**, and **JSON** views to confirm the extension can read the document.
 
 If you prefer to validate outside the extension first, use [Mongo Shell Quick Start](/docs/getting-started/mongo-shell-quickstart).
 
@@ -689,8 +721,11 @@ After the connection works, the extension can help you continue without leaving 
 
 ## Troubleshooting and debugging
 
-If the extension does not connect on the first try:
+If setup or the connection does not work on the first try:
 
+- If the browser link does nothing, confirm the extension is installed and up to date, then run **DocumentDB: Set up DocumentDB Local** from the Command Palette instead
+- If VS Code reports **No extension gallery service configured**, it could not reach a marketplace to install the extension for you. On managed devices that use a private marketplace, this can happen when the link is also what starts VS Code. Open the link again once VS Code has loaded, or install the extension yourself with \`code --install-extension ms-azuretools.vscode-documentdb\` and then open the link again
+- If setup reports that Docker is unreachable, fix what it names (Docker not running, or Docker set to Windows containers rather than Linux) and select **Continue setup**; nothing has been created at that point
 - Verify the extension is installed and reload VS Code if the DocumentDB view does not appear
 - Confirm your local DocumentDB instance is actually running before you connect
 - If you used Docker, check \`docker ps\` and \`docker logs documentdb\`
