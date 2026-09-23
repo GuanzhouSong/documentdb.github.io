@@ -99,9 +99,13 @@ export function installSelectionQuery(selection: InstallSelection): string {
   return new URLSearchParams({ method: selection.method, family, target, pg, arch }).toString();
 }
 
-// The shareable URL: package choices only matter, and are only written, for packages.
+// Docker links stay short, but keep non-default package choices so switching back restores them.
 export function installSelectionUrlQuery(selection: InstallSelection): string {
-  return selection.method === "docker" ? "method=docker" : installSelectionQuery(selection);
+  const { family, target, pg, arch } = selection.packages;
+  const defaults = defaultInstallSelection.packages;
+  const packagesChanged = family !== defaults.family || target !== defaults.target
+    || pg !== defaults.pg || arch !== defaults.arch;
+  return selection.method === "docker" && !packagesChanged ? "method=docker" : installSelectionQuery(selection);
 }
 
 export function selectInstallTarget(selection: InstallSelection, target: string): SelectionResult {

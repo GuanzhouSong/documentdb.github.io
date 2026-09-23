@@ -34,8 +34,11 @@ const dockerCommand = `docker run -dt --name documentdb \\
   --username '<YOUR_USERNAME>' \\
   --password '<YOUR_PASSWORD>'`;
 
-const firstQuery = `db.starter.insertOne({ message: "Hello, DocumentDB!" })
-db.starter.findOne({ message: "Hello, DocumentDB!" })`;
+const dockerReadyCommand = `until docker logs documentdb 2>&1 | grep -q "=== DocumentDB is ready ==="; do sleep 2; done`;
+
+const firstQuery = `use quickstart
+db.orders.insertOne({ item: "widget", qty: 5 })
+db.orders.find({ item: "widget" })`;
 
 const nextGuides = [
   { title: "Python", description: "Connect with PyMongo.", href: "/docs/getting-started/python-setup" },
@@ -79,8 +82,9 @@ export default function PackagesPage() {
   const { method, packages } = selection;
   const { family, target, pg, arch } = packages;
   const selectionReady = state !== null && state.error === null;
-  const packagesAvailable = releaseStatus === "live" && releaseHasPackages(release, packages);
-  const canInstall = selectionReady && packagesAvailable;
+  // The commands install from the package repository, so only a confirmed gap in the release withholds them.
+  const packagesMissing = releaseStatus === "live" && !releaseHasPackages(release, packages);
+  const canInstall = selectionReady && !packagesMissing;
   const targetLabel = packages.family === "apt" ? aptTargetLabels[packages.target] : rpmTargetLabels[packages.target];
   const selectedPackageNames = `documentdb-${pg}`;
   const packagingGuideUrl = `https://github.com/documentdb/documentdb/blob/${release.tagName}/packaging/README.md`;
@@ -88,8 +92,9 @@ export default function PackagesPage() {
   const installCommand = packages.family === "apt"
     ? buildAptInstallCommand(packages.target, packages.arch, packages.pg)
     : buildRpmInstallCommand(packages.target, packages.arch, packages.pg);
-  const connectionCommand = `mongosh 'mongodb://127.0.0.1:10260/mydb?authSource=admin&tls=true&tlsAllowInvalidCertificates=true' \\
-  --username ${method === "packages" ? "admin" : "'<YOUR_USERNAME>'"} --password`;
+  // Same form as the getting-started guides.
+  const connectionCommand = `mongosh localhost:10260 -u ${method === "packages" ? "admin" : "'<YOUR_USERNAME>'"} -p \\
+  --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates`;
 
   function choose(result: SelectionResult) {
     setState(result);
@@ -99,7 +104,7 @@ export default function PackagesPage() {
     for (const [key, value] of new URLSearchParams(installSelectionUrlQuery(result.selection))) {
       url.searchParams.set(key, value);
     }
-    window.history.pushState(null, "", url);
+    window.history.replaceState(null, "", url);
   }
 
   function changeChoice(key: "method" | "pg" | "arch", value: string) {
@@ -120,7 +125,10 @@ export default function PackagesPage() {
             Use Docker to evaluate and develop on Linux, macOS, or Windows. On a supported Linux
             host, Linux packages give you control over PostgreSQL, services, and configuration.
           </p>
-          <a href="#downloads" className={`mt-4 inline-block text-sm ${linkClass}`}>Looking for individual package downloads?</a>
+          <p className="mt-4 text-sm text-gray-300">
+            <a href="https://github.com/documentdb/documentdb/releases" className={linkClass}>Download release assets</a>
+            {" · "}<a href="#downloads" className={linkClass}>Package details</a>
+          </p>
         </header>
 
         <section aria-label="Installation method" className="grid gap-3 sm:grid-cols-2">
@@ -131,10 +139,10 @@ export default function PackagesPage() {
             <button
               key={item.value}
               type="button"
-              aria-pressed={method === item.value}
+              aria-pressed={state !== null && method === item.value}
               onClick={() => changeChoice("method", item.value)}
               className={`rounded-xl border p-5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400 ${
-                method === item.value ? "border-blue-400 bg-blue-500/15" : "border-neutral-700 bg-neutral-800/60 hover:bg-neutral-800"
+                state !== null && method === item.value ? "border-blue-400 bg-blue-500/15" : "border-neutral-700 bg-neutral-800/60 hover:bg-neutral-800"
               }`}
             >
               <span className="block text-xl font-semibold text-white">{item.title}</span>
@@ -165,10 +173,13 @@ export default function PackagesPage() {
           </div>
         )}
 
-        {method === "packages" ? (
+        {/* The static page can't see the query string, so show no flow until it is read. */}
+        {state === null ? (
+          <p className="text-center text-sm text-gray-400">Loading installation steps...</p>
+        ) : method === "packages" ? (
           <>
             <section className={panelClass} aria-labelledby="linux-settings">
-              <h2 id="linux-settings" className="text-xl font-bold text-white">One complete stack. No package decisions.</h2>
+              <h2 id="linux-settings" className="text-xl font-bold text-white">Choose your Linux host</h2>
               <p className="mt-2 text-sm leading-6 text-gray-300">
                 The selected <code>{selectedPackageNames}</code> package brings PostgreSQL, the extension,
                 gateway, setup tools, and services together. The number {pg} is the PostgreSQL major,
@@ -216,28 +227,28 @@ export default function PackagesPage() {
               </p>
             </aside>
 
-            <div aria-live="polite">
+            <div>
               {releaseStatus === "loading" ? (
-                <p className="text-sm text-gray-300">Checking the published package release...</p>
+                <p role="status" className="text-sm text-gray-300">Checking the published package release...</p>
               ) : releaseStatus === "fallback" ? (
                 <div role="alert" className="rounded-lg border border-amber-400/40 p-4 text-sm text-amber-100">
                   <p>Cannot confirm the current repository release. {releaseError}</p>
                   <p className="mt-2">
-                    Reference release: {release.tagName}, not confirmed current. Installation commands are
-                    withheld until availability can be confirmed.{" "}
+                    The commands below install the latest packages from the repository. Last known
+                    release: {release.tagName}.{" "}
                     <a href="https://github.com/documentdb/documentdb/releases" className={linkClass}>Browse release assets</a>{" "}
                     or <button type="button" onClick={() => window.location.reload()} className={linkClass}>retry the lookup</button>.
                   </p>
                 </div>
               ) : (
-                <p className="text-sm text-gray-300">
+                <p role="status" className="text-sm text-gray-300">
                   Published repository release:{" "}
                   <a href={release.releaseUrl} className={linkClass}>{release.tagName}</a>
                   {" · "}{targetLabel}{" · "}{arch === "auto" ? "AMD64 / ARM64" : arch}
                 </p>
               )}
             </div>
-            {selectionReady && releaseStatus === "live" && !packagesAvailable && (
+            {selectionReady && packagesMissing && (
               <p role="alert" className="rounded-lg border border-amber-400/40 p-4 text-sm text-amber-100">
                 The complete package set for this selection is not present in the published release.
                 Choose another target or a specific available architecture, or{" "}
@@ -253,7 +264,7 @@ export default function PackagesPage() {
                 stack. Review the command before running it. Installation does not start a usable DocumentDB endpoint.
               </p>
               {canInstall ? <CommandSnippet command={installCommand} label={`${family.toUpperCase()} installation`} /> : (
-                <p className="text-sm text-gray-400">Commands will appear after your selection and the published package set are confirmed.</p>
+                <p className="text-sm text-gray-400">No command is shown for this selection.</p>
               )}
             </section>
 
@@ -329,7 +340,15 @@ export default function PackagesPage() {
                   Install and start Docker first. Replace both credential placeholders before running the
                   command. This local example exposes port 10260 only on your machine&apos;s loopback interface.
                 </p>
-                {selectionReady && <CommandSnippet command={dockerCommand} label="Docker" />}
+                {selectionReady && (
+                  <>
+                    <CommandSnippet command={dockerCommand} label="Docker" />
+                    <p className="mb-4 mt-4 text-sm leading-6 text-gray-300">
+                      The container is up before DocumentDB accepts connections. Wait for the readiness banner:
+                    </p>
+                    <CommandSnippet command={dockerReadyCommand} label="Wait until ready" />
+                  </>
+                )}
                 <p className="mt-4 text-sm leading-6 text-gray-400">
                   The container initializes the database; do not run the Linux package setup wizard inside it.
                   For persistent volumes and a versioned image, follow the{" "}
@@ -340,7 +359,7 @@ export default function PackagesPage() {
           </>
         )}
 
-        {!(method === "docker" && dockerSetup === "guided") && (
+        {state !== null && !(method === "docker" && dockerSetup === "guided") && (
           <section id="connect" className={panelClass}>
             <h2 className="text-2xl font-bold text-white">{method === "packages" ? "3" : "2"}. Connect and run your first query</h2>
             <p className="mb-4 mt-3 text-sm leading-6 text-gray-300">
@@ -348,7 +367,7 @@ export default function PackagesPage() {
               <a href="https://www.mongodb.com/docs/mongodb-shell/install/" className={linkClass}>mongosh</a>{" "}
               separately, then connect from the same host as DocumentDB.{" "}
               {method === "packages" ? "Use the admin password you chose during setup." : "Use the username and password you chose for Docker."}{" "}
-              The shell prompts for the password; it is not included in the connection URI.
+              The shell prompts for the password, so it stays out of your shell history.
             </p>
             {selectionReady && (method === "docker" || canInstall) && (
               <>
@@ -358,8 +377,8 @@ export default function PackagesPage() {
               </>
             )}
             <p className="mt-3 text-sm leading-6 text-gray-400">
-              Expect an acknowledged insert and a document containing &quot;Hello, DocumentDB!&quot;.
-              The example uses the <code>mydb</code> database. The self-signed certificate bypass is
+              Expect an acknowledged insert and the widget document back.
+              The example uses the <code>quickstart</code> database. The self-signed certificate bypass is
               for local development only; use trusted certificates and remove the bypass for other deployments.
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -373,7 +392,7 @@ export default function PackagesPage() {
           </section>
         )}
 
-        {method === "packages" && (
+        {state !== null && method === "packages" && (
           <section className={panelClass} aria-labelledby="keep-control">
             <h2 id="keep-control" className="text-2xl font-bold text-white">Keep control after the first query</h2>
             <p className="mb-4 mt-3 text-sm leading-6 text-gray-300">

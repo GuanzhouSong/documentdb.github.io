@@ -37,12 +37,12 @@ This is a guided installation, not a one-command path from an unprepared machine
 After setup and an authenticated connection in `mongosh`, insert a document and read it back:
 
 ```javascript
-use linux_packages_demo
+use quickstart
 db.notes.insertOne({ message: "Start simple. Keep control." })
 db.notes.findOne({ message: "Start simple. Keep control." })
 ```
 
-The query should return the inserted document, including its `_id`. On a systemd host, follow [Services and paths]({{ site_root }}/docs/linux-packages/#services-and-paths) to restart the complete-stack target for your selected PostgreSQL major. Reconnect, select `linux_packages_demo`, and repeat the query to check that the same data remains. A service restart is not a data reset.
+The query should return the inserted document, including its `_id`. On a systemd host, follow [Services and paths]({{ site_root }}/docs/linux-packages/#services-and-paths) to restart the complete-stack target for your selected PostgreSQL major. Reconnect, select `quickstart`, and repeat the query to check that the same data remains. A service restart is not a data reset.
 
 The [operations guide]({{ site_root }}/docs/linux-packages/) keeps service commands, storage paths, troubleshooting, and removal guidance in one place.
 
@@ -56,7 +56,7 @@ The complete stack is the starting point, not the only option.
 
 ## Supported platforms and release boundaries
 
-These details describe [v0.117-0](https://github.com/documentdb/documentdb/releases/tag/v0.117-0), the current release as of September 10, 2026. Linux packages are not new to this release.
+These details describe [v0.117-0](https://github.com/documentdb/documentdb/releases/tag/v0.117-0), the current release as of September 10, 2026.
 
 The shipped package matrix covers Ubuntu 24.04 with APT and RHEL/Rocky Linux 9 with RPM/dnf, on PostgreSQL 17 or 18 and amd64 or arm64. RPM names those architectures x86_64 and aarch64. RHEL requires registration and the documented repository prerequisites. PostgreSQL 18 is the default: `documentdb` selects it, while `documentdb-17` and `documentdb-18` select a specific major.
 
