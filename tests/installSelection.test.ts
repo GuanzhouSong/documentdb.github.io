@@ -80,10 +80,18 @@ describe("install selection links", () => {
     expect(parseInstallSelection("family=rpm&target=rocky9").selection?.method).toBe("packages");
   });
 
-  it("writes package choices to the URL only for packages", () => {
+  it("keeps Docker links short unless package choices were changed", () => {
     expect(installSelectionUrlQuery(defaultInstallSelection)).toBe("method=docker");
     const packages = { ...defaultInstallSelection, method: "packages" as const };
     expect(installSelectionUrlQuery(packages)).toBe(installSelectionQuery(packages));
+  });
+
+  it("restores package choices after switching to Docker and back", () => {
+    const chosen = parseInstallSelection("method=packages&family=rpm&target=rhel9&pg=17&arch=aarch64").selection!;
+    const docker = parseInstallSelection(installSelectionUrlQuery({ ...chosen, method: "docker" })).selection!;
+    expect(docker.method).toBe("docker");
+    const back = parseInstallSelection(installSelectionUrlQuery({ ...docker, method: "packages" })).selection;
+    expect(back).toEqual(chosen);
   });
 
   it("allows campaign parameters without treating them as install choices", () => {

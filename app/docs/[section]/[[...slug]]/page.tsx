@@ -306,7 +306,7 @@ export default async function ArticlePage({ params }: PageProps) {
                                             <div className="mt-4">
                                                 <Link
                                                     href="/packages?method=packages"
-                                                    className={primerPrimaryLinkClass}
+                                                    className={primerSecondaryLinkClass}
                                                 >
                                                     Linux packages installation
                                                 </Link>
