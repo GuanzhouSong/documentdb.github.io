@@ -9,6 +9,7 @@
     <meta name="keywords" content="{{ page.tags | join: ', ' | escape }}">
     {% endif %}
     <meta name="theme-color" content="#09090b">
+    <link rel="canonical" href="{{ page.url | absolute_url }}">
 
     {% assign social_title = page.title | default: site.title %}
     {% assign social_description = page.description | default: site.description %}
