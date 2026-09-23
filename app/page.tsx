@@ -6,7 +6,6 @@ import {
   documentdbVsCodeExtensionMarketplaceUrl,
   documentdbVsCodeLocalQuickStartDeepLink,
 } from "./services/externalLinks";
-import { vscodeExistingConnectionSectionAnchor } from "./lib/docsAnchors";
 import { getMetadata } from "./services/metadataService";
 import {
   documentdbGitHubForks,
@@ -43,37 +42,6 @@ const quickRunCommand = `docker run -dt --name documentdb \\
   ghcr.io/documentdb/documentdb/documentdb-local:latest \\
   --username '<YOUR_USERNAME>' \\
   --password '<YOUR_PASSWORD>'`;
-
-const dockerQuickStartSteps = [
-  {
-    step: "01",
-    description:
-      "Replace the username and password, then run the command. The first run downloads the image.",
-  },
-  {
-    step: "02",
-    description:
-      "Connect on 127.0.0.1:10260 with your app, driver, or mongosh. See the Docker guide for connection and TLS settings.",
-  },
-  {
-    step: "03",
-    description:
-      "Run your first query.",
-  },
-];
-
-const guidedQuickStartSteps = [
-  {
-    step: "01",
-    description:
-      "Confirm the prompts. In the wizard, select Continue, review the defaults, then select Start DocumentDB Local.",
-  },
-  {
-    step: "02",
-    description:
-      "When setup finishes, select Open Connection to explore your data. Sample data is enabled by default.",
-  },
-];
 
 const kubernetesOperatorEntryPoints = [
   {
@@ -395,22 +363,16 @@ export default function Home() {
                 <h2 className="mt-4 text-xl font-semibold text-white sm:text-2xl">
                   Run DocumentDB locally
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-gray-300">
-                  Choose how to set up your local database.
-                </p>
-                <p className="mt-1 text-sm leading-6 text-gray-400">
-                  Both options require Docker and use the DocumentDB Local image.
+                <p className="mt-2 text-sm leading-6 text-gray-400">
+                  Both options require Docker.
                 </p>
               </div>
               <QuickStartTabs
                 dockerCommand={quickRunCommand}
-                dockerSteps={dockerQuickStartSteps}
-                guidedSteps={guidedQuickStartSteps}
                 vscodeDeepLinkUrl={documentdbVsCodeLocalQuickStartDeepLink}
                 vscodeMarketplaceUrl={documentdbVsCodeExtensionMarketplaceUrl}
                 dockerDocsUrl="/docs/getting-started/docker"
                 vscodeDocsUrl="/docs/getting-started/vscode-quickstart"
-                existingConnectionDocsUrl={`/docs/getting-started/vscode-quickstart#${vscodeExistingConnectionSectionAnchor}`}
               />
             </div>
           </div>

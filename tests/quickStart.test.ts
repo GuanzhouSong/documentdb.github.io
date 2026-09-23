@@ -22,12 +22,9 @@ const existingConnectionUrl = `${vscodeGuideUrl}#${vscodeExistingConnectionSecti
 
 function panel(id: 'command' | 'guided') {
   const start = card.indexOf(`id="quickstart-panel-${id}"`);
-  const end = card.indexOf(
-    id === 'command'
-      ? 'id="quickstart-panel-guided"'
-      : 'id="quickstart-existing-connection"',
-    start + 1,
-  );
+  const end = id === 'command'
+    ? card.indexOf('id="quickstart-panel-guided"', start + 1)
+    : card.length;
   expect(start).toBeGreaterThan(-1);
   expect(end).toBeGreaterThan(start);
   return card.slice(start, end);
@@ -98,7 +95,7 @@ describe('homepage local quick start', () => {
   });
 
   it('states the shared Docker requirement once, outside either panel', () => {
-    const requirement = 'Both options require Docker and use the DocumentDB Local image.';
+    const requirement = 'Both options require Docker.';
     expect(card.split(requirement)).toHaveLength(2);
     expect(card.indexOf(requirement)).toBeLessThan(card.indexOf('role="tablist"'));
     expect(panel('command')).not.toContain(requirement);
@@ -107,9 +104,9 @@ describe('homepage local quick start', () => {
   });
 
   it('explains manual control and guided provisioning rather than editor choice', () => {
-    expect(panel('command')).toContain('Run the container yourself');
+    expect(card).toContain('Run it yourself');
     expect(panel('guided')).toContain(
-      'create your local database, generate credentials, and save a ready-to-use connection',
+      'creates your local database, generates credentials, and saves a connection',
     );
     expect(card).not.toContain('smoothest experience');
     expect(card).not.toContain('One click');
@@ -132,19 +129,29 @@ describe('homepage local quick start', () => {
     const caption = guided.slice(captionStart, guided.indexOf('</p>', captionStart));
     expect(caption).toContain('Requires');
     expect(caption).toContain('href="https://code.visualstudio.com/"');
-    expect(caption).toContain('VS Code may prompt you to install');
+    expect(caption).toContain('You may be prompted to install');
     expect(caption).toContain(`href="${documentdbVsCodeExtensionMarketplaceUrl}"`);
     expect(guided).not.toContain('>Install the extension</');
   });
 
-  it('keeps the guided steps focused on setup and using the result', () => {
-    expect(panel('command').match(/<li\b/g)).toHaveLength(3);
-    expect(panel('guided').match(/<li\b/g)).toHaveLength(2);
-    expect(panel('guided')).toContain('Confirm the prompts');
-    expect(panel('guided')).toContain('select Continue');
-    expect(panel('guided')).toContain('select Start DocumentDB Local');
-    expect(panel('guided')).toContain('When setup finishes, select Open Connection');
-    expect(panel('guided')).toContain('Sample data is enabled by default.');
+  it('keeps both workflows concise without numbered steps', () => {
+    const command = panel('command');
+    const guided = panel('guided');
+    const editCredentials = 'Replace the username and password, then run the command.';
+    const connect = 'Then connect with your preferred client.';
+    expect(command).not.toContain('<ol');
+    expect(command.split(editCredentials)).toHaveLength(2);
+    expect(command.indexOf(editCredentials)).toBeLessThan(command.indexOf('<pre'));
+    expect(command.indexOf(connect)).toBeGreaterThan(command.indexOf('</pre>'));
+    expect(command.indexOf('Docker setup guide')).toBeGreaterThan(command.indexOf(connect));
+    expect(command).not.toContain('Connect on 127.0.0.1:10260 with your app');
+    expect(command).not.toContain('Run your first query.');
+    expect(guided).not.toContain('<ol');
+    expect(guided).not.toContain('Confirm the prompts');
+    expect(guided).not.toContain('select Continue');
+    expect(guided).not.toContain('select Start DocumentDB Local');
+    expect(guided).toContain('When setup finishes, select Open Connection.');
+    expect(guided).not.toContain('Sample data is enabled by default.');
   });
 
   it('leaves extension versions in the guide, not the homepage', () => {
@@ -159,21 +166,18 @@ describe('homepage local quick start', () => {
     expect(panel('guided')).toContain(`href="${vscodeGuideUrl}"`);
     expect(panel('guided')).toContain('VS Code setup guide');
     expect(panel('guided').indexOf('>VS Code setup guide</a>')).toBeGreaterThan(
-      panel('guided').lastIndexOf('</ol>'),
+      panel('guided').indexOf('When setup finishes, select Open Connection'),
     );
     expect(card).not.toContain('Nothing happened?');
     expect(card).not.toContain('Not working in VS Code?');
     expect(card).not.toContain('role="status"');
   });
 
-  it('separates existing-instance connection from both provisioning panels', () => {
-    const footer = card.slice(card.indexOf('id="quickstart-existing-connection"'));
-    expect(footer).toContain('Already running DocumentDB?');
-    expect(footer).toContain('Connect your existing instance in VS Code.');
-    expect(footer).toContain(`href="${existingConnectionUrl}"`);
-    expect(footer).not.toContain(documentdbVsCodeLocalQuickStartDeepLink);
-    expect(panel('command')).not.toContain(existingConnectionUrl);
-    expect(panel('guided')).not.toContain(existingConnectionUrl);
+  it('omits the existing-instance footer from the homepage', () => {
+    expect(card).not.toContain('id="quickstart-existing-connection"');
+    expect(card).not.toContain('Already running DocumentDB?');
+    expect(card).not.toContain('Connect your existing instance in VS Code.');
+    expect(card).not.toContain(`href="${existingConnectionUrl}"`);
   });
 });
 
