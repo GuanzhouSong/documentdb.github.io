@@ -103,6 +103,13 @@ describe('homepage local quick start', () => {
     expect(panel('guided')).not.toContain('Linux containers');
   });
 
+  it('points Linux users without Docker to packages, outside either panel', () => {
+    const link = card.indexOf('href="/packages"');
+    expect(link).toBeGreaterThan(-1);
+    expect(link).toBeLessThan(card.indexOf('role="tablist"'));
+    expect(card.slice(link)).toMatch(/^href="\/packages"[^>]*>Install Linux packages</);
+  });
+
   it('explains manual control and guided provisioning rather than editor choice', () => {
     expect(card).toContain('Run it yourself');
     expect(panel('guided')).toContain(

@@ -364,7 +364,14 @@ export default function Home() {
                   Run DocumentDB locally
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-gray-400">
-                  Both options require Docker.
+                  Both options require Docker. No Docker on Linux?{" "}
+                  <Link
+                    href="/packages"
+                    className="font-semibold text-blue-300 transition-colors hover:text-blue-200"
+                  >
+                    Install Linux packages
+                  </Link>
+                  .
                 </p>
               </div>
               <QuickStartTabs
