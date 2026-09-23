@@ -103,11 +103,14 @@ describe('homepage local quick start', () => {
     expect(panel('guided')).not.toContain('Linux containers');
   });
 
-  it('points Linux users without Docker to packages, outside either panel', () => {
-    const link = card.indexOf('href="/packages"');
-    expect(link).toBeGreaterThan(-1);
-    expect(link).toBeLessThan(card.indexOf('role="tablist"'));
-    expect(card.slice(link)).toMatch(/^href="\/packages"[^>]*>Install Linux packages</);
+  it('opens the Linux packages guide from below both panels, not before the default path', () => {
+    const href = 'href="/docs/getting-started/packages"';
+    const link = card.indexOf(href);
+    expect(card.split(href)).toHaveLength(2);
+    expect(link).toBeGreaterThan(card.indexOf('id="quickstart-panel-guided"'));
+    // Closes the guided panel and the tabs wrapper, so the footer is visible from either tab.
+    expect(card.slice(0, card.lastIndexOf('<p', link))).toMatch(/<\/div><\/div>$/);
+    expect(card.slice(link)).toMatch(/^href="[^"]+"[^>]*>Linux packages guide</);
   });
 
   it('explains manual control and guided provisioning rather than editor choice', () => {

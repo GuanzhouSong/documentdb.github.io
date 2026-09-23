@@ -364,14 +364,7 @@ export default function Home() {
                   Run DocumentDB locally
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-gray-400">
-                  Both options require Docker. No Docker on Linux?{" "}
-                  <Link
-                    href="/packages"
-                    className="font-semibold text-blue-300 transition-colors hover:text-blue-200"
-                  >
-                    Install Linux packages
-                  </Link>
-                  .
+                  Both options require Docker.
                 </p>
               </div>
               <QuickStartTabs
@@ -381,6 +374,15 @@ export default function Home() {
                 dockerDocsUrl="/docs/getting-started/docker"
                 vscodeDocsUrl="/docs/getting-started/vscode-quickstart"
               />
+              <p className="mt-6 border-t border-neutral-800 pt-4 text-sm leading-6 text-gray-400">
+                Prefer to install directly on Linux?{" "}
+                <Link
+                  href="/docs/getting-started/packages"
+                  className="whitespace-nowrap font-semibold text-blue-300 transition-colors hover:text-blue-200"
+                >
+                  Linux packages guide
+                </Link>
+              </p>
             </div>
           </div>
         </div>
