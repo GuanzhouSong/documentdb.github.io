@@ -180,7 +180,7 @@ describe('homepage local quick start', () => {
     );
     expect(card).not.toContain('Nothing happened?');
     expect(card).not.toContain('Not working in VS Code?');
-    expect(card).not.toContain('role="status"');
+    expect(panel('guided')).not.toContain('role="status"');
   });
 
   it('omits the existing-instance footer from the homepage', () => {
