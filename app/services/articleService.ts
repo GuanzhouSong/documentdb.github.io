@@ -387,7 +387,7 @@ prefix both setup runs with \`sudo DOCUMENTDB_TOAST_COMPRESSION=default\`.
 ## Install the PostgreSQL extension only
 
 Choose this advanced path for SQL-facing DocumentDB capabilities in PostgreSQL you manage.
-It does **not** create a MongoDB-compatible network endpoint, install the gateway, or run
+It does **not** install the gateway, create a network endpoint for drivers, or run
 \`documentdb-setup\`. Shell, driver, and VS Code quick starts require the complete stack instead.
 
 Use the extension package for your PostgreSQL major: \`postgresql-N-documentdb\` on Ubuntu
@@ -670,7 +670,7 @@ export DOCUMENTDB_PASSWORD='<YOUR_PASSWORD>'
 \`\`\`
 `;
 
-const optionalSampleDataContent = `Sample data is **opt-in**, not required for your first insert and read. Linux package installations can add \`--load-sample-data\` during setup, which separately requires [mongosh](https://www.mongodb.com/docs/mongodb-shell/install/). Docker installations can start with \`--init-data true\`. Without these options, \`StoreData\` does not exist. Existing Docker volumes are not migrated automatically; do not delete data you need just to load a sample.`;
+const optionalSampleDataContent = `Sample data is **opt-in**, not required for your first insert and read. Linux package installations can add \`--load-sample-data\` during setup, which needs one extra tool; see [Set up and connect](/docs/getting-started/packages#set-up-and-connect). Docker installations can start with \`--init-data true\`. Without these options, \`StoreData\` does not exist. Docker seeds the sample once per data volume: re-creating the container with \`--init-data true\` on a volume that was never seeded loads it without touching your data, and seeding again needs a new volume.`;
 
 const vscodeQuickStartGuideContent = `# Visual Studio Code Quick Start
 
@@ -1308,18 +1308,18 @@ Choose your environment once, create a working instance, then connect with the c
 
 1. **Choose Docker or Linux packages.** [Docker installation](/packages?method=docker) is recommended for evaluation and development on Linux, macOS, or Windows. [Linux packages installation](/packages?method=packages) is for environments without Docker, or when you need control over PostgreSQL, topology, services, and configuration.
 2. **Create a working instance.** Follow the [Docker Quick Start](/docs/getting-started/docker) or [Linux Packages Quick Start](/docs/getting-started/packages). Linux package installation has two stages: install packages, then run the setup wizard. Neither copying a command nor installing files alone proves the endpoint is ready.
-3. **Insert and read your first document.** Use the [Mongo Shell Quick Start](/docs/getting-started/mongo-shell-quickstart), [Node.js Quick Start](/docs/getting-started/nodejs-setup), [Python Quick Start](/docs/getting-started/python-setup), or [Visual Studio Code Quick Start](/docs/getting-started/vscode-quickstart). Keep the same running instance; no second server installation is needed.
+3. **Insert and read your first document.** Use the [Visual Studio Code Quick Start](/docs/getting-started/vscode-quickstart), [Node.js Quick Start](/docs/getting-started/nodejs-setup), or [Python Quick Start](/docs/getting-started/python-setup). Keep the same running instance; no second server installation is needed.
 
 Linux packages are pre-GA and support **fresh installation only**, not in-place upgrades from earlier releases. Removing packages preserves database files; reinstalling does not reset data.
 
-For advanced control, [use an existing local PostgreSQL instance](/docs/linux-packages#adopt-an-existing-postgre-sql-instance) with administrator-managed configuration and restart, or [install the PostgreSQL extension only](/docs/linux-packages#install-the-postgre-sql-extension-only). Extension-only installation does not create a MongoDB-compatible endpoint.
+For advanced control, [use an existing local PostgreSQL instance](/docs/linux-packages#adopt-an-existing-postgre-sql-instance) with administrator-managed configuration and restart, or [install the PostgreSQL extension only](/docs/linux-packages#install-the-postgre-sql-extension-only). Extension-only installation does not install the gateway, so apps and drivers cannot connect; you use it through SQL.
 `;
 
 const gettingStartedIndexVerificationContent = `## Verify your setup
 
 Before moving on to application code, confirm that DocumentDB is reachable and can insert and read a document. For Docker, check \`docker ps --filter "name=documentdb"\` and wait for the readiness banner in \`docker logs documentdb\`; for Linux packages, inspect \`sudo documentdb-setup --status\`.
 
-Install [mongosh](https://www.mongodb.com/docs/mongodb-shell/install/) separately for this shell example. Run it on the same host as DocumentDB. Use your Docker username, or \`admin\` for Linux packages, and enter your password at the prompt.
+Run this shell example on the same host as DocumentDB. Use your Docker username, or \`admin\` for Linux packages, and enter your password at the prompt.
 
 The certificate bypass is for **local development only**. Linux package setup binds the gateway on **all interfaces** by default: firewall port \`10260\` before setup and follow [network and certificate guidance](/docs/linux-packages#before-exposing-it-to-a-network).
 

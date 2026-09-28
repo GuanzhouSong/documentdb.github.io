@@ -331,27 +331,19 @@ export default async function ArticlePage({ params }: PageProps) {
                                                 Insert and read your first document
                                             </p>
                                             <p className="mt-1 text-sm text-gray-400">
-                                                Install mongosh separately for the shell walkthrough below, or
-                                                use your preferred language or editor. Each guide connects to
-                                                the instance you already created and verifies an insert and read.
+                                                Pick the client you prefer. Each guide connects to the
+                                                instance you already created and verifies an insert and read.
                                                 Sample data is optional.
                                             </p>
                                             <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
                                                 <Link
-                                                    href="/docs/getting-started/mongo-shell-quickstart"
+                                                    href="/docs/getting-started/vscode-quickstart"
                                                     className={primerPrimaryLinkClass}
                                                 >
-                                                    Mongo Shell Quick Start
+                                                    Visual Studio Code Quick Start
                                                 </Link>
                                                 <p className="text-sm text-gray-400">
                                                     Or go directly to{" "}
-                                                    <Link
-                                                        href="/docs/getting-started/vscode-quickstart"
-                                                        className={primerSecondaryLinkClass}
-                                                    >
-                                                        Visual Studio Code Quick Start
-                                                    </Link>
-                                                    ,{" "}
                                                     <Link
                                                         href="/docs/getting-started/nodejs-setup"
                                                         className={primerSecondaryLinkClass}

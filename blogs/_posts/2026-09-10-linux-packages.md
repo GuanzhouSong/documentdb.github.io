@@ -16,7 +16,7 @@ tags:
 
 Docker remains the fastest way to evaluate DocumentDB on Linux, macOS, or Windows. When you cannot use Docker, or need control over PostgreSQL, services, and configuration on a Linux host, Linux packages give you another option: familiar package managers, guided setup, and a choice about how much of the stack you manage.
 
-DocumentDB is an open-source, MongoDB API compatible document database built on PostgreSQL. The Linux packages bring the PostgreSQL extension, gateway, setup tools, and systemd services together, so you can start with a complete installation instead of assembling individual components.
+DocumentDB is an open-source document database built on PostgreSQL. The Linux packages bring the PostgreSQL extension, gateway, setup tools, and systemd services together, so you can start with a complete installation instead of assembling individual components.
 
 **Start simple. Keep control.** Use the complete stack for a new instance, or choose an advanced path for PostgreSQL you already manage.
 
@@ -28,13 +28,13 @@ Installation and setup are separate steps:
 
 1. **Install with apt or dnf.** Follow the [Linux installation guide]({{ site_root }}/docs/getting-started/packages/) to configure the signed DocumentDB and PostgreSQL repositories, meet the distribution prerequisites, and install the complete-stack package for your selected PostgreSQL major. This changes system-wide package sources and installs dependencies.
 2. **Run guided setup.** The guide's `documentdb-setup` command explicitly creates a new private instance, configures the database and gateway, and starts the services. Installing packages alone does not create a working endpoint. Enter the administrator password at the terminal prompt, not in a connection URI or shell history.
-3. **Connect and query.** Install `mongosh` separately if you want to use the shell examples or load the optional sample data. Follow the guide's connection instructions before running your first insert and read.
+3. **Connect and query.** Follow the guide's connection instructions, then run your first insert and read.
 
 This is a guided installation, not a one-command path from an unprepared machine to production.
 
 ## Try a write, then keep it across a restart
 
-After setup and an authenticated connection in `mongosh`, insert a document and read it back:
+Once you are connected, insert a document and read it back:
 
 ```javascript
 use quickstart
@@ -52,7 +52,7 @@ The complete stack is the starting point, not the only option.
 
 **Use an existing local PostgreSQL instance.** Keep ownership of its service and data while configuring DocumentDB and the gateway alongside it. This requires explicit configuration changes and can require an operator-controlled PostgreSQL restart. Back up first and follow [the existing-instance guide]({{ site_root }}/docs/linux-packages/#adopt-an-existing-postgre-sql-instance). The gateway and PostgreSQL must be on the same host; a remote PostgreSQL backend is not supported.
 
-**Install only the PostgreSQL extension.** Choose this when you want the DocumentDB extension in PostgreSQL without the gateway or package-managed private instance. Extension-only installation does not create a MongoDB-compatible network endpoint. Review the component choices on the install page rather than treating this as a substitute for the complete-stack quickstart.
+**Install only the PostgreSQL extension.** Choose this when you want the DocumentDB extension in PostgreSQL without the gateway or package-managed private instance. Extension-only installation does not install the gateway, so apps and drivers cannot connect; you use it through SQL. See the extension-only steps in the [full Linux guide]({{ site_root }}/docs/linux-packages/#install-the-postgre-sql-extension-only) rather than treating this as a substitute for the complete-stack quickstart.
 
 ## Supported platforms and release boundaries
 

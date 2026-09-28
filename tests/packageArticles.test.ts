@@ -88,7 +88,7 @@ describe('Linux package articles', () => {
     expect(article.content).toContain('db.orders.insertOne(');
     expect(article.content).toContain('db.orders.find(');
     expect(article.content).toContain('acknowledged: true');
-    expect(article.content).toContain('Install [mongosh]');
+    expect(article.content).toContain('Run this shell example on the same host as DocumentDB');
     expect(article.content).toContain('## Architecture Components');
     expect(article.content).toContain('## Common Use Cases');
     expect(article.content).toContain('## Community and Support');
@@ -152,7 +152,7 @@ describe('Linux package articles', () => {
       const content = getArticleByPath('getting-started', [slug])?.content;
       expect(content, slug).toContain('not required for your first insert and read');
       expect(content, slug).toContain('`--load-sample-data` during setup');
-      expect(content, slug).toContain('separately requires [mongosh]');
+      expect(content, slug).toContain('see [Set up and connect](/docs/getting-started/packages#set-up-and-connect)');
       expect(content, slug).toContain('`--init-data true`');
     }
     const docker = getArticleByPath('getting-started', ['docker'])?.content;
@@ -236,7 +236,7 @@ describe('Linux package articles', () => {
       '## Install the PostgreSQL extension only',
     );
     expect(linuxPackagesOperationsContent).toContain(
-      'does **not** create a MongoDB-compatible network endpoint',
+      'does **not** install the gateway, create a network endpoint for drivers',
     );
     expect(linuxPackagesOperationsContent).toContain(
       'sudo systemctl restart documentdb-local@18.target',
