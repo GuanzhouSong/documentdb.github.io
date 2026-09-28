@@ -191,7 +191,7 @@ The current official release publishes the full stack — extension, gateway, se
 > Need another distribution or PostgreSQL major? We welcome community builds. Check out the matching release tag and use the version-parameterized [packaging scripts](https://github.com/documentdb/documentdb/blob/v0.117-0/packaging/README.md). \`build_packages.sh\` builds the extension, \`gateway/build_gateway_packages.sh\` builds the gateway, and \`build_extra_packages.sh\` builds the common, tools, stand-alone, and meta packages. PostgreSQL 15 is extension-only because the setup tools require PostgreSQL 16 or newer. These builds are on demand and are not official release assets hosted by documentdb.io.
 
 > [!NOTE]
-> **v1.0-RC1** is for testing only. Get it from its [release page](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC1) or the \`pg*-1.0.0\` Docker images; this repository and these guides stay on v0.117-0.
+> Want to try DocumentDB 1.0? See [Try the 1.0 release candidate](#try-the-1-0-release-candidate).
 
 You do not need PostgreSQL already installed — the setup wizard creates and manages its own instance. The install does add the PGDG repository and pull PostgreSQL, PostGIS and around 160 packages (about 140 MB), so pick a host you are willing to have PGDG on.
 
@@ -286,6 +286,15 @@ A database and collection are created on first write:
 - Anything else — \`sudo documentdb-setup --status\` reports the listener, service states and resolved paths
 
 More failure modes, including hosts without systemd: [Operating a package install](/docs/linux-packages#troubleshooting).
+
+## Try the 1.0 release candidate
+
+[v1.0-RC1](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC1) lets you try DocumentDB 1.0 before it ships. It is for testing only: it won't be maintained, and there is no supported upgrade from it to 1.0 or later, so use a host you can rebuild and don't keep data on it you need. Please [report issues](https://github.com/documentdb/documentdb/issues).
+
+This repository stays on v0.117-0, so the commands above install 0.117. To try the RC instead:
+
+- **Docker** — replace \`latest\` with \`pg17-1.0.0\` or \`pg18-1.0.0\` in any Docker quick start.
+- **Linux packages** — download the packages for your platform from the release page and install them all in one \`apt install\` or \`dnf install\`, with PGDG (and EPEL and CRB on EL9) already enabled. See [Smaller offline cases](/docs/linux-packages/offline#smaller-offline-cases). The RC's \`install.sh\` installs from this repository, so it gives you 0.117.
 
 ## If you used an earlier repository target
 
@@ -1244,8 +1253,8 @@ The \`latest\` tag is a convenience alias. Pin an explicit tag for anything repr
 | \`ghcr.io/documentdb/documentdb/documentdb-local:pg18-0.117.0\` | DocumentDB 0.117.0 on PostgreSQL 18 |
 | \`…:pg17-0.117.0\` | DocumentDB 0.117.0 on PostgreSQL 17 |
 | \`…:pg16-0.117.0\` · \`…:pg15-0.117.0\` | PostgreSQL 16 and 15 |
-| \`…:pg17-1.0.0\` · \`pg18\`, \`pg16\`, \`pg15\` | v1.0-RC1, for testing only |
-| \`…:latest\` | Currently the RC1 test image \`pg17-1.0.0\`; pin \`pg17-0.117.0\` for the stable release |
+| \`…:pg17-1.0.0\` · \`…:pg18-1.0.0\` | [v1.0-RC1](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC1) release candidate, for testing only |
+| \`…:latest\` | Currently identical to \`pg17-0.117.0\` |
 
 > \`latest\` tracks **PostgreSQL 17**, while the \`documentdb\` package on Linux pins
 > **PostgreSQL 18**. If you evaluate in Docker and then deploy from packages, you change

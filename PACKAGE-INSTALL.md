@@ -2,9 +2,10 @@
 
 Repository-backed installation commands for DocumentDB.
 
-> **v1.0-RC1** is for testing only. Get it from its
-> [release page](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC1) or the
-> `pg*-1.0.0` Docker images; this repository stays on v0.117-0.
+> This repository serves v0.117-0. To try DocumentDB 1.0, use the
+> [v1.0-RC1](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC1) release assets or the
+> `pg17-1.0.0` / `pg18-1.0.0` Docker images. The release candidate is for testing only: it won't be
+> maintained and has no supported upgrade path to 1.0 or later.
 
 ## What is published
 

@@ -385,7 +385,7 @@ describe('Linux package articles', () => {
       'documentdb-local:pg18-0.117.0',
     );
     expect(source).toContain(
-      'Currently the RC1 test image \\`pg17-1.0.0\\`; pin \\`pg17-0.117.0\\`',
+      'Currently identical to \\`pg17-0.117.0\\`',
     );
     expect(source).not.toContain(
       '5 users, 5 products, 4 orders, and 2',
