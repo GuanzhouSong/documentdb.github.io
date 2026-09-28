@@ -5,6 +5,9 @@ Repository-backed installation commands for DocumentDB.
 > The repository currently serves **v1.0-RC1**, a release candidate for DocumentDB 1.0.
 > The stable [v0.117-0](https://github.com/documentdb/documentdb/releases/tag/v0.117-0)
 > remains available from its release assets.
+> Hosts that installed v0.117-0 from this repository will be offered 1.0 on their next package
+> upgrade; that upgrade is untested on the candidate, so hold the DocumentDB packages if you are
+> not evaluating it.
 
 ## What is published
 
