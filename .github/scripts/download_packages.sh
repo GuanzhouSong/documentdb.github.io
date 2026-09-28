@@ -88,23 +88,22 @@ if ! curl -fqs "https://api.github.com/repos/${REPO}/releases?per_page=100" > "$
   exit 1
 fi
 
-# Select exactly one published release. Drafts are always skipped. "latest"
-# skips prereleases too; naming a prerelease tag opts in, so the repository an
-# RC's install.sh points at can serve that RC.
+# Select exactly one published release. Drafts and prereleases are skipped.
 SELECTED_TAG=$(DOCUMENTDB_VERSION="$DOCUMENTDB_VERSION" python3 - "$RELEASES_JSON" <<'PY'
 import json, os, sys
 
-releases = [r for r in json.load(open(sys.argv[1])) if not r.get("draft")]
+releases = json.load(open(sys.argv[1]))
+published = [r for r in releases if not r.get("draft") and not r.get("prerelease")]
+if not published:
+    sys.exit("Error: no published releases found")
+
 requested = os.environ.get("DOCUMENTDB_VERSION", "latest")
 if requested != "latest":
-    selected = next((r for r in releases if r["tag_name"] == requested), None)
+    selected = next((r for r in published if r["tag_name"] == requested), None)
     if selected is None:
         sys.exit(f"Error: Version {requested} not found in releases")
 else:
-    stable = [r for r in releases if not r.get("prerelease")]
-    if not stable:
-        sys.exit("Error: no published releases found")
-    selected = stable[0]
+    selected = published[0]
 
 print(selected["tag_name"])
 PY

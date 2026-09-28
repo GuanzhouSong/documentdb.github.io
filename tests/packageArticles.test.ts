@@ -287,13 +287,13 @@ describe('Linux package articles', () => {
     const offlineGuide = getArticleByPath('linux-packages', ['offline']);
 
     expect(linuxPackagesGuideContent).toContain(
-      'documentdb/blob/v1.0-RC1/packaging/README.md',
+      'documentdb/blob/v0.117-0/packaging/README.md',
     );
     expect(linuxPackagesGuideContent).toContain(
       '`--load-sample-data` to the setup command to seed the `StoreData` database',
     );
     expect(offlineGuide?.content).toContain(
-      'ubuntu24.04-postgresql-18-documentdb_1.0-0_amd64.deb',
+      'ubuntu24.04-postgresql-18-documentdb_0.117-0_amd64.deb',
     );
     expect(offlineGuide?.content).toContain(
       'pass the five packages for the selected PostgreSQL major',
@@ -382,10 +382,10 @@ describe('Linux package articles', () => {
       '41,505 store documents and 2 rating documents',
     );
     expect(source).toContain(
-      'documentdb-local:pg18-1.0.0',
+      'documentdb-local:pg18-0.117.0',
     );
     expect(source).toContain(
-      'Currently identical to \\`pg17-1.0.0\\`',
+      'Currently the RC1 test image \\`pg17-1.0.0\\`; pin \\`pg17-0.117.0\\`',
     );
     expect(source).not.toContain(
       '5 users, 5 products, 4 orders, and 2',
