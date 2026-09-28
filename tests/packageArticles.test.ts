@@ -274,7 +274,7 @@ describe('Linux package articles', () => {
     );
   });
 
-  it('points every tag-specific guide link at the mirrored release', () => {
+  it('keeps package download and source links on the mirrored release', () => {
     const tags = [
       ...`${linuxPackagesGuideContent}\n${linuxPackagesOperationsContent}`.matchAll(/documentdb\/(?:releases\/download|blob)\/(v[^/]+)\//g),
     ].map((match) => match[1]);
