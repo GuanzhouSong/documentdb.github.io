@@ -191,19 +191,19 @@ The current official release publishes the full stack — extension, gateway, se
 > Need another distribution or PostgreSQL major? We welcome community builds. Check out the matching release tag and use the version-parameterized [packaging scripts](https://github.com/documentdb/documentdb/blob/v1.0-RC1/packaging/README.md). \`build_packages.sh\` builds the extension, \`gateway/build_gateway_packages.sh\` builds the gateway, and \`build_extra_packages.sh\` builds the common, tools, stand-alone, and meta packages. PostgreSQL 15 is extension-only because the setup tools require PostgreSQL 16 or newer. These builds are on demand and are not official release assets hosted by documentdb.io.
 
 > [!NOTE]
-> The current release is **v1.0-RC1**, a release candidate for DocumentDB 1.0. Try it and [report issues](https://github.com/documentdb/documentdb/issues) before v1.0-0 ships. The stable [v0.117-0](https://github.com/documentdb/documentdb/releases/tag/v0.117-0) remains available from its release assets. Hosts that installed v0.117-0 from this repository will be offered 1.0 on their next package upgrade; that upgrade is untested on the candidate, so hold the DocumentDB packages if you are not evaluating it.
+> This repository now serves **v1.0-RC1**, the 1.0 release candidate; please [report issues](https://github.com/documentdb/documentdb/issues). Hosts that installed v0.117-0 from here will get the RC on their next \`apt upgrade\` or \`dnf upgrade\`, and that upgrade is untested. Hold the DocumentDB packages on those hosts.
 
 You do not need PostgreSQL already installed — the setup wizard creates and manages its own instance. The install does add the PGDG repository and pull PostgreSQL, PostGIS and around 160 packages (about 140 MB), so pick a host you are willing to have PGDG on.
 
 ## Install
 
-On a clean Ubuntu 24.04 or EL9 host, the release's \`install.sh\` runs every step below — repository, packages and setup — and prompts for the admin password. Pass \`--pg-major 17\` for PostgreSQL 17 or \`--help\` for unattended options:
+On a clean Ubuntu 24.04 or EL9 host, \`install.sh\` configures the repositories, installs the packages and runs setup, prompting for the admin password. Add \`--pg-major 17\` for PostgreSQL 17, or see \`--help\` for unattended options:
 
 \`\`\`bash
 curl -fsSLo documentdb-install.sh https://github.com/documentdb/documentdb/releases/download/v1.0-RC1/install.sh && sh documentdb-install.sh
 \`\`\`
 
-To run the steps yourself instead:
+Then install \`mongosh\` as shown below and skip the setup command. To run each step yourself instead:
 
 ### Ubuntu 24.04, PostgreSQL 18 (APT)
 
@@ -1252,7 +1252,6 @@ The \`latest\` tag is a convenience alias. Pin an explicit tag for anything repr
 | \`ghcr.io/documentdb/documentdb/documentdb-local:pg18-1.0.0\` | DocumentDB 1.0.0 (v1.0-RC1) on PostgreSQL 18 |
 | \`…:pg17-1.0.0\` | DocumentDB 1.0.0 (v1.0-RC1) on PostgreSQL 17 |
 | \`…:pg16-1.0.0\` · \`…:pg15-1.0.0\` | PostgreSQL 16 and 15 |
-| \`…:pg17-0.117.0\` | Previous stable release, DocumentDB 0.117.0 |
 | \`…:latest\` | Currently identical to \`pg17-1.0.0\` |
 
 > \`latest\` tracks **PostgreSQL 17**, while the \`documentdb\` package on Linux pins
