@@ -135,8 +135,8 @@ export default function PackagesPage() {
 
         <section aria-label="Installation method" className="grid gap-3 sm:grid-cols-2">
           {([
-            { value: "docker", title: "Docker", description: "Recommended for evaluation and development." },
-            { value: "packages", title: "Linux packages", description: "Advanced: install on Ubuntu 24.04 or EL9 without Docker." },
+            { value: "docker", title: "Docker container", description: "Recommended for evaluation and development." },
+            { value: "packages", title: "Linux packages", description: "For environments without Docker or when you need control over PostgreSQL, topology, services, and configuration." },
           ] as const).map((item) => (
             <button
               key={item.value}
