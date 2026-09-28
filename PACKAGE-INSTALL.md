@@ -2,8 +2,8 @@
 
 Repository-backed installation commands for DocumentDB.
 
-> This repository serves v0.117-0. v1.0-RC1 is for testing only, with no maintenance and no
-> upgrade path, and isn't in this repository; see
+> This repository serves v0.117-0. v1.0-RC1 is for testing only, gets no fixes (those go into
+> RC2 or 1.0), has no upgrade path, and isn't in this repository; see
 > [Try the 1.0 release candidate](https://documentdb.io/docs/getting-started/release-candidate/).
 
 ## What is published

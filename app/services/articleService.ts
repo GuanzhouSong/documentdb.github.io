@@ -191,7 +191,7 @@ The current official release publishes the full stack — extension, gateway, se
 > Need another distribution or PostgreSQL major? We welcome community builds. Check out the matching release tag and use the version-parameterized [packaging scripts](https://github.com/documentdb/documentdb/blob/v0.117-0/packaging/README.md). \`build_packages.sh\` builds the extension, \`gateway/build_gateway_packages.sh\` builds the gateway, and \`build_extra_packages.sh\` builds the common, tools, stand-alone, and meta packages. PostgreSQL 15 is extension-only because the setup tools require PostgreSQL 16 or newer. These builds are on demand and are not official release assets hosted by documentdb.io.
 
 > [!NOTE]
-> Want to try DocumentDB 1.0? [v1.0-RC1](/docs/getting-started/release-candidate) is for testing only, with no maintenance and no upgrade path. It isn't in the package repository, so the commands below install v0.117-0.
+> Want to try DocumentDB 1.0? [v1.0-RC1](/docs/getting-started/release-candidate) is for testing only, gets no fixes (those go into RC2 or 1.0) and has no upgrade path. It isn't in the package repository, so the commands below install v0.117-0.
 
 You do not need PostgreSQL already installed — the setup wizard creates and manages its own instance. The install does add the PGDG repository and pull PostgreSQL, PostGIS and around 160 packages (about 140 MB), so pick a host you are willing to have PGDG on.
 
@@ -1244,7 +1244,7 @@ The \`latest\` tag is a convenience alias. Pin an explicit tag for anything repr
 | \`ghcr.io/documentdb/documentdb/documentdb-local:pg18-0.117.0\` | DocumentDB 0.117.0 on PostgreSQL 18 |
 | \`…:pg17-0.117.0\` | DocumentDB 0.117.0 on PostgreSQL 17 |
 | \`…:pg16-0.117.0\` · \`…:pg15-0.117.0\` | PostgreSQL 16 and 15 |
-| \`…:pg17-1.0.0\` · \`…:pg18-1.0.0\` | [v1.0-RC1](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC1), for testing only, with [no maintenance or upgrade path](/docs/getting-started/release-candidate). Use a new, empty data volume. |
+| \`…:pg17-1.0.0\` · \`…:pg18-1.0.0\` | [v1.0-RC1](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC1), for testing only, with [no fixes to RC1 and no upgrade path](/docs/getting-started/release-candidate). Use a new, empty data volume. |
 | \`…:latest\` | Currently identical to \`pg17-0.117.0\` |
 
 > \`latest\` tracks **PostgreSQL 17**, while the \`documentdb\` package on Linux pins
