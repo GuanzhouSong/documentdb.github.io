@@ -75,33 +75,36 @@ describe('package metadata', () => {
 });
 
 describe('release metadata', () => {
-  it('uses v0.117-0 for the first paint and feed fallback', () => {
+  it('uses v1.0-RC1 for the first paint and feed fallback', () => {
     expect(FALLBACK_RELEASE).toMatchObject({
-      tagName: 'v0.117-0',
-      aptVersion: '0.117-0',
-      rpmVersion: '0.117.0-1.el9',
-      metaVersion: '0.117.0',
-      metaRpmVersion: '0.117.0-1',
-      releaseUrl: 'https://github.com/documentdb/documentdb/releases/tag/v0.117-0',
+      tagName: 'v1.0-RC1',
+      aptVersion: '1.0-0',
+      rpmVersion: '1.0.0-1.el9',
+      metaVersion: '1.0.0',
+      metaRpmVersion: '1.0.0-1',
+      releaseUrl: 'https://github.com/documentdb/documentdb/releases/tag/v1.0-RC1',
     });
   });
 
-  it('derives v0.117 package versions from the published asset shapes', () => {
+  it.each([
+    ['v0.117-0', '0.117-0', '0.117.0'],
+    ['v1.0-RC1', '1.0-0', '1.0.0'],
+  ])('derives %s package versions from the published asset shapes', (tag, ext, flat) => {
     expect(parseReleaseInfo({
-      tag_name: 'v0.117-0',
-      html_url: 'https://github.com/documentdb/documentdb/releases/tag/v0.117-0',
+      tag_name: tag,
+      html_url: `https://github.com/documentdb/documentdb/releases/tag/${tag}`,
       assets: [
-        { name: 'ubuntu24.04-documentdb_0.117.0_all.deb' },
-        { name: 'ubuntu24.04-postgresql-18-documentdb_0.117-0_amd64.deb' },
-        { name: 'documentdb-0.117.0-1.noarch.rpm' },
-        { name: 'rhel9-postgresql18-documentdb-0.117.0-1.el9.x86_64.rpm' },
+        { name: `ubuntu24.04-documentdb_${flat}_all.deb` },
+        { name: `ubuntu24.04-postgresql-18-documentdb_${ext}_amd64.deb` },
+        { name: `documentdb-${flat}-1.noarch.rpm` },
+        { name: `rhel9-postgresql18-documentdb-${flat}-1.el9.x86_64.rpm` },
       ],
     })).toMatchObject({
-      tagName: 'v0.117-0',
-      aptVersion: '0.117-0',
-      rpmVersion: '0.117.0-1.el9',
-      metaVersion: '0.117.0',
-      metaRpmVersion: '0.117.0-1',
+      tagName: tag,
+      aptVersion: ext,
+      rpmVersion: `${flat}-1.el9`,
+      metaVersion: flat,
+      metaRpmVersion: `${flat}-1`,
     });
   });
 });

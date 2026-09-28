@@ -2,6 +2,10 @@
 
 Repository-backed installation commands for DocumentDB.
 
+> The repository currently serves **v1.0-RC1**, a release candidate for DocumentDB 1.0.
+> The stable [v0.117-0](https://github.com/documentdb/documentdb/releases/tag/v0.117-0)
+> remains available from its release assets.
+
 ## What is published
 
 Starting with **v0.116-0**, DocumentDB ships a multi-package layout with a setup wizard and
@@ -204,7 +208,7 @@ Before using this anywhere but a private machine:
 
 ```bash
 sudo documentdb-setup --status      # gateway listener, service states, resolved paths
-documentdb-gateway --version        # DocumentDB version (0.117.0)
+documentdb-gateway --version        # DocumentDB version (1.0.0)
 dpkg -l | grep documentdb           # or: rpm -qa | grep documentdb
 ```
 
@@ -434,7 +438,7 @@ three entry points:
 - `packaging/gateway/build_gateway_packages.sh` — wire-protocol gateway
 - `packaging/build_extra_packages.sh` — tools, common payload, `documentdb-N`, and meta package
 
-The [v0.117 packaging guide](https://github.com/documentdb/documentdb/blob/v0.117-0/packaging/README.md)
+The [v1.0-RC1 packaging guide](https://github.com/documentdb/documentdb/blob/v1.0-RC1/packaging/README.md)
 documents their required arguments, version formats, prerequisites, and accepted targets.
 PostgreSQL 15 remains extension-only for package-managed installs because the setup tools
 require PostgreSQL 16 or newer.
@@ -449,9 +453,9 @@ they do not retain packages from older releases.
 Examples:
 
 ```text
-ubuntu24.04-documentdb_0.117.0_all.deb
-ubuntu24.04-postgresql-18-documentdb_0.117-0_amd64.deb
-rhel9-postgresql18-documentdb-0.117.0-1.el9.x86_64.rpm
+ubuntu24.04-documentdb_1.0.0_all.deb
+ubuntu24.04-postgresql-18-documentdb_1.0-0_amd64.deb
+rhel9-postgresql18-documentdb-1.0.0-1.el9.x86_64.rpm
 ```
 
 For a full stack, pass the five packages for the selected PostgreSQL major to one command:

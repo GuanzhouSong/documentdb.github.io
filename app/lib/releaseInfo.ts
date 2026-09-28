@@ -12,23 +12,23 @@ import { useEffect, useState } from "react";
 // after v0.116-0 had been published and mirrored.
 
 export type ReleaseInfo = {
-  /** Git tag of the mirrored release, e.g. "v0.117-0". */
+  /** Git tag of the mirrored release, e.g. "v1.0-RC1". */
   tagName: string;
-  /** Extension package version on DEB, e.g. "0.117-0". */
+  /** Extension package version on DEB, e.g. "1.0-0". */
   aptVersion: string;
-  /** Extension package version on RPM, e.g. "0.117.0-1.el9". */
+  /** Extension package version on RPM, e.g. "1.0.0-1.el9". */
   rpmVersion: string;
   /**
-   * Version of every non-extension package, e.g. "0.117.0".
+   * Version of every non-extension package, e.g. "1.0.0".
    *
-   * The extension keeps the control-file form (`0.117-0`) while the meta,
+   * The extension keeps the control-file form (`1.0-0`) while the meta,
    * per-major, gateway, tools and common packages use the flat dotted form.
    * Pinning examples MUST pick the right one for the package being pinned:
-   * `apt install documentdb-18=0.117-0` fails with "Version '0.117-0' for
-   * 'documentdb-18' was not found", because that package is `0.117.0`.
+   * `apt install documentdb-18=1.0-0` fails with "Version '1.0-0' for
+   * 'documentdb-18' was not found", because that package is `1.0.0`.
    */
   metaVersion: string;
-  /** RPM form of the non-extension packages, e.g. "0.117.0-1". */
+  /** RPM form of the non-extension packages, e.g. "1.0.0-1". */
   metaRpmVersion: string;
   releaseUrl: string;
   assetNames: readonly string[];
@@ -36,12 +36,12 @@ export type ReleaseInfo = {
 
 // A reference release, not evidence of current repository availability.
 export const FALLBACK_RELEASE: ReleaseInfo = {
-  tagName: "v0.117-0",
-  aptVersion: "0.117-0",
-  rpmVersion: "0.117.0-1.el9",
-  metaVersion: "0.117.0",
-  metaRpmVersion: "0.117.0-1",
-  releaseUrl: "https://github.com/documentdb/documentdb/releases/tag/v0.117-0",
+  tagName: "v1.0-RC1",
+  aptVersion: "1.0-0",
+  rpmVersion: "1.0.0-1.el9",
+  metaVersion: "1.0.0",
+  metaRpmVersion: "1.0.0-1",
+  releaseUrl: "https://github.com/documentdb/documentdb/releases/tag/v1.0-RC1",
   assetNames: [],
 };
 
@@ -80,14 +80,14 @@ export function parseReleaseInfo(payload: unknown): ReleaseInfo {
   }
   const raw = payload as RawReleaseInfo;
   const names = assetNamesOf(raw);
-  if (typeof raw.tag_name !== "string" || !/^v\d+\.\d+[.-]\d+(?:[.-][a-zA-Z0-9]+)*$/.test(raw.tag_name)) {
+  if (typeof raw.tag_name !== "string" || !/^v\d+\.\d+(?:[.-][a-zA-Z0-9]+)+$/.test(raw.tag_name)) {
     throw new Error("The repository returned an invalid release tag.");
   }
   const tagName = raw.tag_name;
   const releaseUrl = `https://github.com/documentdb/documentdb/releases/tag/${tagName}`;
 
-  // The extension keeps the control-file form (0.117-0) on DEB, while RPM
-  // splits it into Version/Release and renders 0.117.0-1.el9. Everything else
+  // The extension keeps the control-file form (1.0-0) on DEB, while RPM
+  // splits it into Version/Release and renders 1.0.0-1.el9. Everything else
   // uses the flat dotted form. Read all three off real filenames so the page
   // cannot claim a shape the release does not contain.
   const aptVersion =
@@ -101,7 +101,7 @@ export function parseReleaseInfo(payload: unknown): ReleaseInfo {
     firstMatch(names, /^ubuntu[\d.]+-documentdb_([^_]+)_all\.deb$/) ??
     firstMatch(names, /^documentdb-(\d+\.\d+\.\d+)-\d+\.noarch\.rpm$/);
 
-  // e.g. documentdb-0.117.0-1.noarch.rpm -> 0.117.0-1
+  // e.g. documentdb-1.0.0-1.noarch.rpm -> 1.0.0-1
   const metaRpmVersion =
     firstMatch(names, /^documentdb-(\d+\.\d+\.\d+-\d+)\.noarch\.rpm$/);
 
