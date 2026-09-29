@@ -1244,7 +1244,7 @@ The \`latest\` tag is a convenience alias. Pin an explicit tag for anything repr
 | \`ghcr.io/documentdb/documentdb/documentdb-local:pg18-0.117.0\` | DocumentDB 0.117.0 on PostgreSQL 18 |
 | \`…:pg17-0.117.0\` | DocumentDB 0.117.0 on PostgreSQL 17 |
 | \`…:pg16-0.117.0\` · \`…:pg15-0.117.0\` | PostgreSQL 16 and 15 |
-| \`…:pg17-1.0.0\` · \`…:pg18-1.0.0\` | [v1.0-RC1](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC1), for testing only, with [no fixes to RC1 and no upgrade path](/docs/getting-started/release-candidate). Use a new, empty data volume. |
+| \`…:pg15-1.0.0-rc1\` · \`…:pg16-1.0.0-rc1\` · \`…:pg17-1.0.0-rc1\` · \`…:pg18-1.0.0-rc1\` | [v1.0-RC1](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC1), for testing only, with [no fixes to RC1 and no upgrade path](/docs/getting-started/release-candidate). No date for 1.0 yet. Use a new, empty data volume. The \`pgNN-1.0.0\` tags point at the same images today but will move to the final 1.0 build. |
 | \`…:latest\` | Currently identical to \`pg17-0.117.0\` |
 
 > \`latest\` tracks **PostgreSQL 17**, while the \`documentdb\` package on Linux pins
