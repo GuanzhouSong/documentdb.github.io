@@ -6,6 +6,26 @@ Repository-backed installation commands for DocumentDB.
 > RC2 or 1.0), has no upgrade path, and isn't in this repository; see
 > [Try the 1.0 release candidate](https://documentdb.io/docs/getting-started/release-candidate/).
 
+## Clean-host installer
+
+On a clean Ubuntu 24.04 or EL9 host, download and run the installer:
+
+```sh
+curl -fsSLo documentdb-install.sh https://documentdb.io/install.sh &&
+sh documentdb-install.sh
+```
+
+The default installs from the stable repository, currently v0.117-0.
+For disposable RC1 testing, run `sh documentdb-install.sh --version v1.0-RC1`
+instead. Both modes default to PostgreSQL 18; use `--pg-major 17` to select 17.
+The RC path downloads checksum-verified release assets without putting them in
+the stable repository. Existing DocumentDB packages, configuration, or data
+are refused for RC installation.
+
+The website publishes the canonical engine installer using the commit and
+checksum pinned in `scripts/publish-installer.mjs`. This pin is independent
+of `DOCUMENTDB_VERSION`, which selects the stable package mirror.
+
 ## What is published
 
 Starting with **v0.116-0**, DocumentDB ships a multi-package layout with a setup wizard and

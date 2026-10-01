@@ -283,6 +283,14 @@ describe('Linux package articles', () => {
     expect(new Set(tags)).toEqual(new Set([FALLBACK_RELEASE.tagName]));
   });
 
+  it('keeps stable installation as the default and makes RC1 an explicit selection', () => {
+    expect(linuxPackagesGuideContent).toContain('https://documentdb.io/install.sh');
+    expect(linuxPackagesGuideContent).toContain('sh documentdb-install.sh --version v1.0-RC1');
+    expect(linuxPackagesGuideContent).toContain('defaults to the stable repository, currently v0.117-0');
+    expect(linuxPackagesGuideContent).toContain('refuses existing DocumentDB');
+    expect(linuxPackagesGuideContent).toContain('RC1 has no maintenance or supported upgrades');
+  });
+
   it('uses the current release package guide and artifact version', () => {
     const offlineGuide = getArticleByPath('linux-packages', ['offline']);
 

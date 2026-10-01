@@ -195,6 +195,23 @@ The current official release publishes the full stack — extension, gateway, se
 
 You do not need PostgreSQL already installed — the setup wizard creates and manages its own instance. The install does add the PGDG repository and pull PostgreSQL, PostGIS and around 160 packages (about 140 MB), so pick a host you are willing to have PGDG on.
 
+## Clean-host installer
+
+On a fresh Ubuntu 24.04 or EL9 host, download and run the installer:
+
+\`\`\`sh
+curl -fsSLo documentdb-install.sh https://documentdb.io/install.sh &&
+sh documentdb-install.sh
+\`\`\`
+
+This defaults to the stable repository, currently v0.117-0, and PostgreSQL 18.
+Use \`--pg-major 17\` to select PostgreSQL 17. For disposable RC1 testing,
+run \`sh documentdb-install.sh --version v1.0-RC1\` instead. The RC path
+downloads checksum-verified release assets and refuses existing DocumentDB
+packages, configuration, or data. RC1 has no maintenance or supported upgrades.
+See [RC instructions](/docs/getting-started/release-candidate) for details.
+The manual repository commands below remain on the stable channel.
+
 ## Install
 
 ### Ubuntu 24.04, PostgreSQL 18 (APT)
