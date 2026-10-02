@@ -42,6 +42,8 @@ If you find any problems with the RC, please [create an issue on GitHub](https:/
 
 ## Definition of support
 
+This policy is a proposal under discussion in [documentdb/documentdb#597](https://github.com/documentdb/documentdb/pull/597). The final policy will be published with 1.0.
+
 DocumentDB aims to publish one new major version each year. The major versions are on branches such as `release/v3`. 
 Security fixes will be backported to supported release branches, with new artifacts built until support ends. Other bug fixes will be backported case by case.
 A major version will be supported until three months after the next major version is released.
