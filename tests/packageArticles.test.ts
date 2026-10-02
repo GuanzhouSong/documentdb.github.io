@@ -13,6 +13,7 @@ import {
   buildRpmInstallCommand,
   buildSetupCommand,
 } from '../app/lib/packageInstall';
+import { FALLBACK_RELEASE } from '../app/lib/releaseInfo';
 
 function getCodeBlocks(content: string, language: string): string[] {
   const pattern = new RegExp('```' + language + '\\n([\\s\\S]*?)\\n```', 'g');
@@ -271,6 +272,23 @@ describe('Linux package articles', () => {
     expect(linuxPackagesOperationsContent).toContain(
       '--use-new-postgres-instance --admin-user admin --admin-password-stdin --yes',
     );
+  });
+
+  it('keeps package download and source links on the mirrored release', () => {
+    const tags = [
+      ...`${linuxPackagesGuideContent}\n${linuxPackagesOperationsContent}`.matchAll(/documentdb\/(?:releases\/download|blob)\/(v[^/]+)\//g),
+    ].map((match) => match[1]);
+
+    expect(tags.length).toBeGreaterThan(0);
+    expect(new Set(tags)).toEqual(new Set([FALLBACK_RELEASE.tagName]));
+  });
+
+  it('serves the stable installer and adds RC1 only through preinstalled release packages', () => {
+    expect(linuxPackagesGuideContent).toContain('https://documentdb.io/install.sh');
+    expect(linuxPackagesGuideContent).toContain('installs v0.117-0 from the package repository');
+    expect(linuxPackagesGuideContent).toContain('releases/tag/v1.0-RC1');
+    expect(linuxPackagesGuideContent).toContain('adds no DocumentDB repository');
+    expect(linuxPackagesGuideContent).not.toContain('--version v1.0-RC1');
   });
 
   it('uses the current release package guide and artifact version', () => {
