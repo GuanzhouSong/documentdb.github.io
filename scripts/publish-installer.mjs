@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 // Release assets can be replaced, so the digest is pinned too.
 export const installerSource = {
   release: 'v1.0-RC1',
-  sha256: '4b380e6632533df8a8267a68bb1978909cae5253d4c0e1ac2d0d14839171621a',
+  sha256: 'dfacd0cd85ad23de191dee9d39b8fc5b4abe9cf1da7db75ea539ad487a2e9f34',
 };
 
 export async function publishInstaller(outputDirectory = 'out') {
