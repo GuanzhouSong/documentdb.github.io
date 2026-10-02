@@ -27,24 +27,13 @@ These experimental versions are not intended for long-term use, nor will they be
 
 ### Release candidate installation
 
-RC1 isn't in the package repository, so the installer on its own sets up the stable v0.117-0.
-Follow [Try the 1.0 release candidate](https://documentdb.io/docs/getting-started/release-candidate/) instead.
-On Linux, enable PGDG and install the five RC1 packages from the [release](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC1), then run the installer.
-It finds the RC1 packages already installed and only runs setup:
+For installation instructions, see our [README.md](https://github.com/documentdb/documentdb/blob/main/packaging/README.md#clean-host-installer)
+or use the command below.
 
 ```bash
 curl -fsSLo documentdb-install.sh \
   https://documentdb.io/install.sh &&
-sh documentdb-install.sh
-```
-
-Or run the RC1 container image on a new volume:
-
-```bash
-docker run -dt -p 127.0.0.1:10260:10260 -v documentdb-rc1-data:/data --name docdb-rc1 \
-  -e USERNAME="${DOCUMENTDB_USERNAME:?Set DOCUMENTDB_USERNAME first}" \
-  -e PASSWORD="${DOCUMENTDB_PASSWORD:?Set DOCUMENTDB_PASSWORD first}" \
-  ghcr.io/documentdb/documentdb/documentdb-local:pg17-1.0.0-rc1
+sh documentdb-install.sh --version v1.0-RC1
 ```
 
 If you find any problems with the RC, please [create an issue on GitHub](https://github.com/documentdb/documentdb/issues).
