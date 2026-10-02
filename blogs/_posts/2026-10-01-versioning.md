@@ -27,16 +27,25 @@ These experimental versions are not intended for long-term use, nor will they be
 
 ### Release candidate installation
 
-For installation instructions, see our [README.md](https://github.com/documentdb/documentdb/blob/v1.0-RC1/packaging/README.md#clean-host-installer)
-or use the command below.
+The quickest way to try RC1 on any machine with Docker, including macOS and Windows, is the container image. Choose the admin credentials, then start it on a new volume:
+
+```bash
+printf 'DocumentDB username: '; read -r DOCUMENTDB_USERNAME
+printf 'DocumentDB password: '; stty -echo; read -r DOCUMENTDB_PASSWORD; stty echo; echo
+docker run -dt -p 127.0.0.1:10260:10260 -v documentdb-rc1-data:/data --name docdb-rc1 \
+  -e USERNAME="$DOCUMENTDB_USERNAME" -e PASSWORD="$DOCUMENTDB_PASSWORD" \
+  ghcr.io/documentdb/documentdb/documentdb-local:pg17-1.0-rc1
+```
+
+Images are tagged `pg15-1.0-rc1` through `pg18-1.0-rc1`. On a clean Ubuntu 24.04 or RHEL-compatible 9 host, you can install the packages with the installer instead:
 
 ```bash
 curl -fsSLo documentdb-install.sh \
   https://documentdb.io/install.sh &&
-sh documentdb-install.sh --version v1.0-RC1
+sudo sh documentdb-install.sh --version v1.0-RC1
 ```
 
-For container images, known issues and what RC1 does and doesn't support, see [Try the 1.0 release candidate](https://documentdb.io/docs/getting-started/release-candidate/).
+[Try the 1.0 release candidate](https://documentdb.io/docs/getting-started/release-candidate/) covers both routes in full, how to connect, known issues, and what RC1 does and doesn't support.
 
 If you find any problems with the RC, please [create an issue on GitHub](https://github.com/documentdb/documentdb/issues).
 
