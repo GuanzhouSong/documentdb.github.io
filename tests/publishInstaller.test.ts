@@ -22,13 +22,13 @@ afterEach(async () => {
 });
 
 describe('published installer', () => {
-  it('pins the engine revision and checksum independently of the stable package channel', () => {
-    expect(installerSource.revision).toMatch(/^[a-f0-9]{40}$/);
+  it('pins a release tag and checksum', () => {
+    expect(installerSource.release).toMatch(/^v\d/);
     expect(installerSource.sha256).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it('publishes the verified bytes without changing the execution barrier', async () => {
-    installerSource.revision = 'a'.repeat(40);
+    installerSource.release = 'v9.9-0';
     installerSource.sha256 = createHash('sha256').update(script).digest('hex');
     const download = vi.fn().mockResolvedValue(new Response(script));
     vi.stubGlobal('fetch', download);
@@ -36,12 +36,12 @@ describe('published installer', () => {
     await publishInstaller(directory);
     expect(await readFile(path.join(directory, 'install.sh'), 'utf8')).toBe(script);
     expect(download.mock.calls[0][0]).toBe(
-      `https://raw.githubusercontent.com/documentdb/documentdb/${'a'.repeat(40)}/packaging/install.sh`,
+      'https://github.com/documentdb/documentdb/releases/download/v9.9-0/install.sh',
     );
   });
 
   it.each(['HTTP error', 'checksum mismatch', 'network error'])('refuses %s without publishing', async (failure) => {
-    installerSource.revision = 'a'.repeat(40);
+    installerSource.release = 'v9.9-0';
     installerSource.sha256 = '0'.repeat(64);
     const download = vi.fn();
     if (failure === 'network error') {
@@ -56,10 +56,10 @@ describe('published installer', () => {
   });
 
   it('rejects a moving source reference before downloading', async () => {
-    installerSource.revision = 'main';
+    installerSource.release = 'latest';
     const download = vi.fn();
     vi.stubGlobal('fetch', download);
-    await expect(publishInstaller(await outputDirectory())).rejects.toThrow('pinned commit');
+    await expect(publishInstaller(await outputDirectory())).rejects.toThrow('release tag');
     expect(download).not.toHaveBeenCalled();
   });
 });

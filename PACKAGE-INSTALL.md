@@ -15,16 +15,14 @@ curl -fsSLo documentdb-install.sh https://documentdb.io/install.sh &&
 sh documentdb-install.sh
 ```
 
-The default installs from the stable repository, currently v0.117-0.
-For disposable RC1 testing, run `sh documentdb-install.sh --version v1.0-RC1`
-instead. Both modes default to PostgreSQL 18; use `--pg-major 17` to select 17.
-The RC path downloads checksum-verified release assets without putting them in
-the stable repository. Existing DocumentDB packages, configuration, or data
-are refused for RC installation.
+This installs v0.117-0 from this repository on PostgreSQL 18; add `--pg-major 17`
+for 17. To try v1.0-RC1 instead, enable PGDG and install the RC1 packages from the
+[release](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC1) first, as the
+[RC guide](https://documentdb.io/docs/getting-started/release-candidate/) shows. The
+installer then reuses them, adds no DocumentDB repository, and only runs setup.
 
-The website publishes the canonical engine installer using the commit and
-checksum pinned in `scripts/publish-installer.mjs`. This pin is independent
-of `DOCUMENTDB_VERSION`, which selects the stable package mirror.
+The site serves the `install.sh` attached to the release named in
+`scripts/publish-installer.mjs`, and the build fails if its SHA256 changes.
 
 ## What is published
 

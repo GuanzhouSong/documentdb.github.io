@@ -3,17 +3,19 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+// v0.117-0 ships no installer; RC1's installs from the stable repository.
+// Release assets can be replaced, so the digest is pinned too.
 export const installerSource = {
-  revision: '2b0321c94daebdd6a5327b641069af0d0036997b',
-  sha256: 'b42077317d3eed19ac6090b757c59ce20b2f6a07b912cd4e134fd4cef7e3da0c',
+  release: 'v1.0-RC1',
+  sha256: '4b380e6632533df8a8267a68bb1978909cae5253d4c0e1ac2d0d14839171621a',
 };
 
 export async function publishInstaller(outputDirectory = 'out') {
-  if (!/^[a-f0-9]{40}$/.test(installerSource.revision) ||
+  if (!/^v\d[\w.-]*$/.test(installerSource.release) ||
       !/^[a-f0-9]{64}$/.test(installerSource.sha256)) {
-    throw new Error('Installer source must have a pinned commit and SHA256');
+    throw new Error('Installer source must name a release tag and SHA256');
   }
-  const url = `https://raw.githubusercontent.com/documentdb/documentdb/${installerSource.revision}/packaging/install.sh`;
+  const url = `https://github.com/documentdb/documentdb/releases/download/${installerSource.release}/install.sh`;
   const response = await fetch(url, { signal: AbortSignal.timeout(60_000) });
   if (!response.ok) {
     throw new Error(`Installer download failed: HTTP ${response.status}`);
