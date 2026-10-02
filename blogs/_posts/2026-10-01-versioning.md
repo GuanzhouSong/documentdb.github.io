@@ -1,6 +1,6 @@
 ---
 title: "Long-term support or development? An explanation of DocumentDB's versioning"
-description: A comparison DocumentDB's long-term support, development, and release-candidate builds
+description: A comparison of DocumentDB's long-term support, development, and release-candidate builds
 date: 2026-10-01
 featured: true
 author: DocumentDB team
@@ -36,9 +36,13 @@ curl -fsSLo documentdb-install.sh \
 sh documentdb-install.sh --version v1.0-RC1
 ```
 
+For container images, known issues and what RC1 does and doesn't support, see [Try the 1.0 release candidate](https://documentdb.io/docs/getting-started/release-candidate/).
+
 If you find any problems with the RC, please [create an issue on GitHub](https://github.com/documentdb/documentdb/issues).
 
 ## Definition of support
+
+This policy is a proposal under discussion in [documentdb/documentdb#597](https://github.com/documentdb/documentdb/pull/597). The final policy will be published with 1.0.
 
 DocumentDB aims to publish one new major version each year. The major versions are on branches such as `release/v3`. 
 Security fixes will be backported to supported release branches, with new artifacts built until support ends. Other bug fixes will be backported case by case.
