@@ -16,10 +16,11 @@ sh documentdb-install.sh
 ```
 
 This installs v0.117-0 from this repository on PostgreSQL 18; add `--pg-major 17`
-for 17. To try v1.0-RC1 instead, enable PGDG and install the RC1 packages from the
-[release](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC1) first, as the
-[RC guide](https://documentdb.io/docs/getting-started/release-candidate/) shows. The
-installer then reuses them, adds no DocumentDB repository, and only runs setup.
+for 17. For disposable RC1 testing, add `--version v1.0-RC1`. The installer then
+downloads this host's packages from the
+[v1.0-RC1 release](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC1),
+verifies them against its `SHA256SUMS`, and doesn't use this repository. See the
+[RC guide](https://documentdb.io/docs/getting-started/release-candidate/).
 
 The site serves the `install.sh` attached to the release named in
 `scripts/publish-installer.mjs`, and the build fails if its SHA256 changes.

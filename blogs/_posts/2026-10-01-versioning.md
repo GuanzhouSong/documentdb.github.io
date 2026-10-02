@@ -27,7 +27,7 @@ These experimental versions are not intended for long-term use, nor will they be
 
 ### Release candidate installation
 
-For installation instructions, see our [README.md](https://github.com/documentdb/documentdb/blob/main/packaging/README.md#clean-host-installer)
+For installation instructions, see our [README.md](https://github.com/documentdb/documentdb/blob/v1.0-RC1/packaging/README.md#clean-host-installer)
 or use the command below.
 
 ```bash

@@ -205,8 +205,8 @@ sh documentdb-install.sh
 \`\`\`
 
 This installs v0.117-0 from the package repository on PostgreSQL 18; add \`--pg-major 17\` for 17.
-To try v1.0-RC1 instead, enable PGDG and install the RC1 packages from the [release](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC1) first, as the [RC guide](/docs/getting-started/release-candidate) shows, then run the same installer.
-It reuses the installed packages, adds no DocumentDB repository and only runs setup.
+For disposable RC1 testing, run \`sh documentdb-install.sh --version v1.0-RC1\` instead.
+It downloads this host's packages from the [v1.0-RC1 release](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC1), verifies them against its \`SHA256SUMS\` and doesn't use the package repository. See the [RC guide](/docs/getting-started/release-candidate).
 RC1 has no maintenance or supported upgrades, so use a disposable host.
 
 ## Install
@@ -1258,7 +1258,7 @@ The \`latest\` tag is a convenience alias. Pin an explicit tag for anything repr
 | \`ghcr.io/documentdb/documentdb/documentdb-local:pg18-0.117.0\` | DocumentDB 0.117.0 on PostgreSQL 18 |
 | \`…:pg17-0.117.0\` | DocumentDB 0.117.0 on PostgreSQL 17 |
 | \`…:pg16-0.117.0\` · \`…:pg15-0.117.0\` | PostgreSQL 16 and 15 |
-| \`…:pg15-1.0.0-rc1\` · \`…:pg16-1.0.0-rc1\` · \`…:pg17-1.0.0-rc1\` · \`…:pg18-1.0.0-rc1\` | [v1.0-RC1](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC1), for testing only, with [no fixes to RC1 and no upgrade path](/docs/getting-started/release-candidate). No date for 1.0 yet. Use a new, empty data volume. The \`pgNN-1.0.0\` tags point at the same images today but will move to the final 1.0 build. |
+| \`…:pg15-1.0-rc1\` · \`…:pg16-1.0-rc1\` · \`…:pg17-1.0-rc1\` · \`…:pg18-1.0-rc1\` | [v1.0-RC1](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC1), for testing only, with [no fixes to RC1 and no upgrade path](/docs/getting-started/release-candidate). No date for 1.0 yet. Use a new, empty data volume. Don't use the \`pgNN-1.0.0\` tags: they hold an earlier RC1 build and will move to the final 1.0 build. |
 | \`…:latest\` | Currently identical to \`pg17-0.117.0\` |
 
 > \`latest\` tracks **PostgreSQL 17**, while the \`documentdb\` package on Linux pins
