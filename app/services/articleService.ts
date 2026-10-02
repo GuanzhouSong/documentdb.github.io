@@ -190,7 +190,24 @@ The current official release publishes the full stack — extension, gateway, se
 > [!NOTE]
 > Need another distribution or PostgreSQL major? We welcome community builds. Check out the matching release tag and use the version-parameterized [packaging scripts](https://github.com/documentdb/documentdb/blob/v0.117-0/packaging/README.md). \`build_packages.sh\` builds the extension, \`gateway/build_gateway_packages.sh\` builds the gateway, and \`build_extra_packages.sh\` builds the common, tools, stand-alone, and meta packages. PostgreSQL 15 is extension-only because the setup tools require PostgreSQL 16 or newer. These builds are on demand and are not official release assets hosted by documentdb.io.
 
+> [!NOTE]
+> Want to try DocumentDB 1.0? [v1.0-RC1](/docs/getting-started/release-candidate) is for testing only, gets no fixes (those go into RC2 or 1.0) and has no upgrade path. It isn't in the package repository, so the commands below install v0.117-0.
+
 You do not need PostgreSQL already installed — the setup wizard creates and manages its own instance. The install does add the PGDG repository and pull PostgreSQL, PostGIS and around 160 packages (about 140 MB), so pick a host you are willing to have PGDG on.
+
+## Clean-host installer
+
+On a fresh Ubuntu 24.04 or EL9 host, download and run the installer:
+
+\`\`\`sh
+curl -fsSLo documentdb-install.sh https://documentdb.io/install.sh &&
+sh documentdb-install.sh
+\`\`\`
+
+This installs v0.117-0 from the package repository on PostgreSQL 18; add \`--pg-major 17\` for 17.
+To try v1.0-RC1 instead, enable PGDG and install the RC1 packages from the [release](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC1) first, as the [RC guide](/docs/getting-started/release-candidate) shows, then run the same installer.
+It reuses the installed packages, adds no DocumentDB repository and only runs setup.
+RC1 has no maintenance or supported upgrades, so use a disposable host.
 
 ## Install
 
@@ -392,7 +409,9 @@ It does **not** install the gateway, create a network endpoint for drivers, or r
 
 Use the extension package for your PostgreSQL major: \`postgresql-N-documentdb\` on Ubuntu
 or \`postgresqlN-documentdb\` on EL9. You own PostgreSQL configuration, extension activation,
-and service restarts. Follow the matching release's [manual package instructions](https://github.com/documentdb/documentdb/blob/v0.117-0/packaging/README.md),
+and service restarts. Create \`documentdb_extended_rum\` as well as \`documentdb\`:
+\`CREATE EXTENSION documentdb CASCADE\` does not pull it in, and without it every index
+creation fails. Follow the matching release's [manual package instructions](https://github.com/documentdb/documentdb/blob/v0.117-0/packaging/README.md),
 or the [extension-only offline instructions](/docs/linux-packages/offline#smaller-offline-cases)
 when PostgreSQL and all extension dependencies are already installed.
 
@@ -1239,6 +1258,7 @@ The \`latest\` tag is a convenience alias. Pin an explicit tag for anything repr
 | \`ghcr.io/documentdb/documentdb/documentdb-local:pg18-0.117.0\` | DocumentDB 0.117.0 on PostgreSQL 18 |
 | \`…:pg17-0.117.0\` | DocumentDB 0.117.0 on PostgreSQL 17 |
 | \`…:pg16-0.117.0\` · \`…:pg15-0.117.0\` | PostgreSQL 16 and 15 |
+| \`…:pg15-1.0.0-rc1\` · \`…:pg16-1.0.0-rc1\` · \`…:pg17-1.0.0-rc1\` · \`…:pg18-1.0.0-rc1\` | [v1.0-RC1](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC1), for testing only, with [no fixes to RC1 and no upgrade path](/docs/getting-started/release-candidate). No date for 1.0 yet. Use a new, empty data volume. The \`pgNN-1.0.0\` tags point at the same images today but will move to the final 1.0 build. |
 | \`…:latest\` | Currently identical to \`pg17-0.117.0\` |
 
 > \`latest\` tracks **PostgreSQL 17**, while the \`documentdb\` package on Linux pins
