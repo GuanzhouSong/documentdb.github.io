@@ -1,6 +1,6 @@
 ---
 title: "Long-term support or development? An explanation of DocumentDB's versioning"
-description: A comparison DocumentDB's long-term support, development, and release-candidate builds
+description: A comparison of DocumentDB's long-term support, development, and release-candidate builds
 date: 2026-10-01
 featured: true
 author: DocumentDB team
@@ -35,6 +35,8 @@ curl -fsSLo documentdb-install.sh \
   https://documentdb.io/install.sh &&
 sh documentdb-install.sh --version v1.0-RC1
 ```
+
+For container images, known issues and what RC1 does and doesn't support, see [Try the 1.0 release candidate](https://documentdb.io/docs/getting-started/release-candidate/).
 
 If you find any problems with the RC, please [create an issue on GitHub](https://github.com/documentdb/documentdb/issues).
 
