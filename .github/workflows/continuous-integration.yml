@@ -86,6 +86,20 @@ jobs:
         #
         # Use the built-in NPM script to build the site
         run: npm run build
+      - name: Render future-dated blog posts
+        # The production build skips posts dated after today, so a scheduled
+        # post that fails to render would otherwise pass until its date.
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/blogs-future"
+          bundle exec jekyll build --future --config blogs/_config.yml --source blogs --destination "$out" --baseurl /blogs
+          for post in blogs/_posts/*.md; do
+            slug=$(basename "$post" .md | cut -d- -f4-)
+            if [ ! -s "$out/posts/$slug/index.html" ]; then
+              echo "::error file=$post::did not render to posts/$slug/"
+              exit 1
+            fi
+          done
   package-repository-validation:
     name: Validate package repository
     runs-on: ubuntu-latest

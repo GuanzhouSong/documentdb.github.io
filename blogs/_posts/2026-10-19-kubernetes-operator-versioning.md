@@ -67,11 +67,6 @@ candidates are for testing, not long-term deployments. Our
 [October 1 post on DocumentDB versioning][versioning] explains the proposed
 support policy and upgrade paths.
 
-The Kubernetes operator will also offer LTS and development release tracks,
-following the same model as the engine. The operator's LTS track will provide a
-stable feature set with security patches, while its development track will
-deliver newer capabilities through minor releases.
-
 The operator and engine have separate version numbers. Coordinating their
 announcements does not make their upgrades interchangeable: choose an operator
 release compatible with your engine and Kubernetes versions, and follow the

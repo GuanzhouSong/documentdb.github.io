@@ -1,10 +1,12 @@
 ---
 title: "DocumentDB for VS Code 1.0: Run It Locally, Bring Your Data"
 description: The free, open-source DocumentDB GUI for VS Code reaches 1.0. Start DocumentDB Local in a few clicks, bring your data with copy and paste, and understand it with the Cluster Dashboard and Query Insights.
-date: 2026-10-16 00:01:00 -0700
+date: 2026-10-19 00:01:00 -0700
 featured: true
 author: Tomasz Naumowicz and the DocumentDB for VS Code team
 category: documentdb-blog
+cover_image: /assets/images/posts/documentdb-for-vs-code-1-0/hero.png
+cover_image_alt: DocumentDB for VS Code 1.0
 tags:
   - DocumentDB
   - VS Code
@@ -12,8 +14,6 @@ tags:
   - GUI
   - Tools
 ---
-![DocumentDB for VS Code 1.0]({{ '/assets/images/posts/documentdb-for-vs-code-1-0/hero.png' | relative_url }})
-
 DocumentDB for VS Code 1.0 is here. Released alongside [DocumentDB 1.0](https://documentdb.io/), the free, open-source extension is a **DocumentDB GUI** and MongoDB GUI, built right into Visual Studio Code. It works with DocumentDB, Azure DocumentDB and other MongoDB-compatible databases, wherever they run.
 
 The milestone reflects what we built across all the releases on the way to 1.0, over a little more than a year. Version 1.0 focuses on fixes and polish, and celebrates how far that experience has come. Here is the shortest path from reading about DocumentDB 1.0 to working with it: run it locally, bring your own data, and understand what you have.

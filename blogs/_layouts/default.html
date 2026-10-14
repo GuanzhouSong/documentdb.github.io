@@ -63,7 +63,15 @@
       <a href="{{ blogs_href }}" aria-current="page">Blogs</a>
     {% endcapture %}
 
+    {% assign announcement_href = site.release_announcement_url | relative_url %}
     <div class="site-shell">
+      {% unless page.url == '/' and announcement_href == blogs_href %}
+        <a class="release-bar" href="{{ announcement_href }}">
+          <span class="release-bar__badge">New</span>
+          <strong>DocumentDB 1.0 is here.</strong>
+          <span class="release-bar__link">Read the announcement <span aria-hidden="true">&rarr;</span></span>
+        </a>
+      {% endunless %}
       <header class="site-header">
         <div class="site-header__inner">
           <a class="site-brand" href="{{ home_href }}">

@@ -12,6 +12,8 @@ tags:
   - Version
 ---
 
+**Update, October 19, 2026:** DocumentDB 1.0 is now available. [Read the announcement]({{ site.release_announcement_url | relative_url }}).
+
 DocumentDB is releasing v1.0-RC1 for testing. This is a release candidate preceding the full 1.0 release.
 Following the full release, DocumentDB will split the main development branch that will continue with 1.1 and beyond from the LTS branch that will stay at 1.0.
 This is to ensure there is a stable version of the platform for users who don't need the latest features.

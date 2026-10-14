@@ -35,6 +35,54 @@ a {
   text-decoration: none;
 }
 
+.release-bar {
+  display: block;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.2), rgba(59, 130, 246, 0.2), rgba(16, 185, 129, 0.2));
+  text-align: center;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.release-bar__badge {
+  margin-right: 0.5rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(52, 211, 153, 0.2);
+  color: #a7f3d0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.release-bar__link {
+  white-space: nowrap;
+  color: #a7f3d0;
+}
+
+.release-bar:hover .release-bar__link,
+.release-bar:focus-visible .release-bar__link {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Long words in large headings otherwise overflow a 280px fold cover */
+.blog-hero__title,
+.post-card__title,
+.blog-post__title {
+  overflow-wrap: break-word;
+}
+
 .site-shell {
   min-height: 100vh;
   display: flex;
@@ -267,6 +315,24 @@ a {
   color: var(--muted);
 }
 
+.blog-hero__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.75rem;
+  padding: 0.8rem 1.5rem;
+  border-radius: 0.5rem;
+  background: #3b82f6;
+  color: #fff;
+  font-weight: 600;
+  transition: background 180ms ease;
+}
+
+.blog-hero__cta:hover,
+.blog-hero__cta:focus-visible {
+  background: #60a5fa;
+}
+
 .posts-group {
   margin-bottom: 3rem;
 }
@@ -353,8 +419,13 @@ a {
   object-fit: cover;
 }
 
+/* Featured covers are launch artwork with text in them, so show them uncropped */
 .post-card--featured .post-card__media {
-  aspect-ratio: 16 / 8;
+  aspect-ratio: auto;
+}
+
+.post-card--featured .post-card__image {
+  height: auto;
 }
 
 .post-card--featured .post-card__body {
@@ -380,6 +451,20 @@ a {
 .post-card__source,
 .post-card__meta {
   margin: 0;
+}
+
+.post-card__ribbon {
+  margin-left: auto;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid rgba(var(--accent-rgb), 0.45);
+  border-radius: 999px;
+  background: rgba(var(--accent-rgb), 0.14);
+  color: rgb(var(--accent-rgb));
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .post-card__source {
@@ -478,6 +563,11 @@ a {
 .post-card--documentdb-blog {
   --accent-rgb: 14, 165, 233;
   --accent-alt-rgb: 59, 130, 246;
+}
+
+.post-card--release {
+  --accent-rgb: 52, 211, 153;
+  --accent-alt-rgb: 14, 165, 233;
 }
 
 .blog-post {

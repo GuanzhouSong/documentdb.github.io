@@ -12,6 +12,8 @@ tags:
   - Community
 ---
 
+**Update, October 19, 2026:** DocumentDB 1.0 is now available. [Read the announcement]({{ site.release_announcement_url | relative_url }}).
+
 Choosing a document database is a long-term investment in how an application works. A team learns a query language, adopts drivers, and builds around particular behaviors. Those choices become part of the application, from routine reads to the way it recovers after a failed write.
 
 Developers should be able to preserve more of that work when their infrastructure needs change. They may want to run a workload themselves, move it to another provider, or choose a different database implementation. Doing so should not require starting over.

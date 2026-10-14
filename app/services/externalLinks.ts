@@ -16,3 +16,8 @@ export const documentdbKubernetesOperatorGitHubUrl =
 
 export const documentdbVsCodeLocalQuickStartDeepLink =
   'vscode://ms-azuretools.vscode-documentdb/local';
+
+// Where the 1.0 banner sends readers: a site-root path or an absolute URL. The
+// blog index until the announcement exists; blogs/_config.yml holds the same
+// target as `release_announcement_url`, relative to the blog.
+export const documentdbReleaseAnnouncementUrl = '/blogs/';
