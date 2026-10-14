@@ -2,7 +2,7 @@
 title: "Long-term support or development? An explanation of DocumentDB's versioning"
 description: A comparison of DocumentDB's long-term support, development, and release-candidate builds
 date: 2026-10-01
-featured: true
+featured: false
 author: DocumentDB team
 category: documentdb-blog
 tags:

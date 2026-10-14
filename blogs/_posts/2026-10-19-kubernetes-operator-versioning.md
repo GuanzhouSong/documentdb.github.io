@@ -1,7 +1,7 @@
 ---
 title: "DocumentDB 1.0 on Kubernetes"
 description: How the DocumentDB Kubernetes Operator helps teams deploy and manage clusters as part of the DocumentDB 1.0 release
-date: 2026-10-19
+date: 2026-10-19 00:01:00 -0700
 featured: true
 author: DocumentDB team
 category: documentdb-blog
@@ -89,6 +89,6 @@ or contribute. As DocumentDB reaches 1.0, the operator brings its database
 capabilities into the Kubernetes workflows your team already uses.
 
 [operator]: https://github.com/documentdb/documentdb-kubernetes-operator
-[versioning]: /blogs/posts/versioning/
-[installation]: https://documentdb.io/documentdb-kubernetes-operator/latest/preview/getting-started/
+[versioning]: {{ '/posts/versioning/' | relative_url }}
+[installation]: https://documentdb.io/documentdb-kubernetes-operator/latest/preview/getting-started/before-you-start/
 [quickstart]: https://documentdb.io/documentdb-kubernetes-operator/latest/preview/#quickstart

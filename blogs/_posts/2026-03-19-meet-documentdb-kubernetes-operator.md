@@ -2,7 +2,7 @@
 title: Meet the DocumentDB Kubernetes Operator
 description: Preview an open-source operator that brings declarative deployment, secure connectivity, high availability, backup and restore, and automated multi-cloud deployment to DocumentDB on Kubernetes.
 date: 2026-03-19
-featured: true
+featured: false
 author: DocumentDB team
 category: documentdb-blog
 tags:
