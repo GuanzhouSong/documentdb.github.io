@@ -25,7 +25,7 @@
 
 <article>
   <a
-    class="post-card post-card--{{ post.category }}{% if include.featured %} post-card--featured{% endif %}{% if is_release %} post-card--release{% endif %}"
+    class="post-card post-card--{{ post.category }}{% if include.featured %} post-card--featured{% endif %}{% if is_release %} post-card--release{% endif %}{% if post.cover_image %} post-card--with-cover{% endif %}"
     href="{{ href }}"
     {% if is_external %}target="_blank" rel="noopener noreferrer"{% endif %}
   >
