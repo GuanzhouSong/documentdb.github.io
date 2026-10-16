@@ -45,9 +45,9 @@ const highlights = [
       "Fixes for backend crashes, a concurrent dropIndexes deadlock and RUM index vacuum issues. The gateway returns specific, retryable error codes.",
   },
   {
-    title: "Collation",
+    title: "Collation (opt-in)",
     description:
-      "count, $stdDevPop, $stdDevSamp, $median, $percentile and the symbol BSON type now honor collation.",
+      "With documentdb_core.enableCollation on, count, $stdDevPop, $stdDevSamp, $median, $percentile and the symbol BSON type honor collation. It is off by default; see the known issues.",
   },
   {
     title: "Geospatial",
