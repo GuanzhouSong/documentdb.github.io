@@ -228,7 +228,7 @@ const bestFitScenarios = [
 ] as const;
 
 const operatorQuickStartCommand = `helm install documentdb-operator oci://ghcr.io/documentdb/documentdb-operator \\
-  --namespace documentdb-operator --create-namespace --wait`;
+  --version 1.0.0 --namespace documentdb-operator --create-namespace --wait`;
 
 export const metadata = getMetadata({
   title: "DocumentDB Kubernetes Operator",

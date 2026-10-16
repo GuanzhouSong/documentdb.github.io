@@ -67,8 +67,9 @@ candidates are for testing, not long-term deployments. Our
 [October 1 post on DocumentDB versioning][versioning] explains the proposed
 support policy and upgrade paths.
 
-The operator and engine have separate version numbers. Coordinating their
-announcements does not make their upgrades interchangeable: choose an operator
+Operator 1.0.0 is released alongside Engine 1.0, but the operator and engine keep
+separate version numbers. Coordinating their releases does not make their upgrades
+interchangeable: choose an operator
 release compatible with your engine and Kubernetes versions, and follow the
 relevant upgrade guidance for each.
 
@@ -76,8 +77,8 @@ relevant upgrade guidance for each.
 
 Start with the [operator installation guide][installation] for prerequisites and
 Helm setup, then follow the [quick start][quickstart] to deploy your first cluster.
-Pin an explicit Helm chart version for repeatable installations and review that
-release's compatibility requirements.
+Pin an explicit Helm chart version, such as `--version 1.0.0`, for repeatable
+installations and review that release's compatibility requirements.
 
 Explore the [repository][operator] for platform-specific examples, report issues,
 or contribute. As DocumentDB reaches 1.0, the operator brings its database
