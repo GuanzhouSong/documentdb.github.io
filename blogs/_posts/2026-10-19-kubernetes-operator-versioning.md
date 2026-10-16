@@ -67,7 +67,7 @@ candidates are for testing, not long-term deployments. Our
 [October 1 post on DocumentDB versioning][versioning] explains the proposed
 support policy and upgrade paths.
 
-Operator 1.0.0 is released alongside Engine 1.0, but the operator and engine keep
+Operator 1.0.0 is generally available alongside Engine 1.0, but the operator and engine keep
 separate version numbers. Coordinating their releases does not make their upgrades
 interchangeable: choose an operator
 release compatible with your engine and Kubernetes versions, and follow the

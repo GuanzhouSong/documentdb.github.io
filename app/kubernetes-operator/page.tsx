@@ -262,7 +262,7 @@ export default function KubernetesOperatorPage() {
           <div className="grid items-center gap-8 lg:gap-10 xl:grid-cols-[1.15fr_0.85fr]">
             <div className="min-w-0">
               <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300">
-                Kubernetes operator
+                Generally available · Operator 1.0.0
               </p>
               <h1 className="mb-5 text-4xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl">
                 DocumentDB Kubernetes Operator
