@@ -366,14 +366,14 @@ The current release publishes PostgreSQL 17 and 18. Install `documentdb-17` or
 
 ## Upgrading an existing install
 
-> **Warning:** In-place package upgrades from earlier releases are not supported yet. Use a
-> clean host or a new, empty PostgreSQL instance for the current fresh installation.
-> Removing packages alone does not create a fresh database: package removal preserves PostgreSQL data and
-> in-database content, and a later setup run reuses an initialized data directory. Upgrading only
-> `postgresql-N-documentdb` does not install the gateway, tools, common payload, or `documentdb-N`.
+Package installs from v0.116 or later upgrade in place to 1.0. Move the entire stack
+together; upgrading only `postgresql-N-documentdb` does not update the gateway, tools, common
+payload, or `documentdb-N`. On a package-managed private PostgreSQL 18 instance:
 
-For a later point release that uses the same multi-package layout, move the entire stack
-together. On a package-managed private PostgreSQL 18 instance:
+> **Warning:** A host that ran a 1.0 release candidate (RC1 or RC2) has no upgrade path. Use a
+> clean host or a new, empty PostgreSQL instance.
+> Removing packages alone does not create a fresh database: package removal preserves PostgreSQL
+> data and in-database content, and a later setup run reuses an initialized data directory.
 
 ```bash
 sudo systemctl stop documentdb-gateway-local@18.service
@@ -391,7 +391,9 @@ sudo dnf upgrade documentdb-18 postgresql18-documentdb \
 sudo systemctl restart documentdb-postgresql@18.service
 ```
 
-Then update the extensions in **every database** that has DocumentDB installed:
+Upgrading the packages does not update the database catalog. Either re-run
+`sudo documentdb-setup` the way you first ran it, which applies the updates idempotently, or
+run them yourself, in this order, in **every database** that has DocumentDB installed:
 
 ```sql
 ALTER EXTENSION documentdb_core UPDATE;
