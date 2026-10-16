@@ -6,7 +6,7 @@ import { pathToFileURL } from 'node:url';
 // v1.0-0 attaches the same bytes as v1.0-RC2. Release assets can be replaced,
 // so the digest is pinned too.
 export const installerSource = {
-  release: 'v1.0-0',
+  release: 'v1.0-RC2',
   sha256: 'b9d16b3b86d3b1541e701be0ce38086dcb0bc904f761a36c7ede9fefe91d45f2',
 };
 

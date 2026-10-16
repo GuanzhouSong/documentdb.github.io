@@ -1,8 +1,8 @@
 {
   "sources": [
     {
-      "repository": "https://github.com/documentdb/docs",
-      "branch": "main",
+      "repository": "https://github.com/GuanzhouSong/docs",
+      "branch": "guanzhousong/docs-1.0-ga",
       "mappings": [
         {
           "source": "api-reference",
