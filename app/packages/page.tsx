@@ -206,8 +206,9 @@ export default function PackagesPage() {
               </div>
             </details>
 
-            <p className="mt-4 text-sm text-amber-100">
-              Pre-GA: fresh installs only. In-place upgrades from earlier releases are not supported.
+            <p className="mt-4 text-sm text-gray-300">
+              Already running DocumentDB from packages?{" "}
+              <Link href="/docs/linux-packages#upgrading" className={linkClass}>Upgrade in place</Link> instead.
             </p>
             {releaseStatus === "loading" ? (
               <p role="status" className="mt-2 text-sm text-gray-400">Checking the published package release...</p>

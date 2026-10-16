@@ -299,10 +299,6 @@ export default async function ArticlePage({ params }: PageProps) {
                                                 PostgreSQL, topology, services, and configuration. Install with
                                                 apt or dnf on {aptTargetLabels.ubuntu24} or EL9, then run the setup wizard.
                                             </p>
-                                            <p className="mt-2 text-sm text-gray-400">
-                                                Pre-GA, fresh installation only; in-place upgrades from earlier
-                                                releases are not supported.
-                                            </p>
                                             <div className="mt-4">
                                                 <Link
                                                     href="/packages?method=packages"

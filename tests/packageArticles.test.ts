@@ -51,10 +51,11 @@ describe('Linux package articles', () => {
     expect(blocks).toContain(buildRpmInstallCommand('rhel9', 'auto', '18'));
     expect(blocks).toContain(buildSetupCommand('18'));
     expect(linuxPackagesGuideContent).toContain('amd64 or arm64');
-    expect(linuxPackagesGuideContent.indexOf('fresh installation only')).toBeLessThan(
+    // Existing installs must see the upgrade route before the first install command.
+    expect(linuxPackagesGuideContent.indexOf('(/docs/linux-packages#upgrading)')).toBeGreaterThan(-1);
+    expect(linuxPackagesGuideContent.indexOf('(/docs/linux-packages#upgrading)')).toBeLessThan(
       linuxPackagesGuideContent.indexOf('```bash'),
     );
-    expect(linuxPackagesGuideContent).toContain('not in-place package upgrades');
     expect(linuxPackagesGuideContent).toContain(
       'Removing packages preserves database files',
     );
@@ -119,7 +120,7 @@ describe('Linux package articles', () => {
     expect(source).not.toContain('-p 10260:10260');
     expect(source).toContain("--username '<YOUR_USERNAME>'");
     expect(source).toContain("--password '<YOUR_PASSWORD>'");
-    expect(source).toContain('Pre-GA, fresh installation only');
+    expect(source).not.toContain('Pre-GA');
   });
 
   it('offers both server methods before client-specific setup or optional Docker commands', () => {
@@ -283,25 +284,25 @@ describe('Linux package articles', () => {
     expect(new Set(tags)).toEqual(new Set([FALLBACK_RELEASE.tagName]));
   });
 
-  it('serves the stable installer and selects RC2 only with --version', () => {
+  it('serves the stable installer without a pinned or RC version', () => {
     expect(linuxPackagesGuideContent).toContain('https://documentdb.io/install.sh');
-    expect(linuxPackagesGuideContent).toContain('installs v0.117-0 from the package repository');
-    expect(linuxPackagesGuideContent).toContain('sh documentdb-install.sh --version v1.0-RC2');
-    expect(linuxPackagesGuideContent).toContain("doesn't use the package repository");
-    expect(linuxPackagesGuideContent).toContain('DOCUMENTDB_USAGE_TELEMETRY=false');
+    expect(linuxPackagesGuideContent).toContain('installs the current release (v1.0-0) from the package repository');
+    // install.sh rejects --version v1.0-0, and RCs are retired at GA.
+    expect(linuxPackagesGuideContent).not.toContain('--version v1.0');
+    expect(linuxPackagesGuideContent).not.toMatch(/RC2|release-candidate/);
   });
 
   it('uses the current release package guide and artifact version', () => {
     const offlineGuide = getArticleByPath('linux-packages', ['offline']);
 
     expect(linuxPackagesGuideContent).toContain(
-      'documentdb/blob/v0.117-0/packaging/README.md',
+      'documentdb/blob/v1.0-0/packaging/README.md',
     );
     expect(linuxPackagesGuideContent).toContain(
       '`--load-sample-data` to the setup command to seed the `StoreData` database',
     );
     expect(offlineGuide?.content).toContain(
-      'ubuntu24.04-postgresql-18-documentdb_0.117-0_amd64.deb',
+      'ubuntu24.04-postgresql-18-documentdb_1.0-0_amd64.deb',
     );
     expect(offlineGuide?.content).toContain(
       'pass the five packages for the selected PostgreSQL major',
@@ -390,10 +391,10 @@ describe('Linux package articles', () => {
       '41,505 store documents and 2 rating documents',
     );
     expect(source).toContain(
-      'documentdb-local:pg18-0.117.0',
+      'documentdb-local:pg18-1.0.0',
     );
     expect(source).toContain(
-      'Currently identical to \\`pg17-0.117.0\\`',
+      'Currently identical to \\`pg17-1.0.0\\`',
     );
     expect(source).not.toContain(
       '5 users, 5 products, 4 orders, and 2',

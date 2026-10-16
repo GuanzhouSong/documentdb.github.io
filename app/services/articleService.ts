@@ -185,13 +185,10 @@ The current official release publishes the full stack — extension, gateway, se
 **Recommended:** install the complete stack, then create a new private PostgreSQL 18 instance. The commands detect architecture on the Linux host where you run them. For containers or macOS/Windows evaluation, choose [Docker installation](/packages?method=docker).
 
 > [!IMPORTANT]
-> This pre-GA release supports **fresh installation only**, not in-place package upgrades from earlier releases. Use a clean host or a new, empty PostgreSQL instance. Removing packages preserves database files; reinstalling is not a data reset.
+> Already running v0.116 or v0.117 from packages? Follow [Upgrading](/docs/linux-packages#upgrading) instead of installing again. Hosts that ran a 1.0 release candidate have no upgrade path; use a clean host. Removing packages preserves database files; reinstalling is not a data reset.
 
 > [!NOTE]
-> Need another distribution or PostgreSQL major? We welcome community builds. Check out the matching release tag and use the version-parameterized [packaging scripts](https://github.com/documentdb/documentdb/blob/v0.117-0/packaging/README.md). \`build_packages.sh\` builds the extension, \`gateway/build_gateway_packages.sh\` builds the gateway, and \`build_extra_packages.sh\` builds the common, tools, stand-alone, and meta packages. PostgreSQL 15 is extension-only because the setup tools require PostgreSQL 16 or newer. These builds are on demand and are not official release assets hosted by documentdb.io.
-
-> [!NOTE]
-> Want to try DocumentDB 1.0? [v1.0-RC2](/docs/getting-started/release-candidate) is for testing only, gets no fixes (those go into a later RC or 1.0) and has no upgrade path. It isn't in the package repository, so the commands below install v0.117-0.
+> Need another distribution or PostgreSQL major? We welcome community builds. Check out the matching release tag and use the version-parameterized [packaging scripts](https://github.com/documentdb/documentdb/blob/v1.0-0/packaging/README.md). \`build_packages.sh\` builds the extension, \`gateway/build_gateway_packages.sh\` builds the gateway, and \`build_extra_packages.sh\` builds the common, tools, stand-alone, and meta packages. PostgreSQL 15 is extension-only because the setup tools require PostgreSQL 16 or newer. These builds are on demand and are not official release assets hosted by documentdb.io.
 
 You do not need PostgreSQL already installed — the setup wizard creates and manages its own instance. The install does add the PGDG repository and pull PostgreSQL, PostGIS and around 160 packages (about 140 MB), so pick a host you are willing to have PGDG on.
 
@@ -204,11 +201,8 @@ curl -fsSLo documentdb-install.sh https://documentdb.io/install.sh &&
 sudo sh documentdb-install.sh
 \`\`\`
 
-This installs v0.117-0 from the package repository on PostgreSQL 18; add \`--pg-major 17\` for 17.
-To try RC2, run \`sudo sh documentdb-install.sh --version v1.0-RC2\` instead.
-It downloads this host's packages from the [v1.0-RC2 release](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC2), verifies them against its \`SHA256SUMS\` and doesn't use the package repository.
-The \`pgNN-1.0-rc2\` container image also runs RC2; it sends anonymous usage telemetry by default (opt out with \`-e DOCUMENTDB_USAGE_TELEMETRY=false\`). See the [RC guide](/docs/getting-started/release-candidate).
-RC2 gets no fixes and has no upgrade path, so use a clean host.
+This installs the current release (v1.0-0) from the package repository on PostgreSQL 18; add \`--pg-major 17\` for 17.
+The installer refuses a host with existing DocumentDB packages, configuration or data; to move an existing install to 1.0, follow [Upgrading](/docs/linux-packages#upgrading).
 
 ## Install
 
@@ -412,7 +406,7 @@ Use the extension package for your PostgreSQL major: \`postgresql-N-documentdb\`
 or \`postgresqlN-documentdb\` on EL9. You own PostgreSQL configuration, extension activation,
 and service restarts. Create \`documentdb_extended_rum\` as well as \`documentdb\`:
 \`CREATE EXTENSION documentdb CASCADE\` does not pull it in, and without it every index
-creation fails. Follow the matching release's [manual package instructions](https://github.com/documentdb/documentdb/blob/v0.117-0/packaging/README.md),
+creation fails. Follow the matching release's [manual package instructions](https://github.com/documentdb/documentdb/blob/v1.0-0/packaging/README.md),
 or the [extension-only offline instructions](/docs/linux-packages/offline#smaller-offline-cases)
 when PostgreSQL and all extension dependencies are already installed.
 
@@ -662,7 +656,7 @@ Then continue with [Set up and connect](/docs/getting-started/packages#set-up-an
 
 If the target already has PostgreSQL, the PGDG extension dependencies (\`postgresql-N-cron\`, \`-pgvector\`, \`-postgis-3\`) and \`jq\`, you do not need a bundle:
 
-- **Extension only, one file** — \`sudo apt install ./ubuntu24.04-postgresql-18-documentdb_0.117-0_amd64.deb\`. No gateway and no \`documentdb-setup\`.
+- **Extension only, one file** — \`sudo apt install ./ubuntu24.04-postgresql-18-documentdb_1.0-0_amd64.deb\`. No gateway and no \`documentdb-setup\`.
 - **Full stack from the release assets** — pass the five packages for the selected PostgreSQL major to a *single* \`apt install\` / \`dnf install\`: \`documentdb-N\`, the matching \`postgresql-N-documentdb\` / \`postgresqlN-documentdb\` extension, \`documentdb-common\`, \`documentdb-gateway\`, and \`documentdb-postgresql-tools\`. For PostgreSQL 18 only, the optional \`documentdb\` meta package may be included; it selects \`documentdb-18\`. Local files resolve dependencies only against enabled repositories, so a package whose dependencies are not included still fails.
 `;
 
@@ -1256,11 +1250,10 @@ The \`latest\` tag is a convenience alias. Pin an explicit tag for anything repr
 
 | Tag | Contents |
 |---|---|
-| \`ghcr.io/documentdb/documentdb/documentdb-local:pg18-0.117.0\` | DocumentDB 0.117.0 on PostgreSQL 18 |
-| \`…:pg17-0.117.0\` | DocumentDB 0.117.0 on PostgreSQL 17 |
-| \`…:pg16-0.117.0\` · \`…:pg15-0.117.0\` | PostgreSQL 16 and 15 |
-| \`…:pg15-1.0-rc2\` · \`…:pg16-1.0-rc2\` · \`…:pg17-1.0-rc2\` · \`…:pg18-1.0-rc2\` | [v1.0-RC2](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC2), for testing only, with [no fixes to RC2 and no upgrade path](/docs/getting-started/release-candidate). No date for 1.0 yet. Use a new, empty data volume. Sends anonymous usage telemetry by default; see the [privacy statement](https://github.com/documentdb/documentdb/blob/v1.0-RC2/documentdb-local/PRIVACY.md) to opt out. |
-| \`…:latest\` | Currently identical to \`pg17-0.117.0\` |
+| \`ghcr.io/documentdb/documentdb/documentdb-local:pg18-1.0.0\` | DocumentDB 1.0.0 on PostgreSQL 18 |
+| \`…:pg17-1.0.0\` | DocumentDB 1.0.0 on PostgreSQL 17 |
+| \`…:pg16-1.0.0\` · \`…:pg15-1.0.0\` | PostgreSQL 16 and 15 |
+| \`…:latest\` | Currently identical to \`pg17-1.0.0\` |
 
 > \`latest\` tracks **PostgreSQL 17**, while the \`documentdb\` package on Linux pins
 > **PostgreSQL 18**. If you evaluate in Docker and then deploy from packages, you change
@@ -1269,7 +1262,7 @@ The \`latest\` tag is a convenience alias. Pin an explicit tag for anything repr
 Every image records what it was built from:
 
 \`\`\`bash
-docker run --rm --entrypoint cat ghcr.io/documentdb/documentdb/documentdb-local:pg18-0.117.0 /version.txt
+docker run --rm --entrypoint cat ghcr.io/documentdb/documentdb/documentdb-local:pg18-1.0.0 /version.txt
 \`\`\`
 
 ## Data initialization
@@ -1330,8 +1323,6 @@ Choose your environment once, create a working instance, then connect with the c
 1. **Choose Docker or Linux packages.** [Docker installation](/packages?method=docker) is recommended for evaluation and development on Linux, macOS, or Windows. [Linux packages installation](/packages?method=packages) is for environments without Docker, or when you need control over PostgreSQL, topology, services, and configuration.
 2. **Create a working instance.** Follow the [Docker Quick Start](/docs/getting-started/docker) or [Linux Packages Quick Start](/docs/getting-started/packages). Linux package installation has two stages: install packages, then run the setup wizard. Neither copying a command nor installing files alone proves the endpoint is ready.
 3. **Insert and read your first document.** Use the [Visual Studio Code Quick Start](/docs/getting-started/vscode-quickstart), [Node.js Quick Start](/docs/getting-started/nodejs-setup), or [Python Quick Start](/docs/getting-started/python-setup). Keep the same running instance; no second server installation is needed.
-
-Linux packages are pre-GA and support **fresh installation only**, not in-place upgrades from earlier releases. Removing packages preserves database files; reinstalling does not reset data.
 
 For advanced control, [use an existing local PostgreSQL instance](/docs/linux-packages#adopt-an-existing-postgre-sql-instance) with administrator-managed configuration and restart, or [install the PostgreSQL extension only](/docs/linux-packages#install-the-postgre-sql-extension-only). Extension-only installation does not install the gateway, so apps and drivers cannot connect; you use it through SQL.
 `;
@@ -1547,7 +1538,7 @@ function updatePrebuiltPackagesContent(content: string): string {
   const legacyClaim =
     'Everything else — PostgreSQL 15/16, Debian 11/12/13, Ubuntu 22.04, RHEL-compatible 8 — is not built by first-party CI for this release. The [package repository](https://documentdb.io/packages) serves those targets the extension package from an earlier release, or build from the tag with the scripts in [`packaging/`](https://github.com/documentdb/documentdb/blob/main/packaging/README.md). PostgreSQL 15 is extension-only: `documentdb-setup` needs 16 or newer.';
   const currentPolicy =
-    'Everything else — PostgreSQL 15/16, Debian 11/12/13, Ubuntu 22.04, RHEL-compatible 8 — is not built by first-party CI or hosted by documentdb.io for this release. Starting with v0.116, packages from earlier releases are not carried forward. Build from the matching tag with the [`packaging/` scripts](https://github.com/documentdb/documentdb/blob/v0.117-0/packaging/README.md); PostgreSQL 15 remains extension-only because `documentdb-setup` requires 16 or newer.';
+    'Everything else — PostgreSQL 15/16, Debian 11/12/13, Ubuntu 22.04, RHEL-compatible 8 — is not built by first-party CI or hosted by documentdb.io for this release. Starting with v0.116, packages from earlier releases are not carried forward. Build from the matching tag with the [`packaging/` scripts](https://github.com/documentdb/documentdb/blob/v1.0-0/packaging/README.md); PostgreSQL 15 remains extension-only because `documentdb-setup` requires 16 or newer.';
 
   return content.replace(legacyClaim, currentPolicy);
 }

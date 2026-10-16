@@ -75,33 +75,33 @@ describe('package metadata', () => {
 });
 
 describe('release metadata', () => {
-  it('uses v0.117-0 for the first paint and feed fallback', () => {
+  it('uses v1.0-0 for the first paint and feed fallback', () => {
     expect(FALLBACK_RELEASE).toMatchObject({
-      tagName: 'v0.117-0',
-      aptVersion: '0.117-0',
-      rpmVersion: '0.117.0-1.el9',
-      metaVersion: '0.117.0',
-      metaRpmVersion: '0.117.0-1',
-      releaseUrl: 'https://github.com/documentdb/documentdb/releases/tag/v0.117-0',
+      tagName: 'v1.0-0',
+      aptVersion: '1.0-0',
+      rpmVersion: '1.0.0-1.el9',
+      metaVersion: '1.0.0',
+      metaRpmVersion: '1.0.0-1',
+      releaseUrl: 'https://github.com/documentdb/documentdb/releases/tag/v1.0-0',
     });
   });
 
-  it('derives v0.117 package versions from the published asset shapes', () => {
+  it('derives v1.0 package versions from the published asset shapes', () => {
     expect(parseReleaseInfo({
-      tag_name: 'v0.117-0',
-      html_url: 'https://github.com/documentdb/documentdb/releases/tag/v0.117-0',
+      tag_name: 'v1.0-0',
+      html_url: 'https://github.com/documentdb/documentdb/releases/tag/v1.0-0',
       assets: [
-        { name: 'ubuntu24.04-documentdb_0.117.0_all.deb' },
-        { name: 'ubuntu24.04-postgresql-18-documentdb_0.117-0_amd64.deb' },
-        { name: 'documentdb-0.117.0-1.noarch.rpm' },
-        { name: 'rhel9-postgresql18-documentdb-0.117.0-1.el9.x86_64.rpm' },
+        { name: 'ubuntu24.04-documentdb_1.0.0_all.deb' },
+        { name: 'ubuntu24.04-postgresql-18-documentdb_1.0-0_amd64.deb' },
+        { name: 'documentdb-1.0.0-1.noarch.rpm' },
+        { name: 'rhel9-postgresql18-documentdb-1.0.0-1.el9.x86_64.rpm' },
       ],
     })).toMatchObject({
-      tagName: 'v0.117-0',
-      aptVersion: '0.117-0',
-      rpmVersion: '0.117.0-1.el9',
-      metaVersion: '0.117.0',
-      metaRpmVersion: '0.117.0-1',
+      tagName: 'v1.0-0',
+      aptVersion: '1.0-0',
+      rpmVersion: '1.0.0-1.el9',
+      metaVersion: '1.0.0',
+      metaRpmVersion: '1.0.0-1',
     });
   });
 });
