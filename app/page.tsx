@@ -3,7 +3,7 @@ import Link from "next/link";
 import QuickStartTabs from "./components/QuickStartTabs";
 import {
   documentdbKubernetesOperatorQuickStartUrl,
-  documentdbReleaseAnnouncementUrl,
+  documentdbReleasePageUrl,
   documentdbVsCodeLocalQuickStartDeepLink,
 } from "./services/externalLinks";
 import { getMetadata } from "./services/metadataService";
@@ -144,7 +144,7 @@ const releaseHighlights = [
     eyebrow: "Kubernetes",
     title: "DocumentDB 1.0 on Kubernetes",
     description:
-      "Deploy and manage DocumentDB clusters declaratively with the Kubernetes operator.",
+      "Operator 1.0.0 is generally available. Deploy and manage DocumentDB clusters declaratively.",
     href: "/blogs/posts/kubernetes-operator-versioning/",
   },
 ];
@@ -423,12 +423,12 @@ export default function Home() {
                 What&apos;s new in 1.0
               </h2>
             </div>
-            <a
-              href={withBasePath(documentdbReleaseAnnouncementUrl)}
+            <Link
+              href={documentdbReleasePageUrl}
               className="inline-flex items-center text-sm font-semibold text-emerald-300 transition-colors hover:text-emerald-200"
             >
-              Read the announcement <span aria-hidden="true" className="ml-1">&rarr;</span>
-            </a>
+              Explore DocumentDB 1.0 <span aria-hidden="true" className="ml-1">&rarr;</span>
+            </Link>
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
