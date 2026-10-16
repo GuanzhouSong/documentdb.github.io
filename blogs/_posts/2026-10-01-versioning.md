@@ -29,27 +29,9 @@ These experimental versions are not intended for long-term use, nor will they be
 
 ### Release candidate installation
 
-> **Update:** [v1.0-RC2](https://github.com/documentdb/documentdb/releases/tag/v1.0-RC2) replaces RC1 for testing. Use `rc2` and `v1.0-RC2` in place of `rc1` and `v1.0-RC1` below. The RC2 image sends anonymous usage telemetry by default; add `-e DOCUMENTDB_USAGE_TELEMETRY=false` to opt out.
+> **Update, October 19, 2026:** The 1.0 release candidates are retired and no longer get fixes. [Install DocumentDB 1.0](https://documentdb.io/packages/) instead. A host or data volume that ran an RC has no upgrade path to 1.0; start from a clean one.
 
-With Docker:
-
-```bash
-docker run -dt --name docdb-rc1 -p 127.0.0.1:10260:10260 \
-  ghcr.io/documentdb/documentdb/documentdb-local:pg17-1.0-rc1 \
-  --username '<YOUR_USERNAME>' --password '<YOUR_PASSWORD>'
-```
-
-Or on Ubuntu 24.04 or RHEL 9:
-
-```bash
-curl -fsSLo documentdb-install.sh \
-  https://documentdb.io/install.sh &&
-sudo sh documentdb-install.sh --version v1.0-RC1
-```
-
-See [Try the 1.0 release candidate](https://documentdb.io/docs/getting-started/release-candidate/) for details.
-
-If you find any problems with the RC, please [create an issue on GitHub](https://github.com/documentdb/documentdb/issues).
+If you find any problems, please [create an issue on GitHub](https://github.com/documentdb/documentdb/issues).
 
 ## Definition of support
 

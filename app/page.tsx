@@ -118,7 +118,7 @@ const capabilities: Capability[] = [
 ];
 
 const trustBadges = [
-  "1.0 with long-term support",
+  "1.0 with planned long-term support",
   "Built on PostgreSQL",
   "Native BSON",
   "MIT licensed",
@@ -130,7 +130,7 @@ const releaseHighlights = [
     eyebrow: "Versioning",
     title: "Long-term support or development?",
     description:
-      "How the 1.0 LTS track and the development track differ, and which one fits your team.",
+      "How the proposed 1.0 LTS track and the development track differ, and which one fits your team.",
     href: "/blogs/posts/versioning/",
   },
   {
