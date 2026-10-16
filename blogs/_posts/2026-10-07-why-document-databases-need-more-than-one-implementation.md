@@ -54,4 +54,4 @@ The [v1.0 release candidate](https://github.com/documentdb/documentdb/releases/t
 
 Try a workload that matters to you. If something behaves unexpectedly, share a minimal example, the versions involved, and the result you expected. If the installation instructions leave something unclear, that is useful feedback too.
 
-Start with the [release-candidate guide](https://documentdb.io/docs/getting-started/release-candidate/) and the [contribution guide](https://github.com/documentdb/documentdb/blob/main/CONTRIBUTING.md). Your application can help identify the next compatibility gap or usability problem the project needs to address.
+Start with the [getting started guide](https://documentdb.io/docs/getting-started/) and the [contribution guide](https://github.com/documentdb/documentdb/blob/main/CONTRIBUTING.md). Your application can help identify the next compatibility gap or usability problem the project needs to address.
