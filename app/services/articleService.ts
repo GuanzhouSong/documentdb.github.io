@@ -30,6 +30,10 @@ const virtualSections: Record<string, { landingTitle: string; pages: { slug: str
   },
 };
 
+// The documentdb-local image reports usage by default from 1.0; every Docker start command carries the opt-out.
+const documentdbLocalTelemetryNote = `> [!NOTE]
+> The DocumentDB Local image sends usage telemetry by default. To turn it off, add \`-e DOCUMENTDB_USAGE_TELEMETRY=false\` before the image name. See [Usage telemetry](/docs/documentdb-local#usage-telemetry) and the [privacy statement](https://github.com/documentdb/documentdb/blob/v1.0-0/documentdb-local/PRIVACY.md).`;
+
 const dockerGuideContent = `# Docker Quick Start
 
 Run DocumentDB locally with Docker and verify the setup before moving to driver code. For installation choices, open [Docker installation](/packages?method=docker) or [Linux packages installation](/packages?method=packages).
@@ -58,6 +62,8 @@ docker run -dt --name documentdb \\
   --password '<YOUR_PASSWORD>' \\
   --init-data true
 \`\`\`
+
+${documentdbLocalTelemetryNote}
 
 > Replace \`<YOUR_USERNAME>\` and \`<YOUR_PASSWORD>\` with your own credentials.
 >
@@ -744,6 +750,8 @@ docker run -dt --name documentdb \\
   --password '<YOUR_PASSWORD>'
 \`\`\`
 
+${documentdbLocalTelemetryNote}
+
 If you prefer a host installation instead of Docker, use the [Linux Packages Quick Start](/docs/getting-started/packages) on a distribution in the current release matrix.
 
 ## ${vscodeExistingConnectionSectionTitle}
@@ -849,6 +857,8 @@ docker run -dt --name documentdb \\
   --username "\${DOCUMENTDB_USERNAME:?Set DOCUMENTDB_USERNAME}" \\
   --password "\${DOCUMENTDB_PASSWORD:?Set DOCUMENTDB_PASSWORD}"
 \`\`\`
+
+${documentdbLocalTelemetryNote}
 
 Wait for the readiness banner in \`docker logs documentdb\` before connecting; see [Docker Quick Start](/docs/getting-started/docker#verify-the-container).
 
@@ -983,6 +993,8 @@ docker run -dt --name documentdb \\
   --username "\${DOCUMENTDB_USERNAME:?Set DOCUMENTDB_USERNAME}" \\
   --password "\${DOCUMENTDB_PASSWORD:?Set DOCUMENTDB_PASSWORD}"
 \`\`\`
+
+${documentdbLocalTelemetryNote}
 
 Wait for the readiness banner in \`docker logs documentdb\` before connecting; see [Docker Quick Start](/docs/getting-started/docker#verify-the-container).
 
@@ -1140,6 +1152,8 @@ docker run -dt --name documentdb \\
   --password '<YOUR_PASSWORD>'
 \`\`\`
 
+${documentdbLocalTelemetryNote}
+
 Replace the placeholders with your own credentials. Wait for the readiness banner in \`docker logs documentdb\` before connecting; see [Docker Quick Start](/docs/getting-started/docker#verify-the-container).
 
 ## Connect and verify the connection
@@ -1275,6 +1289,8 @@ docker run -dt -p 127.0.0.1:10260:10260 --name documentdb \\
   ghcr.io/documentdb/documentdb/documentdb-local:latest \\
   --username '<YOUR_USERNAME>' --password '<YOUR_PASSWORD>' --init-data true
 \`\`\`
+
+${documentdbLocalTelemetryNote}
 
 Seeding happens once per data volume, on a fresh volume. Existing volumes are not migrated
 automatically; re-create the volume to seed again.

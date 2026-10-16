@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import CommandSnippet from "../components/CommandSnippet";
+import TelemetryNote from "../components/TelemetryNote";
 import {
   aptTargetLabels,
   aptTargetPgVersions,
@@ -315,6 +316,7 @@ export default function PackagesPage() {
                 <h2 className={stepClass}>1. Start DocumentDB</h2>
                 <p className={stepTextClass}>With Docker running, replace the username and password, then run:</p>
                 {selectionReady && <CommandSnippet command={dockerCommand} label="Docker" />}
+                {selectionReady && <TelemetryNote />}
                 <p className="mt-2 text-sm text-gray-400">
                   It takes a few seconds to accept connections. Volumes, image versions, and readiness checks are in the{" "}
                   <Link href="/docs/getting-started/docker" className={linkClass}>Docker quickstart</Link>.

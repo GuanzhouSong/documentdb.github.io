@@ -21,3 +21,6 @@ export const documentdbVsCodeLocalQuickStartDeepLink =
 // blog index until the announcement exists; blogs/_config.yml holds the same
 // target as `release_announcement_url`, relative to the blog.
 export const documentdbReleaseAnnouncementUrl = '/blogs/';
+
+export const documentdbLocalPrivacyUrl =
+  'https://github.com/documentdb/documentdb/blob/v1.0-0/documentdb-local/PRIVACY.md';

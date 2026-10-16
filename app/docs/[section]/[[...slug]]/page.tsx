@@ -5,6 +5,7 @@ import { getAllArticlePaths, getArticleByPath } from "../../../services/articleS
 import { getMetadata } from "../../../services/metadataService";
 import ComingSoon from "../../../components/ComingSoon";
 import CommandSnippet from "../../../components/CommandSnippet";
+import TelemetryNote from "../../../components/TelemetryNote";
 import Markdown from "../../../components/Markdown";
 import MovedNotice from "../../../components/MovedNotice";
 import { aptTargetLabels } from "../../../lib/packageInstall";
@@ -276,6 +277,7 @@ export default async function ArticlePage({ params }: PageProps) {
                                             </p>
                                             <div className="mt-4">
                                                 <CommandSnippet command={dockerQuickRunCommand} label="Start Docker" />
+                                                <TelemetryNote />
                                             </div>
                                             <p className="mt-4 text-sm text-gray-400">
                                                 Wait for the readiness banner in{" "}

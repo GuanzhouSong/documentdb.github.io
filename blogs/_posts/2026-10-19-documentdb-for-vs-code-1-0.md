@@ -24,6 +24,8 @@ The quickest way to try DocumentDB 1.0 is **DocumentDB Local**, right from VS Co
 
 The extension does the rest: it pulls the official DocumentDB image, creates a persistent volume so your data survives restarts, generates credentials, picks a free port, loads sample data, and saves a ready-to-use connection. No `docker run` command to assemble. From then on, you start, stop or restart the container from the same place, and if Docker isn't ready, the setup tells you exactly what's wrong and how to fix it.
 
+The DocumentDB Local image sends usage telemetry by default. The [privacy statement](https://github.com/documentdb/documentdb/blob/v1.0-0/documentdb-local/PRIVACY.md) explains what is sent and how to turn it off.
+
 ![DocumentDB Local setup in VS Code with the Introduction, Configure, Set up and Done steps]({{ '/assets/images/posts/documentdb-for-vs-code-1-0/documentdb-local.png' | relative_url }})
 
 ## Bring your data with you

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import CommandSnippet from "../components/CommandSnippet";
+import TelemetryNote from "../components/TelemetryNote";
 import { getMetadata } from "../services/metadataService";
 import {
   documentdbGitHubForks,
@@ -296,6 +297,7 @@ export default function AIPage() {
             </p>
             <div className="mt-5">
               <CommandSnippet command={quickRunCommand} label="Docker" />
+              <TelemetryNote />
             </div>
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl border border-neutral-800 bg-neutral-900/70 p-4">
