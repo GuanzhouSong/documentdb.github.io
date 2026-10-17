@@ -50,8 +50,8 @@ const operatorBenefits = [
     eyebrow: "Security",
     title: "TLS and access controls",
     description:
-      "Choose from four TLS modes and integrate with secrets, SCRAM auth, RBAC, and secure cluster networking.",
-    highlights: ["4 TLS modes", "SCRAM", "RBAC"],
+      "Choose from three TLS modes and integrate with secrets, SCRAM auth, RBAC, and secure cluster networking.",
+    highlights: ["3 TLS modes", "SCRAM", "RBAC"],
     icon: "shield" as const,
   },
   {

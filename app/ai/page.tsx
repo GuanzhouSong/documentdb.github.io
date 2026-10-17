@@ -28,9 +28,10 @@ export const metadata = getMetadata({
 });
 
 const quickRunCommand = `docker run -dt --name documentdb \\
-  -p 10260:10260 \\
-  ghcr.io/documentdb/documentdb/documentdb-local:latest \\
-  --username admin --password password`;
+  -p 127.0.0.1:10260:10260 \\
+  -e USERNAME=admin \\
+  -e PASSWORD=password \\
+  ghcr.io/documentdb/documentdb/documentdb-local:latest`;
 
 const connectCommand = `mongosh "mongodb://admin:password@localhost:10260/?tls=true&tlsAllowInvalidCertificates=true"`;
 
@@ -388,6 +389,7 @@ export default function AIPage() {
                 <p className="mt-2 text-sm leading-6 text-gray-400">{item.description}</p>
                 <div className="mt-5">
                   <CommandSnippet command={item.code} label={item.label} />
+                  {item.code === quickRunCommand && <TelemetryNote />}
                 </div>
               </article>
             ))}

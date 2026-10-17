@@ -302,7 +302,7 @@ a {
 
 .blog-hero__title {
   margin: 0;
-  font-size: clamp(2.75rem, 6vw, 4.5rem);
+  font-size: clamp(2.25rem, 6vw, 4.5rem);
   line-height: 1.02;
   letter-spacing: -0.05em;
 }
@@ -322,7 +322,7 @@ a {
   margin-top: 1.75rem;
   padding: 0.8rem 1.5rem;
   border-radius: 0.5rem;
-  background: #3b82f6;
+  background: #2563eb;
   color: #fff;
   font-weight: 600;
   transition: background 180ms ease;
@@ -330,7 +330,7 @@ a {
 
 .blog-hero__cta:hover,
 .blog-hero__cta:focus-visible {
-  background: #60a5fa;
+  background: #1d4ed8;
 }
 
 .posts-group {
@@ -410,6 +410,7 @@ a {
 
 .post-card__header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.95rem;
   margin-bottom: 1.25rem;

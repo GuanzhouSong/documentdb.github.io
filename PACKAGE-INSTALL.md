@@ -14,8 +14,9 @@ sudo sh documentdb-install.sh
 ```
 
 This installs v1.0-0 from this repository on PostgreSQL 18; add `--pg-major 17`
-for 17. It refuses a host with existing DocumentDB packages, configuration or data; to
-move an existing install to 1.0, see [Upgrading an existing install](#upgrading-an-existing-install).
+for 17. On a host where DocumentDB is already set up, it only reports that instance's status
+and doesn't upgrade it; to move an existing install to 1.0, see
+[Upgrading an existing install](#upgrading-an-existing-install).
 
 The site serves the `install.sh` attached to the release named in
 `scripts/publish-installer.mjs`, and the build fails if its SHA256 changes.
@@ -386,36 +387,61 @@ sudo apt install --only-upgrade documentdb-18 postgresql-18-documentdb \
 # EL9: use this instead of the apt commands above
 sudo dnf upgrade documentdb-18 postgresql18-documentdb \
   documentdb-common documentdb-gateway documentdb-postgresql-tools
-
-# PostgreSQL has the old shared library loaded until it restarts.
-sudo systemctl restart documentdb-postgresql@18.service
 ```
 
-Upgrading the packages does not update the database catalog. Either re-run
-`sudo documentdb-setup` the way you first ran it, which applies the updates idempotently, or
-run them yourself, in this order, in **every database** that has DocumentDB installed:
+Upgrading the packages does not update the database catalog. The simplest way is to restart the
+stack so PostgreSQL loads the new libraries, then re-run setup with the options you installed with:
 
-```sql
-ALTER EXTENSION documentdb_core UPDATE;
-ALTER EXTENSION documentdb UPDATE;
-ALTER EXTENSION documentdb_extended_rum UPDATE;  -- only if it is installed
+```bash
+sudo systemctl restart documentdb-local@18.target &&
+sudo documentdb-setup --pg-version 18 --use-new-postgres-instance --admin-user admin
 ```
 
-PostgreSQL applies available intermediate extension upgrade scripts automatically. Confirm
-afterwards with:
+Setup adds any missing `shared_preload_libraries` entries and updates the extensions, but only in
+the `postgres` database. It also asks for the admin password and sets it on the existing admin
+user: enter the current password to keep it.
+
+To update by hand, or for every other database that has DocumentDB installed, first check that
+the extended RUM library is preloaded:
+
+```bash
+sudo -u documentdb-local psql -h /run/documentdb-local/18/postgresql -p 9718 -d postgres -X -Atc "SHOW shared_preload_libraries;"
+```
+
+If `pg_documentdb_extended_rum` is missing (possible on a 0.116 install), re-run setup as above
+first; the update below would succeed without it, and index builds would fail later. Then restart
+PostgreSQL, update the extensions in one transaction, and start the gateway only if that worked:
+
+```bash
+sudo systemctl restart documentdb-postgresql@18.service &&
+sudo -u documentdb-local psql -h /run/documentdb-local/18/postgresql -p 9718 -d postgres \
+  -X -1 -v ON_ERROR_STOP=1 \
+  -c 'ALTER EXTENSION documentdb_core UPDATE;' \
+  -c 'ALTER EXTENSION documentdb UPDATE;' \
+  -c 'CREATE EXTENSION IF NOT EXISTS documentdb_extended_rum CASCADE;' \
+  -c 'ALTER EXTENSION documentdb_extended_rum UPDATE;' &&
+sudo systemctl start documentdb-gateway-local@18.service
+```
+
+`-1` runs the statements as one transaction: if any fails, every extension stays at its old version
+and the gateway stays stopped. `-X` skips `~/.psqlrc`, which could otherwise turn `ON_ERROR_STOP` off. For another database, run the `psql` part with that `-d`.
+PostgreSQL applies intermediate upgrade scripts automatically. Take a backup first.
+
+On a host with both PostgreSQL 17 and 18, `documentdb-common`, `documentdb-gateway` and
+`documentdb-postgresql-tools` serve both majors, so upgrading them affects both; upgrade and
+update each major.
+
+For an adopted PostgreSQL instance, setup never restarts PostgreSQL. Restart its
+operator-managed PostgreSQL service yourself, then re-run
+`documentdb-setup --pg-version 18 --target-postgres-instance <cluster> --admin-user admin`. If
+setup has to change `shared_preload_libraries`, it exits without updating the extensions: restart
+PostgreSQL and run it once more. By hand, use that instance's own `psql` connection.
+
+Confirm afterwards with:
 
 ```sql
 SELECT extname, extversion FROM pg_extension WHERE extname LIKE 'documentdb%';
 ```
-
-Finally restart the gateway:
-
-```bash
-sudo systemctl start documentdb-gateway-local@18.service
-```
-
-Take a backup first. For an adopted PostgreSQL instance, restart its operator-managed
-PostgreSQL service instead of `documentdb-postgresql@18.service`.
 
 ## Version pinning
 
@@ -444,10 +470,10 @@ published in the documentdb.io package repositories. Community builds are welcom
 For example, after checking out the matching release tag, build an extension package with:
 
 ```bash
-./packaging/build_packages.sh --os deb12 --pg 16
+./packaging/build_packages.sh --os deb12 --pg 16 --version 1.0.0
 ```
 
-That command builds only `postgresql-N-documentdb`. A custom full-stack package set uses
+`v1.0-0` and `v1.0-RC2` are on the same commit, so pass `--version`; without it the scripts can build RC-versioned packages. That command builds only `postgresql-N-documentdb`. A custom full-stack package set uses
 three entry points:
 
 - `packaging/build_packages.sh` — PostgreSQL extension
