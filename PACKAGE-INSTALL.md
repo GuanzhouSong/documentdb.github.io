@@ -429,12 +429,14 @@ and the gateway stays stopped. `-X` skips `~/.psqlrc`, which could otherwise tur
 PostgreSQL applies intermediate upgrade scripts automatically. Take a backup first.
 
 On a host with both PostgreSQL 17 and 18, `documentdb-common`, `documentdb-gateway` and
-`documentdb-postgresql-tools` serve both majors, so upgrading them affects both; upgrade and
-update each major.
+`documentdb-postgresql-tools` serve both majors, so upgrading them affects both: stop both gateways
+(`documentdb-gateway-local@17.service` and `@18.service`) before upgrading, then update each major.
 
-For an adopted PostgreSQL instance, setup never restarts PostgreSQL. Restart its
-operator-managed PostgreSQL service yourself, then re-run
-`documentdb-setup --pg-version 18 --target-postgres-instance <cluster> --admin-user admin`. If
+For an adopted PostgreSQL instance, setup never restarts PostgreSQL. Stop the gateway
+(`documentdb-gateway-local@18.service`) before upgrading, restart the operator-managed PostgreSQL
+service yourself, then re-run
+`documentdb-setup --pg-version 18 --target-postgres-instance <cluster> --admin-user admin`; it
+updates the extensions and then starts the gateway. If
 setup has to change `shared_preload_libraries`, it exits without updating the extensions: restart
 PostgreSQL and run it once more. By hand, use that instance's own `psql` connection.
 

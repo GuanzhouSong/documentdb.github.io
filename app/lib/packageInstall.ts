@@ -107,14 +107,17 @@ sudo dnf config-manager --set-enabled crb && \\
 sudo dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${rhelMajorVersion}.noarch.rpm`;
 
   // CentOS Stream has no minor release, so PGDG's rhel-$major.$minor path 404s; install.sh does the same.
+  // It runs first too, so a repo file left by an earlier attempt can't fail the first dnf call.
   const pgdgCentosStreamFix =
     rpmTarget === "rhel9"
       ? ""
-      : `
-if grep -Eq '^ID="?centos"?$' /etc/os-release; then sudo sed -i 's/rhel-\\$releasever_major\\.\\$releasever_minor-/rhel-$releasever_major-/g' /etc/yum.repos.d/pgdg-redhat-all.repo; fi && \\`;
+      : `if (. /etc/os-release && [ "$ID" = centos ]) && [ -f /etc/yum.repos.d/pgdg-redhat-all.repo ]; then sudo sed -i 's/rhel-\\$releasever_major\\.\\$releasever_minor-/rhel-$releasever_major-/g' /etc/yum.repos.d/pgdg-redhat-all.repo; fi && \\`;
 
-  return `${distributionPrerequisites} && \\
-sudo dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-${rhelMajorVersion}-${arch}/pgdg-redhat-repo-latest.noarch.rpm && \\${pgdgCentosStreamFix}
+  const beforePgdg = pgdgCentosStreamFix && `${pgdgCentosStreamFix}\n`;
+  const afterPgdg = pgdgCentosStreamFix && `\n${pgdgCentosStreamFix}`;
+
+  return `${beforePgdg}${distributionPrerequisites} && \\
+sudo dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-${rhelMajorVersion}-${arch}/pgdg-redhat-repo-latest.noarch.rpm && \\${afterPgdg}
 sudo dnf -qy module disable postgresql && \\
 sudo rpm --import https://documentdb.io/documentdb-archive-keyring.gpg && \\
 printf '%s\\n' \\

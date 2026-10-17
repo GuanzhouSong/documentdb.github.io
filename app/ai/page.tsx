@@ -35,7 +35,13 @@ const quickRunCommand = `docker run -dt --name documentdb \\
 
 const connectCommand = `mongosh "mongodb://admin:password@localhost:10260/?tls=true&tlsAllowInvalidCertificates=true"`;
 
-const createIndexCommand = `db.runCommand({
+const createIndexCommand = `// Real embeddings are longer: set dimensions to your model's size, such as 1536.
+db.documents.insertMany([
+  { title: "Vector indexes", category: "technical", embedding: [0.10, -0.02, 0.30] },
+  { title: "Release notes", category: "news", embedding: [0.90, 0.40, -0.10] }
+]);
+
+db.runCommand({
   createIndexes: "documents",
   indexes: [{
     key: { embedding: "cosmosSearch" },
@@ -43,7 +49,7 @@ const createIndexCommand = `db.runCommand({
     cosmosSearchOptions: {
       kind: "vector-hnsw",
       similarity: "COS",
-      dimensions: 1536
+      dimensions: 3
     }
   }]
 });
@@ -54,7 +60,7 @@ db.documents.createIndex({ category: 1 });`;
 const vectorSearchCommand = `db.documents.aggregate([
   {
     $vectorSearch: {
-      queryVector: [0.12, -0.04, 0.31, /* ... 1536 dims */],
+      queryVector: [0.12, -0.04, 0.31],
       path: "embedding",
       limit: 10,
       numCandidates: 100,
@@ -118,7 +124,7 @@ const quickStartSteps = [
     step: "03",
     title: "Create a vector index",
     description:
-      "Create a native HNSW vector index with cosine similarity, plus an index on the field you filter by.",
+      "Add sample documents, a native HNSW vector index with cosine similarity, and an index on the field you filter by.",
     label: "Index",
     code: createIndexCommand,
   },

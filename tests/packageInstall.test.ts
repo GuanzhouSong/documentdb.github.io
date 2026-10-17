@@ -219,27 +219,34 @@ describe('buildRpmInstallCommand', () => {
   });
 
   it('switches PGDG to its major-only path on CentOS Stream only', () => {
-    const line = buildRpmInstallCommand('rocky9', 'x86_64', '18')
+    const lines = buildRpmInstallCommand('rocky9', 'x86_64', '18')
       .split('\n')
-      .find((l) => l.startsWith('if grep'));
-    expect(line).toBeDefined();
+      .filter((l) => l.startsWith('if (. /etc/os-release'));
+    // Once before the first dnf call (a repo left by an earlier attempt) and once after PGDG is added.
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toBe(lines[1]);
     expect(buildRpmInstallCommand('rhel9', 'x86_64', '18')).not.toContain('pgdg-redhat-all.repo');
     const baseurl =
       'baseurl=https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-$releasever_major.$releasever_minor-$basearch\n';
-    const run = (id: string) => {
+    const run = (osRelease: string, withRepo = true) => {
       const dir = mkdtempSync(join(tmpdir(), 'pgdg-'));
-      writeFileSync(join(dir, 'os-release'), `ID=${id}\n`);
-      writeFileSync(join(dir, 'pgdg.repo'), baseurl);
-      const script = line!
-        .replace('/etc/os-release', join(dir, 'os-release'))
-        .replace('/etc/yum.repos.d/pgdg-redhat-all.repo', join(dir, 'pgdg.repo'))
+      writeFileSync(join(dir, 'os-release'), osRelease);
+      if (withRepo) writeFileSync(join(dir, 'pgdg.repo'), baseurl);
+      const script = lines[0]
+        .replaceAll('/etc/os-release', join(dir, 'os-release'))
+        .replaceAll('/etc/yum.repos.d/pgdg-redhat-all.repo', join(dir, 'pgdg.repo'))
         .replace('sudo sed -i ', 'sed -i.bak ')
         .replace(/ && \\$/, '');
-      execFileSync('bash', ['-c', script]);
-      return readFileSync(join(dir, 'pgdg.repo'), 'utf8');
+      execFileSync('sh', ['-c', script]);
+      return withRepo ? readFileSync(join(dir, 'pgdg.repo'), 'utf8') : '';
     };
-    expect(run('"centos"')).toContain('/redhat/rhel-$releasever_major-$basearch');
-    expect(run('"rocky"')).toBe(baseurl);
+    const fixed = '/redhat/rhel-$releasever_major-$basearch';
+    expect(run('ID=centos\n')).toContain(fixed);
+    expect(run('ID="centos"\n')).toContain(fixed);
+    expect(run("ID='centos'\n")).toContain(fixed);
+    expect(run('ID="rocky"\n')).toBe(baseurl);
+    expect(run('ID="centos\n')).toBe(baseurl);
+    expect(run('ID="centos"\n', false)).toBe('');
   });
 
   it('uses subscription-manager for registered RHEL', () => {
