@@ -552,7 +552,7 @@ describe('manual extension upgrade SQL', () => {
     ['PACKAGE-INSTALL.md', () => fs.readFileSync(fileURLToPath(new URL('../PACKAGE-INSTALL.md', import.meta.url)), 'utf8')],
   ])('restarts PostgreSQL, updates every extension in one transaction and gates the gateway in %s', (_name, read) => {
     const text = read();
-    const command = text.match(/sudo systemctl restart documentdb-postgresql@18\.service &&\n[\s\S]*?documentdb-gateway-local@18\.service/)?.[0];
+    const command = text.match(/sudo systemctl restart documentdb-postgresql@18\.service &&\nsudo -u documentdb-local psql[\s\S]*?documentdb-gateway-local@18\.service/)?.[0];
     expect(command).toBeDefined();
     expect(command).toContain('-X -1 -v ON_ERROR_STOP=1');
     // Exactly the four statements: no COMMIT/BEGIN of its own to split the transaction.
@@ -572,6 +572,9 @@ describe('manual extension upgrade SQL', () => {
     // The old separate-statement form committed each ALTER on its own.
     expect(text).not.toMatch(/^ALTER EXTENSION documentdb_core UPDATE;$/m);
     expect(text).toMatch(/only in\s+the `postgres` database/);
+    // Restarting the whole target would start the gateway before setup updates the extensions.
+    expect(text).toMatch(/restart documentdb-postgresql@18\.service &&\nsudo documentdb-setup/);
+    expect(text).not.toMatch(/restart documentdb-local@18\.target &&\nsudo documentdb-setup/);
   });
 });
 

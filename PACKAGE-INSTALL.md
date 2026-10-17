@@ -389,11 +389,12 @@ sudo dnf upgrade documentdb-18 postgresql18-documentdb \
   documentdb-common documentdb-gateway documentdb-postgresql-tools
 ```
 
-Upgrading the packages does not update the database catalog. The simplest way is to restart the
-stack so PostgreSQL loads the new libraries, then re-run setup with the options you installed with:
+Upgrading the packages does not update the database catalog. The simplest way is to restart
+PostgreSQL so it loads the new libraries, then re-run setup with the options you installed with.
+Setup updates the extensions and then starts the gateway:
 
 ```bash
-sudo systemctl restart documentdb-local@18.target &&
+sudo systemctl restart documentdb-postgresql@18.service &&
 sudo documentdb-setup --pg-version 18 --use-new-postgres-instance --admin-user admin
 ```
 

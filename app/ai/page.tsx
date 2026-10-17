@@ -46,7 +46,10 @@ const createIndexCommand = `db.runCommand({
       dimensions: 1536
     }
   }]
-});`;
+});
+
+// $vectorSearch filters need an index on each filtered field.
+db.documents.createIndex({ category: 1 });`;
 
 const vectorSearchCommand = `db.documents.aggregate([
   {
@@ -115,7 +118,7 @@ const quickStartSteps = [
     step: "03",
     title: "Create a vector index",
     description:
-      "Create a native HNSW vector index with cosine similarity for embedding retrieval.",
+      "Create a native HNSW vector index with cosine similarity, plus an index on the field you filter by.",
     label: "Index",
     code: createIndexCommand,
   },

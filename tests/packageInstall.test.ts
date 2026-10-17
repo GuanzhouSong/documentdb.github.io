@@ -1,3 +1,7 @@
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   aptServesFullStack,
@@ -212,6 +216,30 @@ describe('buildRpmInstallCommand', () => {
     expect(command).toContain('sudo dnf config-manager --set-enabled crb');
     expect(command).not.toContain('subscription-manager repos --enable');
     expect(command).not.toContain('codeready-builder-for-rhel');
+  });
+
+  it('switches PGDG to its major-only path on CentOS Stream only', () => {
+    const line = buildRpmInstallCommand('rocky9', 'x86_64', '18')
+      .split('\n')
+      .find((l) => l.startsWith('if grep'));
+    expect(line).toBeDefined();
+    expect(buildRpmInstallCommand('rhel9', 'x86_64', '18')).not.toContain('pgdg-redhat-all.repo');
+    const baseurl =
+      'baseurl=https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-$releasever_major.$releasever_minor-$basearch\n';
+    const run = (id: string) => {
+      const dir = mkdtempSync(join(tmpdir(), 'pgdg-'));
+      writeFileSync(join(dir, 'os-release'), `ID=${id}\n`);
+      writeFileSync(join(dir, 'pgdg.repo'), baseurl);
+      const script = line!
+        .replace('/etc/os-release', join(dir, 'os-release'))
+        .replace('/etc/yum.repos.d/pgdg-redhat-all.repo', join(dir, 'pgdg.repo'))
+        .replace('sudo sed -i ', 'sed -i.bak ')
+        .replace(/ && \\$/, '');
+      execFileSync('bash', ['-c', script]);
+      return readFileSync(join(dir, 'pgdg.repo'), 'utf8');
+    };
+    expect(run('"centos"')).toContain('/redhat/rhel-$releasever_major-$basearch');
+    expect(run('"rocky"')).toBe(baseurl);
   });
 
   it('uses subscription-manager for registered RHEL', () => {
