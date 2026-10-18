@@ -3,6 +3,7 @@ title: "DocumentDB Extension for Visual Studio Code 1.0: Run It Locally, Bring Y
 description: The DocumentDB extension for Visual Studio Code, a free, open-source DocumentDB GUI, reaches 1.0. Start DocumentDB Local in a few clicks, bring your data with copy and paste, and understand it with the Cluster Dashboard and Query Insights.
 date: 2026-10-19 00:01:01 -0700
 featured: true
+release_post: true
 author: Tomasz Naumowicz and the team behind the DocumentDB extension for Visual Studio Code
 category: documentdb-blog
 cover_image: /assets/images/posts/documentdb-for-vs-code-1-0/hero.png

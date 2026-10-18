@@ -123,7 +123,7 @@ function getMarkdownComponents(sourcePath: string) {
     // Inline code
     code: ({ inline, children, ...props }: any) => {
       return (
-        <code className="bg-neutral-900/50 px-2 py-1 rounded text-green-400 font-mono text-sm" {...props}>
+        <code className="bg-neutral-900/50 px-2 py-1 rounded text-green-400 font-mono text-sm [overflow-wrap:anywhere]" {...props}>
           {children}
         </code>
       );

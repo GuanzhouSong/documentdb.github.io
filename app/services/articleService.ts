@@ -440,7 +440,8 @@ For an adopted instance, use the operator's existing PostgreSQL connection inste
 
 Package installs from v0.116 or later upgrade in place to 1.0. Move the entire stack
 together; upgrading only \`postgresql-N-documentdb\` does not update the gateway, tools,
-common payload, or \`documentdb-N\`. On a package-managed private PostgreSQL 18 instance:
+common payload, or \`documentdb-N\`. These steps use systemd; upgrading a host without it isn't covered here.
+On a package-managed private PostgreSQL 18 instance:
 
 > [!WARNING]
 > A host that ran a 1.0 release candidate (RC1 or RC2) has no upgrade path. Move it to a
@@ -450,14 +451,14 @@ common payload, or \`documentdb-N\`. On a package-managed private PostgreSQL 18 
 > later setup run reuses an initialized data directory.
 
 \`\`\`bash
-sudo systemctl stop documentdb-gateway-local@18.service
-
 # Debian / Ubuntu
-sudo apt update
+sudo systemctl stop documentdb-gateway-local@18.service &&
+sudo apt update &&
 sudo apt install --only-upgrade documentdb-18 postgresql-18-documentdb \\
   documentdb-common documentdb-gateway documentdb-postgresql-tools
 
 # EL9: use this instead of the apt commands above
+sudo systemctl stop documentdb-gateway-local@18.service &&
 sudo dnf upgrade documentdb-18 postgresql18-documentdb \\
   documentdb-common documentdb-gateway documentdb-postgresql-tools
 \`\`\`
@@ -472,7 +473,7 @@ sudo documentdb-setup --pg-version 18 --use-new-postgres-instance --admin-user a
 \`\`\`
 
 Setup adds any missing \`shared_preload_libraries\` entries and updates the extensions, but only in
-the \`postgres\` database. It also asks for the admin password and sets it on the existing admin
+the \`postgres\` database. If your gateway uses another database, take the manual route below. It also asks for the admin password and sets it on the existing admin
 user: enter the current password to keep it.
 
 To update by hand, or for every other database that has DocumentDB installed, first check that
@@ -498,7 +499,8 @@ sudo systemctl start documentdb-gateway-local@18.service
 \`\`\`
 
 \`-1\` runs the statements as one transaction: if any fails, every extension stays at its old version
-and the gateway stays stopped. \`-X\` skips \`~/.psqlrc\`, which could otherwise turn \`ON_ERROR_STOP\` off. For another database, run the \`psql\` part with that \`-d\`.
+and the gateway stays stopped. \`-X\` skips \`~/.psqlrc\`, which could otherwise turn \`ON_ERROR_STOP\` off. If DocumentDB is installed in other databases too, run the \`psql\` part for each of them, with
+that \`-d\`, before the last line, so the gateway starts only after every database is updated.
 PostgreSQL applies intermediate upgrade scripts automatically. Take a backup first.
 
 On a host with both PostgreSQL 17 and 18, \`documentdb-common\`, \`documentdb-gateway\` and
@@ -508,7 +510,7 @@ On a host with both PostgreSQL 17 and 18, \`documentdb-common\`, \`documentdb-ga
 For an adopted PostgreSQL instance, setup never restarts PostgreSQL. Stop the gateway
 (\`documentdb-gateway-local@18.service\`) before upgrading, restart the operator-managed PostgreSQL
 service yourself, then re-run
-\`documentdb-setup --pg-version 18 --target-postgres-instance <cluster> --admin-user admin\`; it
+\`documentdb-setup --pg-version 18 --target-postgres-instance 18/main --admin-user admin\` (with your cluster name); it
 updates the extensions and then starts the gateway. If
 setup has to change \`shared_preload_libraries\`, it exits without updating the extensions: restart
 PostgreSQL and run it once more. By hand, use that instance's own \`psql\` connection.
@@ -964,7 +966,10 @@ async function main() {
   }
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
 \`\`\`
 
 Run the script:
@@ -1447,14 +1452,6 @@ function normalizeArticle(section: string, file: string, frontmatter: Record<str
 
   if (section === 'getting-started' && file === 'azure-setup') {
     normalizedContent = normalizedContent.replace(/Micrtosoft/g, 'Microsoft');
-  }
-
-  if (section === 'getting-started' && file === 'release-notes-1.0') {
-    // prebuilt-packages redirects to the quick start and drops the anchor.
-    normalizedContent = normalizedContent.replace(
-      /\]\((?:\.\/)?prebuilt-packages\.md#upgrading-to-10\)/g,
-      '](/docs/linux-packages#upgrading)',
-    );
   }
 
   if (headingOverride) {

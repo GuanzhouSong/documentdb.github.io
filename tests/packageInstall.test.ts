@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -230,15 +230,20 @@ describe('buildRpmInstallCommand', () => {
       'baseurl=https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-$releasever_major.$releasever_minor-$basearch\n';
     const run = (osRelease: string, withRepo = true) => {
       const dir = mkdtempSync(join(tmpdir(), 'pgdg-'));
-      writeFileSync(join(dir, 'os-release'), osRelease);
-      if (withRepo) writeFileSync(join(dir, 'pgdg.repo'), baseurl);
-      const script = lines[0]
-        .replaceAll('/etc/os-release', join(dir, 'os-release'))
-        .replaceAll('/etc/yum.repos.d/pgdg-redhat-all.repo', join(dir, 'pgdg.repo'))
-        .replace('sudo sed -i ', 'sed -i.bak ')
-        .replace(/ && \\$/, '');
-      execFileSync('sh', ['-c', script]);
-      return withRepo ? readFileSync(join(dir, 'pgdg.repo'), 'utf8') : '';
+      try {
+        writeFileSync(join(dir, 'os-release'), osRelease);
+        if (withRepo) writeFileSync(join(dir, 'pgdg.repo'), baseurl);
+        // Paths go in as positional arguments so a TMPDIR with spaces stays one word.
+        const script = lines[0]
+          .replaceAll('/etc/os-release', '"$1"')
+          .replaceAll('/etc/yum.repos.d/pgdg-redhat-all.repo', '"$2"')
+          .replace('sudo sed -i ', 'sed -i.bak ')
+          .replace(/ && \\$/, '');
+        execFileSync('sh', ['-c', script, 'sh', join(dir, 'os-release'), join(dir, 'pgdg.repo')]);
+        return withRepo ? readFileSync(join(dir, 'pgdg.repo'), 'utf8') : '';
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
     };
     const fixed = '/redhat/rhel-$releasever_major-$basearch';
     expect(run('ID=centos\n')).toContain(fixed);

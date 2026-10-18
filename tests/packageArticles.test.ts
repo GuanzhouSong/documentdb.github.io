@@ -555,6 +555,7 @@ describe('manual extension upgrade SQL', () => {
     const command = text.match(/sudo systemctl restart documentdb-postgresql@18\.service &&\nsudo -u documentdb-local psql[\s\S]*?documentdb-gateway-local@18\.service/)?.[0];
     expect(command).toBeDefined();
     expect(command).toContain('-X -1 -v ON_ERROR_STOP=1');
+    expect(command).toContain('-p 9718 -d postgres \\\n');
     // Exactly the four statements: no COMMIT/BEGIN of its own to split the transaction.
     expect(command!.match(/ -c '/g)).toHaveLength(4);
     expect(command).not.toMatch(/BEGIN|COMMIT|ROLLBACK/);
@@ -583,8 +584,6 @@ describe('docs-owned article normalization', () => {
     const fixturePaths = new Map([
       [path.join(process.cwd(), 'articles', 'documentdb-local', 'index.md'),
         fileURLToPath(new URL('./fixtures/documentdb-local/index.md', import.meta.url))],
-      [path.join(process.cwd(), 'articles', 'getting-started', 'release-notes-1.0.md'),
-        fileURLToPath(new URL('./fixtures/getting-started/release-notes-1.0.md', import.meta.url))],
     ]);
     const existsSync = fs.existsSync;
     const readFileSync = fs.readFileSync;
@@ -603,11 +602,5 @@ describe('docs-owned article normalization', () => {
     expect(article?.content).toContain('## Built-in sample data');
     expect(article?.content).not.toMatch(/## (Container image tags|Data initialization)/);
     expect(article?.content).not.toContain('on a fresh volume');
-  });
-
-  it('sends the release notes upgrade link to the operations guide', () => {
-    const article = getArticleByPath('getting-started', ['release-notes-1.0']);
-    expect(article?.content).toContain('](/docs/linux-packages#upgrading)');
-    expect(article?.content).not.toContain('prebuilt-packages.md#upgrading-to-10');
   });
 });

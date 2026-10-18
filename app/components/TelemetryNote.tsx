@@ -8,7 +8,7 @@ export default function TelemetryNote() {
   return (
     <p className="mt-2 text-xs leading-5 text-gray-400">
       The image sends usage telemetry by default. Add{" "}
-      <code className="text-gray-300">-e DOCUMENTDB_USAGE_TELEMETRY=false</code> before the image name to
+      <code className="text-gray-300 [overflow-wrap:anywhere]">-e DOCUMENTDB_USAGE_TELEMETRY=false</code> before the image name to
       turn it off.{" "}
       <Link href="/docs/documentdb-local#usage-telemetry" className={linkClass}>What is sent</Link>
       {" · "}

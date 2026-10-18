@@ -3,6 +3,7 @@ title: "DocumentDB 1.0 on Kubernetes"
 description: How the DocumentDB Kubernetes Operator helps teams deploy and manage clusters as part of the DocumentDB 1.0 release
 date: 2026-10-19 00:01:00 -0700
 featured: true
+release_post: true
 author: DocumentDB team
 category: documentdb-blog
 tags:
