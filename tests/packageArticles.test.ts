@@ -555,6 +555,9 @@ describe('manual extension upgrade SQL', () => {
     const command = text.match(/sudo systemctl restart documentdb-postgresql@18\.service &&\nsudo -u documentdb-local psql[\s\S]*?documentdb-gateway-local@18\.service/)?.[0];
     expect(command).toBeDefined();
     expect(command).toContain('-X -1 -v ON_ERROR_STOP=1');
+    // A later -v ON_ERROR_STOP or ON_ERROR_ROLLBACK would undo the error gate.
+    expect(command!.match(/ON_ERROR_STOP/g)).toHaveLength(1);
+    expect(command).not.toContain('ON_ERROR_ROLLBACK');
     expect(command).toContain('-p 9718 -d postgres \\\n');
     // Exactly the four statements: no COMMIT/BEGIN of its own to split the transaction.
     expect(command!.match(/ -c '/g)).toHaveLength(4);

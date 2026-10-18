@@ -412,8 +412,11 @@ the extended RUM library is preloaded:
 sudo -u documentdb-local psql -h /run/documentdb-local/18/postgresql -p 9718 -d postgres -X -Atc "SHOW shared_preload_libraries;"
 ```
 
-If `pg_documentdb_extended_rum` is missing (possible on a 0.116 install), re-run setup as above
-first; the update below would succeed without it, and index builds would fail later. Then restart
+If `pg_documentdb_extended_rum` is missing (possible on a 0.116 install), add it before updating;
+the update below would succeed without it, and index builds would fail later. If the gateway uses
+`postgres`, re-run setup as above. If it uses another database, add the library to
+`shared_preload_libraries` in the instance's `postgresql.conf` yourself: setup would point the
+gateway back at `postgres`. Then restart
 PostgreSQL, update the extensions in one transaction, and start the gateway only if that worked:
 
 ```bash
