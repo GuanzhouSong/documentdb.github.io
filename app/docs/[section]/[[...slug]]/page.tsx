@@ -10,7 +10,7 @@ import Markdown from "../../../components/Markdown";
 import MovedNotice from "../../../components/MovedNotice";
 import { aptTargetLabels } from "../../../lib/packageInstall";
 
-const dockerQuickRunCommand = `docker run -dt --name documentdb \\
+const dockerQuickRunCommand = `docker run -dt --pull always --name documentdb \\
   -p 127.0.0.1:10260:10260 \\
   -e USERNAME='<YOUR_USERNAME>' \\
   -e PASSWORD='<YOUR_PASSWORD>' \\

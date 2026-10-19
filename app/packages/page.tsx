@@ -28,7 +28,7 @@ import {
   documentdbVsCodeLocalQuickStartDeepLink,
 } from "../services/externalLinks";
 
-const dockerCommand = `docker run -dt --name documentdb \\
+const dockerCommand = `docker run -dt --pull always --name documentdb \\
   -p 127.0.0.1:10260:10260 \\
   -e USERNAME='<YOUR_USERNAME>' \\
   -e PASSWORD='<YOUR_PASSWORD>' \\

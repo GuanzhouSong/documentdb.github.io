@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useMemo } from 'react';
 import type { ReactElement } from 'react';
 import Code from './Code';
-import { headingAnchor } from '../lib/docsAnchors';
+import { githubHeadingAnchor, headingAnchor } from '../lib/docsAnchors';
 import { resolveMarkdownLink } from '../lib/markdownLinks';
 import { withBasePath } from '../services/sitePath';
 
@@ -44,7 +44,7 @@ export default function Markdown({ content, sourcePath }: MarkdownProps) {
 
         elements.push(
           <div key={`section-${index}`} className="bg-neutral-800/50 backdrop-blur-sm rounded-lg border border-neutral-700/50 p-6">
-            <a className="invisible scroll-mt-24" id={headingAnchor(title)} />
+            <HeadingAnchors title={title} />
             <h2 className="text-xl sm:text-2xl font-semibold text-white mb-4">
               {title}
             </h2>
@@ -64,6 +64,22 @@ export default function Markdown({ content, sourcePath }: MarkdownProps) {
 
   // Long inline code, URLs and identifiers would otherwise push the article wider than a phone
   return <div className="space-y-8 break-words">{processedContent}</div>;
+}
+
+// Docs Markdown links headings GitHub's way, so emit that id alongside the site's own.
+function HeadingAnchors({ title }: { title: string }) {
+  const anchor = headingAnchor(title);
+  const githubAnchor = githubHeadingAnchor(title);
+  return (
+    <>
+      <a className="invisible scroll-mt-24" id={anchor} />
+      {githubAnchor !== anchor && <a className="invisible scroll-mt-24" id={githubAnchor} />}
+    </>
+  );
+}
+
+function hastText(node: any): string {
+  return node?.type === 'text' ? node.value : (node?.children ?? []).map(hastText).join('');
 }
 
 function getMarkdownComponents(sourcePath: string) {
@@ -86,10 +102,13 @@ function getMarkdownComponents(sourcePath: string) {
     ),
 
     // H3 sections (subsections within H2 cards)
-    h3: ({ children, ...props }: any) => (
-      <h3 className="text-lg font-medium text-white mb-3 mt-6">
-        {children}
-      </h3>
+    h3: ({ children, node }: any) => (
+      <>
+        <HeadingAnchors title={hastText(node)} />
+        <h3 className="text-lg font-medium text-white mb-3 mt-6">
+          {children}
+        </h3>
+      </>
     ),
 
     // H4 subsections
