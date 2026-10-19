@@ -782,7 +782,7 @@ Use this if you want to manage the container yourself. If DocumentDB is already 
 Start it with Docker:
 
 \`\`\`bash
-docker run -dt --name documentdb \\
+docker run -dt --pull always --name documentdb \\
   -p 127.0.0.1:10260:10260 \\
   -e USERNAME='<YOUR_USERNAME>' \\
   -e PASSWORD='<YOUR_PASSWORD>' \\
@@ -890,7 +890,7 @@ Skip this if you installed Linux packages or already have a running instance. If
 export DOCUMENTDB_USERNAME='<YOUR_USERNAME>'
 export DOCUMENTDB_PASSWORD='<YOUR_PASSWORD>'
 
-docker run -dt --name documentdb \\
+docker run -dt --pull always --name documentdb \\
   -p 127.0.0.1:10260:10260 \\
   -e USERNAME="\${DOCUMENTDB_USERNAME:?Set DOCUMENTDB_USERNAME}" \\
   -e PASSWORD="\${DOCUMENTDB_PASSWORD:?Set DOCUMENTDB_PASSWORD}" \\
@@ -1029,7 +1029,7 @@ Skip this if you installed Linux packages or already have a running instance. If
 export DOCUMENTDB_USERNAME='<YOUR_USERNAME>'
 export DOCUMENTDB_PASSWORD='<YOUR_PASSWORD>'
 
-docker run -dt --name documentdb \\
+docker run -dt --pull always --name documentdb \\
   -p 127.0.0.1:10260:10260 \\
   -e USERNAME="\${DOCUMENTDB_USERNAME:?Set DOCUMENTDB_USERNAME}" \\
   -e PASSWORD="\${DOCUMENTDB_PASSWORD:?Set DOCUMENTDB_PASSWORD}" \\
@@ -1187,7 +1187,7 @@ ${clientInstancePrerequisiteContent}
 Skip this if you installed Linux packages or already have a running instance. If you chose Docker and have [Docker](https://www.docker.com/) installed:
 
 \`\`\`bash
-docker run -dt --name documentdb \\
+docker run -dt --pull always --name documentdb \\
   -p 127.0.0.1:10260:10260 \\
   -e USERNAME='<YOUR_USERNAME>' \\
   -e PASSWORD='<YOUR_PASSWORD>' \\

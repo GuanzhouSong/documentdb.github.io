@@ -576,6 +576,9 @@ describe('manual extension upgrade SQL', () => {
     // The old separate-statement form committed each ALTER on its own.
     expect(text).not.toMatch(/^ALTER EXTENSION documentdb_core UPDATE;$/m);
     expect(text).toMatch(/only in\s+the `postgres` database/);
+    // Setup repoints the gateway at `postgres`, so a gateway on another database must not re-run it.
+    expect(text).toMatch(/If your gateway uses another database, take the manual route below\./);
+    expect(text).toMatch(/If it uses another database, add the library to\s+`shared_preload_libraries`[\s\S]*?setup would point the\s+gateway back at `postgres`/);
     // Restarting the whole target would start the gateway before setup updates the extensions.
     expect(text).toMatch(/restart documentdb-postgresql@18\.service &&\nsudo documentdb-setup/);
     expect(text).not.toMatch(/restart documentdb-local@18\.target &&\nsudo documentdb-setup/);

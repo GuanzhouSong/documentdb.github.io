@@ -5,11 +5,10 @@ on:
   push:
     branches:
       - main
-  # Runs on pull requests targeting the default branch or the 1.0 release branch
+  # Runs on pull requests targeting the default branch
   pull_request:
     branches:
       - main
-      - 1.0-release-readiness
 # Supersede in-flight runs for a pull request when new commits arrive, so a
 # rebase or force-push does not leave several runs racing on stale commits.
 # Pushes to main are never cancelled: every commit on the default branch

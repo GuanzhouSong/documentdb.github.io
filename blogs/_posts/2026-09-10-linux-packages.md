@@ -19,6 +19,8 @@ tags:
 {% assign blogs_at = blog_base | size | minus: 6 %}
 {% if blogs_at >= 0 %}{% assign blogs_tail = blog_base | slice: blogs_at, 6 %}{% if blogs_tail == '/blogs' %}{% assign site_root = blog_base | slice: 0, blogs_at %}{% endif %}{% endif %}
 
+**Update, October 19, 2026:** DocumentDB 1.0 is the current release. [Read the announcement]({{ site.release_announcement_url | relative_url }}). Packages from v0.116 or v0.117 [upgrade in place]({{ site_root }}/docs/linux-packages/#upgrading).
+
 Docker remains the fastest way to evaluate DocumentDB on Linux, macOS, or Windows. When you cannot use Docker, or need control over PostgreSQL, services, and configuration on a Linux host, Linux packages give you another option: familiar package managers, guided setup, and a choice about how much of the stack you manage.
 
 DocumentDB is an open-source document database built on PostgreSQL. The Linux packages bring the PostgreSQL extension, gateway, setup tools, and systemd services together, so you can start with a complete installation instead of assembling individual components.

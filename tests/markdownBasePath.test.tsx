@@ -32,3 +32,12 @@ describe('Markdown root-relative links', () => {
     expect(html).toContain('href="//cdn.test/z"');
   });
 });
+
+describe('Markdown heading anchors', () => {
+  it('answers in-page links written against GitHub, on H2 and H3', async () => {
+    const html = await render('See [a](#choosing-numcandidates) and [b](#sortby-requirements).\n\n## Choosing numCandidates\n\ntext\n\n### `sortBy` requirements\n\ntext');
+    for (const id of ['choosing-num-candidates', 'choosing-numcandidates', 'sort-by-requirements', 'sortby-requirements']) {
+      expect(html).toContain(`id="${id}"`);
+    }
+  });
+});
