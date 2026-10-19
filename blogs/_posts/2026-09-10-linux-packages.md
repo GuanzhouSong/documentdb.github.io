@@ -2,7 +2,7 @@
 title: "Linux packages for DocumentDB: start simple, keep control"
 description: Install DocumentDB on Linux with apt or dnf and guided setup. Start with the complete stack, use your own local PostgreSQL, or install only the extension.
 date: 2026-09-10
-featured: true
+featured: false
 author: DocumentDB team
 category: documentdb-blog
 tags:
@@ -12,7 +12,12 @@ tags:
   - APT
   - RPM
 ---
-{% assign site_root = site.baseurl | replace: '/blogs', '' %}
+{% assign blog_base = site.baseurl %}
+{% assign blog_base_last = blog_base | slice: -1, 1 %}
+{% if blog_base_last == '/' %}{% assign blog_base_end = blog_base | size | minus: 1 %}{% assign blog_base = blog_base | slice: 0, blog_base_end %}{% endif %}
+{% assign site_root = blog_base %}
+{% assign blogs_at = blog_base | size | minus: 6 %}
+{% if blogs_at >= 0 %}{% assign blogs_tail = blog_base | slice: blogs_at, 6 %}{% if blogs_tail == '/blogs' %}{% assign site_root = blog_base | slice: 0, blogs_at %}{% endif %}{% endif %}
 
 Docker remains the fastest way to evaluate DocumentDB on Linux, macOS, or Windows. When you cannot use Docker, or need control over PostgreSQL, services, and configuration on a Linux host, Linux packages give you another option: familiar package managers, guided setup, and a choice about how much of the stack you manage.
 
