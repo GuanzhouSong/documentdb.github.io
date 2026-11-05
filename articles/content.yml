@@ -16,3 +16,7 @@ landing:
       link: /docs/architecture
     - title: Samples & Demos
       link: /samples
+  secondaryLinks:
+    - title: Documentation Versions
+      description: Current docs and archived snapshots of earlier releases
+      link: /docs/versions
