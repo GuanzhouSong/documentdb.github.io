@@ -1,7 +1,7 @@
 import Link from "next/link";
 import VersionSwitcher from "./VersionSwitcher";
 import { VersionSwitcherEntry } from "../services/versionService";
-import { CURRENT_RELEASE_NOTES_PATH } from "../lib/currentRelease";
+import { CURRENT_RELEASE_LINE, CURRENT_RELEASE_NOTES_PATH } from "../lib/currentRelease";
 
 export interface SidebarNavItem {
     title: string;
@@ -135,7 +135,8 @@ export function DocsSidebarMobile(props: DocsSidebarProps) {
         <details className="mb-6 rounded-lg border border-neutral-700/50 bg-neutral-800/50 md:hidden">
             <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-gray-200">
                 {props.sectionTitle} navigation
-                {props.version ? ` (${props.version})` : ""}
+                {/* The switcher sits inside this disclosure, so say which version the page is. */}
+                <span className="font-normal text-gray-400"> · {props.version ?? CURRENT_RELEASE_LINE}</span>
             </summary>
             <div className="border-t border-neutral-700/50 flex flex-col">
                 <DocsSidebarContent {...props} />
