@@ -18,6 +18,11 @@ import { CURRENT_RELEASE_TAG } from '../lib/currentRelease';
 
 const versionedDirectory = path.join(process.cwd(), 'versioned');
 
+/** Newest first, comparing numbers as numbers so v1.10 sorts above v1.9. */
+export function compareVersionLabelsNewestFirst(a: string, b: string): number {
+  return b.localeCompare(a, 'en', { numeric: true });
+}
+
 /** Labels of all compiled documentation versions, newest first. */
 export function getDocVersions(): string[] {
   if (!fs.existsSync(versionedDirectory)) {
@@ -28,8 +33,7 @@ export function getDocVersions(): string[] {
     .readdirSync(versionedDirectory, { withFileTypes: true })
     .filter((dirent) => dirent.isDirectory())
     .map((dirent) => dirent.name)
-    .sort()
-    .reverse();
+    .sort(compareVersionLabelsNewestFirst);
 }
 
 function versionArticlesDir(version: string): string {
