@@ -26,10 +26,9 @@ export default function VersionsPage() {
                 />
                 <h1 className="text-4xl font-bold text-white">Documentation Versions</h1>
                 <p className="mt-3 max-w-2xl text-gray-400">
-                    The documentation site always describes the latest DocumentDB release,
-                    with in-page annotations (&quot;added in&quot;, &quot;default changed
-                    in&quot;) covering recent changes. Frozen snapshots are hosted for
-                    recent versions; older versions remain browsable as git tags.
+                    The documentation site always describes the latest DocumentDB release.
+                    Snapshots of earlier releases are kept exactly as they were when each
+                    release shipped.
                 </p>
 
                 <div className="mt-10 space-y-4">
@@ -84,9 +83,8 @@ export default function VersionsPage() {
                 <div className="mt-10 rounded-xl border border-neutral-700/60 bg-neutral-800/30 p-5">
                     <p className="font-semibold text-white">Older versions</p>
                     <p className="mt-1 text-sm text-gray-400">
-                        Documentation for versions that are no longer hosted here is
-                        preserved as git tags on the docs repository — browse the Markdown
-                        exactly as it was at that release.
+                        Snapshots that rotate off this page stay available as git tags on
+                        the docs repository. Every release has release notes on GitHub.
                     </p>
                     <div className="mt-3 flex flex-wrap gap-4 text-sm">
                         <a
