@@ -100,39 +100,43 @@ export default async function VersionedArticlePage({ params }: PageProps) {
             ]),
     ];
 
+    // overflow-clip, not hidden: a scroll container here would stop the archive bar from sticking.
     return (
-        <div className="min-h-screen bg-neutral-900 relative overflow-hidden">
+        <div className="min-h-screen bg-neutral-900 relative overflow-clip">
             <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-neutral-800 to-black"></div>
 
             <div className="relative flex min-h-screen">
                 <DocsSidebar {...sidebarProps} />
 
                 {/* Main Content */}
-                <div className="flex-1 p-4 sm:p-8 overflow-y-auto">
+                <div className="min-w-0 flex-1 p-4 sm:p-8 overflow-x-clip">
                     <div className="max-w-4xl">
                         <DocsSidebarMobile {...sidebarProps} />
 
                         <DocsBreadcrumb crumbs={breadcrumbs} />
 
-                        {/* Old-version banner */}
-                        <div className="mb-6 flex flex-col gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
-                            <p className="text-sm text-amber-200">
-                                You are viewing the frozen documentation for{" "}
-                                <span className="font-semibold">{version}</span>. It is not
-                                updated and may not reflect the latest release.
+                        {/* Sticks under the navbar, so readers who scroll or land on a section link keep seeing the version. */}
+                        <div className="sticky top-16 z-30 mb-2 flex items-center justify-between gap-3 rounded-lg border border-amber-500/40 bg-amber-950/95 px-4 py-2 backdrop-blur sm:top-[72px] md:top-16">
+                            <p className="min-w-0 text-sm text-amber-200">
+                                <span className="font-semibold">Archived {version} docs</span>
+                                <span className="hidden sm:inline"> · not updated</span>
                             </p>
                             <Link
                                 href={currentEquivalent}
-                                className="inline-flex shrink-0 items-center rounded-lg bg-amber-500/20 border border-amber-500/40 px-3 py-1.5 text-xs font-semibold text-amber-100 hover:bg-amber-500/30 transition-colors"
+                                className="shrink-0 rounded-md border border-amber-500/40 bg-amber-500/20 px-2.5 py-1 text-xs font-semibold text-amber-100 transition-colors hover:bg-amber-500/30"
                             >
-                                View current version →
+                                View current →
                             </Link>
                         </div>
+                        <p className="mb-6 text-sm text-gray-400">Frozen as of the {version} release.</p>
 
-                        <Markdown
-                            content={content}
-                            sourcePath={`/docs/versions/${version}/${section}/${file}.md`}
-                        />
+                        {/* Headings reached by a link must clear both the navbar and the archive bar. */}
+                        <div className="[&_a[id]]:scroll-mt-32">
+                            <Markdown
+                                content={content}
+                                sourcePath={`/docs/versions/${version}/${section}/${file}.md`}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
