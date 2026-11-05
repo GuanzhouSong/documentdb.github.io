@@ -83,8 +83,11 @@ export default function VersionsPage() {
                 <div className="mt-10 rounded-xl border border-neutral-700/60 bg-neutral-800/30 p-5">
                     <p className="font-semibold text-white">Older versions</p>
                     <p className="mt-1 text-sm text-gray-400">
-                        Snapshots that rotate off this page stay available as git tags on
-                        the docs repository. Every release has release notes on GitHub.
+                        Snapshots start with 1.0: we keep the current release and the two
+                        release lines before it, plus v0.117 as the last release before 1.0.
+                        Snapshots that rotate off stay available as git tags on the docs
+                        repository. Other releases have release notes on GitHub but no hosted
+                        docs.
                     </p>
                     <div className="mt-3 flex flex-wrap gap-4 text-sm">
                         <a
