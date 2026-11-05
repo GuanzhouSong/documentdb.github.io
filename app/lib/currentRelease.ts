@@ -11,3 +11,6 @@
  * constant cannot silently fall behind it.
  */
 export const CURRENT_RELEASE_TAG = "v1.0-0";
+
+// Release notes for CURRENT_RELEASE_TAG; change the two together.
+export const CURRENT_RELEASE_NOTES_PATH = "/docs/getting-started/release-notes-1.0";

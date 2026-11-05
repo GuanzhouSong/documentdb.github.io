@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getMetadata } from "../../services/metadataService";
 import { getDocVersions } from "../../services/versionService";
-import { CURRENT_RELEASE_TAG } from "../../lib/currentRelease";
+import { CURRENT_RELEASE_NOTES_PATH, CURRENT_RELEASE_TAG } from "../../lib/currentRelease";
 import DocsBreadcrumb from "../../components/DocsBreadcrumb";
 
 export async function generateMetadata() {
@@ -105,7 +105,7 @@ export default function VersionsPage() {
                         >
                             DocumentDB releases →
                         </a>
-                        <Link href="/docs/release-notes" className="text-blue-400 hover:text-blue-300">
+                        <Link href={CURRENT_RELEASE_NOTES_PATH} className="text-blue-400 hover:text-blue-300">
                             Release notes →
                         </Link>
                     </div>

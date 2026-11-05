@@ -89,7 +89,7 @@
                 "description": "Optional one-line subtitle shown under the title.",
                 "minLength": 1,
                 "maxLength": 200,
-                "examples": ["What changed in each DocumentDB release"]
+                "examples": ["What changed in the current release and how to upgrade"]
               },
               "link": {
                 "type": "string",
@@ -97,7 +97,7 @@
                 "pattern": "^(/|https?://)",
                 "minLength": 1,
                 "maxLength": 500,
-                "examples": ["/docs/release-notes", "/docs/versions"]
+                "examples": ["/docs/getting-started/release-notes-1.0", "/docs/versions"]
               }
             },
             "additionalProperties": false

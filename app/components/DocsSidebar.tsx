@@ -1,6 +1,7 @@
 import Link from "next/link";
 import VersionSwitcher from "./VersionSwitcher";
 import { VersionSwitcherEntry } from "../services/versionService";
+import { CURRENT_RELEASE_NOTES_PATH } from "../lib/currentRelease";
 
 export interface SidebarNavItem {
     title: string;
@@ -103,7 +104,7 @@ export function DocsSidebarContent({
             {/* Footer meta links */}
             <div className="p-4 border-t border-neutral-700/50 space-y-1">
                 <Link
-                    href="/docs/release-notes"
+                    href={CURRENT_RELEASE_NOTES_PATH}
                     className="block px-4 py-1.5 text-xs text-gray-400 hover:text-white transition-colors"
                 >
                     Release notes
