@@ -18,7 +18,7 @@ interface ContentSource {
   /**
    * Additional frozen documentation versions to compile alongside the main
    * branch. Each entry clones the repository at the given ref (tag or branch)
-   * and copies the same mappings into versioned/<label>/<target>, which the
+   * and copies the article mappings into versioned/<label>/<target>, which the
    * /docs/versions/<label>/ routes render as an archived snapshot.
    */
   readonly versions?: ReadonlyArray<{
@@ -267,7 +267,8 @@ async function cloneContent(
           );
         }
 
-        for (const mapping of source.mappings) {
+        // Only article sections have archived routes; the API reference is served from current docs.
+        for (const mapping of source.mappings.filter((m) => m.target.startsWith('articles/'))) {
           const sourceDir = path.join(versionCloneDir, mapping.source);
           const targetDir = path.join(VERSIONED_DIR, version.label, mapping.target);
 
