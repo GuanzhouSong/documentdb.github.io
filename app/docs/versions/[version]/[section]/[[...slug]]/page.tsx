@@ -128,7 +128,10 @@ export default async function VersionedArticlePage({ params }: PageProps) {
                                 View current →
                             </Link>
                         </div>
-                        <p className="mb-6 text-sm text-gray-400">Frozen as of the {version} release.</p>
+                        <p className="mb-6 text-sm text-gray-400">
+                            Frozen as of the {version} release. Downloads and other site pages
+                            link to the current release.
+                        </p>
 
                         {/* Headings reached by a link must clear both the navbar and the archive bar. */}
                         <div className="[&_a[id]]:scroll-mt-32">

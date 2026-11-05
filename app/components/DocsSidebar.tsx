@@ -107,7 +107,7 @@ export function DocsSidebarContent({
                     href={CURRENT_RELEASE_NOTES_PATH}
                     className="block px-4 py-1.5 text-xs text-gray-400 hover:text-white transition-colors"
                 >
-                    Release notes
+                    {version ? "Release notes (current docs ↗)" : "Release notes"}
                 </Link>
                 <Link
                     href="/docs/versions"
