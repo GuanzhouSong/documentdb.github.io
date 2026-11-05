@@ -12,5 +12,8 @@
  */
 export const CURRENT_RELEASE_TAG = "v1.0-0";
 
+// Snapshots are labeled by release line, so labels for current drop the build suffix too.
+export const CURRENT_RELEASE_LINE = CURRENT_RELEASE_TAG.replace(/-\d+$/, "");
+
 // Release notes for CURRENT_RELEASE_TAG; change the two together.
 export const CURRENT_RELEASE_NOTES_PATH = "/docs/getting-started/release-notes-1.0";

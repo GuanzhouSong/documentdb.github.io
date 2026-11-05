@@ -3,7 +3,7 @@ import path from 'path';
 import { load as loadYaml } from 'js-yaml';
 import matter from 'gray-matter';
 import { Link } from '../types/Link';
-import { CURRENT_RELEASE_TAG } from '../lib/currentRelease';
+import { CURRENT_RELEASE_LINE } from '../lib/currentRelease';
 
 /**
  * Serves frozen documentation snapshots compiled by scripts/compile-content.tsx
@@ -173,7 +173,7 @@ export function getVersionSwitcherEntries(
   const versions = getDocVersions();
   const entries: VersionSwitcherEntry[] = [
     {
-      label: `Current (${CURRENT_RELEASE_TAG}, latest)`,
+      label: `Current (${CURRENT_RELEASE_LINE}, latest)`,
       href: currentTarget,
       active: viewing === 'current',
     },
