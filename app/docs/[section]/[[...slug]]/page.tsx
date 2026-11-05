@@ -7,6 +7,7 @@ import CommandSnippet from "../../../components/CommandSnippet";
 import TelemetryNote from "../../../components/TelemetryNote";
 import Markdown from "../../../components/Markdown";
 import MovedNotice from "../../../components/MovedNotice";
+import { getMovedPage } from "../../../lib/movedPages";
 import { aptTargetLabels } from "../../../lib/packageInstall";
 import DocsSidebar, { DocsSidebarMobile } from "../../../components/DocsSidebar";
 import DocsBreadcrumb from "../../../components/DocsBreadcrumb";
@@ -28,30 +29,6 @@ const primerPrimaryLinkClass =
 const primerSecondaryLinkClass =
     "font-semibold text-blue-300 transition-colors hover:text-blue-200";
 
-/**
- * Slugs under /docs/getting-started/ that no longer have their own content and
- * now point at the page that replaced them. Kept in one place so the metadata
- * and the rendered notice can never disagree about where a page went.
- */
-const movedGettingStartedPages: Record<string, { href: string; title: string }> = {
-    'prebuilt-packages': {
-        href: '/docs/getting-started/packages',
-        title: 'Linux Packages Quick Start',
-    },
-    'vscode-extension-guide': {
-        href: '/docs/getting-started/vscode-quickstart',
-        title: 'Visual Studio Code Quick Start',
-    },
-};
-
-function getMovedPage(section: string, slug: string[]) {
-    if (section !== 'getting-started') {
-        return undefined;
-    }
-
-    return movedGettingStartedPages[slug[slug.length - 1] ?? ''];
-}
-
 export async function generateStaticParams() {
     const paths = getAllArticlePaths();
 
@@ -70,7 +47,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
     const { section, slug = [] } = await params;
-    const movedPage = getMovedPage(section, slug);
+    const movedPage = getMovedPage(section, slug[slug.length - 1] ?? '');
 
     // These URLs stay reachable for old bookmarks and inbound links, but the
     // content is somewhere else now. Pointing crawlers at the replacement stops
@@ -107,7 +84,7 @@ export async function generateMetadata({ params }: PageProps) {
 
 export default async function ArticlePage({ params }: PageProps) {
     const { section, slug = [] } = await params;
-    const movedPage = getMovedPage(section, slug);
+    const movedPage = getMovedPage(section, slug[slug.length - 1] ?? '');
 
     if (movedPage) {
         return <MovedNotice href={movedPage.href} title={movedPage.title} />;

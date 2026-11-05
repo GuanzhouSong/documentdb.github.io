@@ -40,6 +40,7 @@ export default function VersionSwitcher({ entries }: { entries: VersionSwitcherE
                             className="block rounded-md px-3 py-2 text-xs text-gray-300 hover:bg-neutral-700/60 hover:text-white transition-colors"
                         >
                             {entry.label}
+                            {entry.note && <span className="mt-0.5 block text-[11px] text-gray-500">{entry.note}</span>}
                         </Link>
                     )
                 )}

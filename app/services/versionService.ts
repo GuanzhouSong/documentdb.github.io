@@ -4,6 +4,7 @@ import { load as loadYaml } from 'js-yaml';
 import matter from 'gray-matter';
 import { Link } from '../types/Link';
 import { CURRENT_RELEASE_LINE } from '../lib/currentRelease';
+import { getMovedPage, getPagesMovedTo } from '../lib/movedPages';
 
 /**
  * Serves frozen documentation snapshots compiled by scripts/compile-content.tsx
@@ -137,6 +138,29 @@ export interface VersionSwitcherEntry {
   label: string;
   href: string;
   active: boolean;
+  /** Set when the page has no counterpart in that version, so the link falls back. */
+  note?: string;
+}
+
+/** The snapshot page that stands for /docs/<section>/<file>, following pages renamed since. */
+export function findVersionedPage(
+  version: string,
+  section: string,
+  file: string
+): { section: string; file: string } | null {
+  if (versionedArticleExists(version, section, file)) {
+    return { section, file };
+  }
+
+  return (
+    getPagesMovedTo(section, file).find((former) =>
+      versionedArticleExists(version, former.section, former.file)
+    ) ?? null
+  );
+}
+
+function fallbackNote(destination: string): string {
+  return `No matching page, opens ${destination}`;
 }
 
 /**
@@ -144,8 +168,8 @@ export interface VersionSwitcherEntry {
  *
  * `viewing` is 'current' or a version label. For each version the target is the
  * best equivalent of the page being viewed: the same page when it exists in
- * that version, otherwise the section home, otherwise the version home. This
- * keeps switching lossless where possible and predictable where not.
+ * that version, following renames, otherwise the section home, otherwise the
+ * version home. A fallback carries a note, so the reader knows before clicking.
  */
 export function getVersionSwitcherEntries(
   viewing: string,
@@ -154,14 +178,19 @@ export function getVersionSwitcherEntries(
 ): VersionSwitcherEntry[] {
   const currentArticlesDir = path.join(process.cwd(), 'articles');
 
-  const currentTarget = (() => {
-    if (!section) return '/docs';
-    if (!fs.existsSync(path.join(currentArticlesDir, section))) return '/docs';
-    if (!file || file === 'index') return `/docs/${section}`;
-    if (fs.existsSync(path.join(currentArticlesDir, section, `${file}.md`))) {
-      return `/docs/${section}/${file}`;
+  const currentTarget = ((): Pick<VersionSwitcherEntry, 'href' | 'note'> => {
+    if (!section) return { href: '/docs' };
+    if (!fs.existsSync(path.join(currentArticlesDir, section))) {
+      return { href: '/docs', note: fallbackNote('the docs home') };
     }
-    return `/docs/${section}`;
+    if (!file || file === 'index') return { href: `/docs/${section}` };
+    // Go straight to a renamed page's replacement rather than through its moved notice.
+    const moved = getMovedPage(section, file);
+    if (moved) return { href: moved.href };
+    if (fs.existsSync(path.join(currentArticlesDir, section, `${file}.md`))) {
+      return { href: `/docs/${section}/${file}` };
+    }
+    return { href: `/docs/${section}`, note: fallbackNote(formatSectionTitle(section)) };
   })();
 
   // Name the release "current" actually describes, so a reader can tell at a
@@ -174,25 +203,25 @@ export function getVersionSwitcherEntries(
   const entries: VersionSwitcherEntry[] = [
     {
       label: `Current (${CURRENT_RELEASE_LINE}, latest)`,
-      href: currentTarget,
+      ...currentTarget,
       active: viewing === 'current',
     },
   ];
 
   for (const version of versions) {
-    const target = (() => {
-      if (!section) return `/docs/versions/${version}`;
+    const home = `/docs/versions/${version}`;
+    const target = ((): Pick<VersionSwitcherEntry, 'href' | 'note'> => {
+      if (!section) return { href: home };
       if (!fs.existsSync(path.join(versionArticlesDir(version), section))) {
-        return `/docs/versions/${version}`;
+        return { href: home, note: fallbackNote(`the ${version} home`) };
       }
-      if (!file || file === 'index') return `/docs/versions/${version}/${section}`;
-      if (versionedArticleExists(version, section, file)) {
-        return `/docs/versions/${version}/${section}/${file}`;
-      }
-      return `/docs/versions/${version}/${section}`;
+      if (!file || file === 'index') return { href: `${home}/${section}` };
+      const match = findVersionedPage(version, section, file);
+      if (match) return { href: `${home}/${match.section}/${match.file}` };
+      return { href: `${home}/${section}`, note: fallbackNote(formatSectionTitle(section)) };
     })();
 
-    entries.push({ label: `${version} (archived)`, href: target, active: viewing === version });
+    entries.push({ label: `${version} (archived)`, ...target, active: viewing === version });
   }
 
   return entries;
