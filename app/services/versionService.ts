@@ -159,6 +159,40 @@ export function findVersionedPage(
   );
 }
 
+// The docs write cross-section links as absolute documentdb.io URLs.
+const siteDocsLink = /\]\(https:\/\/documentdb\.io\/docs\/([^)\s#?]*)([#?][^)\s]*)?\)/g;
+
+/**
+ * Points a snapshot's absolute documentdb.io docs links at the same page in the
+ * snapshot, so a reader following them stays in the version. Pages the snapshot
+ * lacks keep linking to the current site, and only targets change, never text.
+ */
+export function keepDocsLinksInVersion(
+  content: string,
+  version: string,
+  page: { section: string; file: string },
+  findPage: (section: string, file: string) => { section: string; file: string } | null = (section, file) =>
+    findVersionedPage(version, section, file)
+): string {
+  const home = `/docs/versions/${version}/`;
+
+  return content.replace(siteDocsLink, (link, pagePath: string, suffix = '') => {
+    const [section, file = 'index', ...rest] = pagePath.split('/').filter(Boolean);
+    if (!section) return `](${home}${suffix})`;
+    if (rest.length > 0) return link;
+
+    const match = findPage(section, file);
+    if (!match) return link;
+    if (match.section === page.section && match.file === page.file) {
+      return suffix.startsWith('#') ? `](${suffix})` : link;
+    }
+
+    // Trailing slash, because Markdown renders these as plain anchors that would otherwise redirect.
+    const target = match.file === 'index' ? `${home}${match.section}/` : `${home}${match.section}/${match.file}/`;
+    return `](${target}${suffix})`;
+  });
+}
+
 function fallbackNote(destination: string): string {
   return `No matching page, opens ${destination}`;
 }

@@ -6,6 +6,7 @@ import {
     getVersionedArticleByPath,
     getVersionedSections,
     getVersionSwitcherEntries,
+    keepDocsLinksInVersion,
     orderSections,
 } from "../../../../../services/versionService";
 import Markdown from "../../../../../components/Markdown";
@@ -136,7 +137,7 @@ export default async function VersionedArticlePage({ params }: PageProps) {
                         {/* Headings reached by a link must clear both the navbar and the archive bar. */}
                         <div className="[&_a[id]]:scroll-mt-32">
                             <Markdown
-                                content={content}
+                                content={keepDocsLinksInVersion(content, version, { section, file })}
                                 sourcePath={`/docs/versions/${version}/${section}/${file}.md`}
                             />
                         </div>
