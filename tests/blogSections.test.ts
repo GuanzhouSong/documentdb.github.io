@@ -8,6 +8,8 @@ import matter from 'gray-matter';
 import { load as loadYaml } from 'js-yaml';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import Navbar from '../app/components/Navbar';
+import { documentdbDiscordUrl } from '../app/services/externalLinks';
+import nav from '../blogs/_data/nav.json';
 
 type Section = 'announcements' | 'blogs';
 type Post = { href: string; section: Section; featured: boolean };
@@ -51,11 +53,30 @@ function getPosts(baseurl: string): Post[] {
   }));
 }
 
+// [href, label] for every nav.json link in order, dropdown items included
+function expectedNav(baseurl = ''): string[][] {
+  const links = nav.links.flatMap((item) => item.items ?? [item]);
+  return [...links, ...nav.icons].map(({ href, label }) => [
+    /^https?:\/\//.test(href) ? href : `${baseurl}${href}`,
+    label.replace(/&/g, '&amp;'),
+  ]);
+}
+
+function renderedLinks(html: string): string[][] {
+  return [...html.matchAll(/<a\b[^>]*\bhref="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g)]
+    .map(([, href, inner]) => [href, inner.replace(/<[^>]+>/g, '').trim()]);
+}
+
 describe('main site navigation', () => {
-  it('renders separate crawlable links for announcements and blogs', () => {
+  it('renders every nav.json link as a crawlable link, even inside closed dropdowns', () => {
     const html = renderToStaticMarkup(createElement(Navbar));
-    expect(html).toMatch(/<a\b[^>]*href="\/announcements\/"[^>]*><span>Announcements<\/span><\/a>/);
-    expect(html).toMatch(/<a\b[^>]*href="\/blogs\/"[^>]*><span>Blogs<\/span><\/a>/);
+    expect(renderedLinks(html).filter(([href]) => href !== '/')).toEqual(expectedNav());
+  });
+
+  it('keeps the Discord invite in step with the other places that link it', () => {
+    const config = loadYaml(fs.readFileSync(path.join(source, '_config.yml'), 'utf8')) as { discord_url?: string };
+    expect(nav.icons.find((link) => link.icon === 'discord')?.href).toBe(documentdbDiscordUrl);
+    expect(config.discord_url).toBe(documentdbDiscordUrl);
   });
 });
 
@@ -116,6 +137,16 @@ describe.each([
     expect(html).toContain(`<a href="${baseurl}/blogs/"${section === 'blogs' ? ' aria-current="page"' : ''}>Blogs</a>`);
     expect(html).toContain(`<link rel="stylesheet" href="${baseurl}/blogs/assets/blog.css">`);
     expect(html).toContain(`<a class="release-bar" href="${baseurl}/v1/">`);
+  });
+
+  it('renders the shared nav in the desktop bar and the mobile menu', () => {
+    for (const page of ['announcements', 'blogs', 'blogs/posts/documentdb-1-0']) {
+      const html = fs.readFileSync(path.join(destination, page, 'index.html'), 'utf8');
+      const desktop = html.match(/<div class="site-nav">([\s\S]*?)<details class="site-menu">/)?.[1] ?? '';
+      const mobile = html.match(/<div class="site-menu__links">([\s\S]*?)<\/details>/)?.[1] ?? '';
+      expect(renderedLinks(desktop), page).toEqual(expectedNav(baseurl));
+      expect(renderedLinks(mobile), page).toEqual(expectedNav(baseurl));
+    }
   });
 
   it('keeps the 1.0 release announcements and their card emphasis in Announcements', () => {
