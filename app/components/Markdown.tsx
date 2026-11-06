@@ -15,6 +15,19 @@ interface MarkdownProps {
   sourcePath: string;
 }
 
+// GFM table cells can't hold newlines, so docs break lines with <br>; render that one tag, not raw HTML.
+function remarkBrTags() {
+  return (tree: any) => {
+    const visit = (node: any) => node.children?.forEach((child: any, i: number) => {
+      if (child.type === 'html' && /^<br\s*\/?>$/i.test(child.value)) node.children[i] = { type: 'break' };
+      else visit(child);
+    });
+    visit(tree);
+  };
+}
+
+const remarkPlugins = [remarkGfm, remarkBrTags];
+
 export default function Markdown({ content, sourcePath }: MarkdownProps) {
   const processedContent = useMemo(() => {
     // Split content by H2 headings to group sections
@@ -29,7 +42,7 @@ export default function Markdown({ content, sourcePath }: MarkdownProps) {
         elements.push(
           <div key={`intro-${index}`} className="mb-8">
             <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
+              remarkPlugins={remarkPlugins}
               components={getMarkdownComponents(sourcePath)}
             >
               {section}
@@ -49,7 +62,7 @@ export default function Markdown({ content, sourcePath }: MarkdownProps) {
               {title}
             </h2>
             <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
+              remarkPlugins={remarkPlugins}
               components={getMarkdownComponents(sourcePath)}
             >
               {sectionContent}

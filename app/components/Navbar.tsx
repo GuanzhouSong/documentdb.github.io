@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 // The Jekyll layout renders the same file, so the blog and announcement pages show this nav too
 import nav from "../../blogs/_data/nav.json";
 import { withBasePath } from "../services/sitePath";
@@ -96,13 +97,44 @@ function ExternalIcon() {
   );
 }
 
+// The banner above the sticky nav varies in height, so fit the open menu to the screen space actually left
+function fitToViewport(menu: HTMLDivElement | null) {
+  if (!menu) return;
+  const fit = () => {
+    menu.style.maxHeight = `${window.innerHeight - menu.getBoundingClientRect().top}px`;
+  };
+  fit();
+  window.addEventListener("resize", fit);
+  return () => window.removeEventListener("resize", fit);
+}
+
 export default function Navbar() {
+  const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [menuPathname, setMenuPathname] = useState(pathname);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const desktopNav = useRef<HTMLDivElement>(null);
+  const menuButton = useRef<HTMLButtonElement>(null);
 
   const closeMenu = () => setIsMenuOpen(false);
   const closeGroup = () => setOpenGroup(null);
+
+  // Close on any navigation, back/forward included; resetting during render avoids a frame of open menu on the new page
+  if (menuPathname !== pathname) {
+    setMenuPathname(pathname);
+    setIsMenuOpen(false);
+  }
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setIsMenuOpen(false);
+      menuButton.current?.focus();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [isMenuOpen]);
 
   useEffect(() => {
     if (!openGroup) return;
@@ -127,7 +159,7 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 border-b border-neutral-700 bg-neutral-900/95 shadow-sm backdrop-blur">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4 py-3 md:h-16 md:py-0">
-          <Link href="/" className="flex shrink-0 items-center gap-2 text-xl font-bold text-white sm:text-2xl">
+          <Link href="/" onClick={closeMenu} className="flex shrink-0 items-center gap-2 text-xl font-bold text-white sm:text-2xl">
             <Image
               src={withBasePath("/images/DocumentDB Logo - background removed.png")}
               alt="DocumentDB Logo"
@@ -215,6 +247,7 @@ export default function Navbar() {
           </div>
 
           <button
+            ref={menuButton}
             type="button"
             className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-neutral-700 text-gray-200 transition-colors hover:border-blue-400 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 lg:hidden"
             aria-expanded={isMenuOpen}
@@ -235,7 +268,7 @@ export default function Navbar() {
         </div>
 
         {isMenuOpen ? (
-          <div id="mobile-navigation" className="border-t border-neutral-800 py-3 lg:hidden">
+          <div id="mobile-navigation" ref={fitToViewport} className="overflow-y-auto border-t border-neutral-800 py-3 lg:hidden">
             <div className="flex flex-col gap-1">
               {links.map((item) =>
                 "items" in item ? (
