@@ -1,7 +1,7 @@
 title: DocumentDB Blog
 description: Insights, updates, and deep dives into the world of document databases and open-source innovation.
-# Shared external links. The Next.js app keeps the same values in
-# app/services/externalLinks.ts; update both when one changes.
+# Shared external links. app/services/externalLinks.ts and _data/nav.json hold
+# the same invite; tests/blogSections.test.ts fails if they differ.
 discord_url: https://discord.gg/vH7bYu524D
 # Shared release announcement target. app/services/externalLinks.ts holds
 # the same site-root path.
