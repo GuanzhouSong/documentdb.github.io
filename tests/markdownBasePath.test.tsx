@@ -41,3 +41,12 @@ describe('Markdown heading anchors', () => {
     }
   });
 });
+
+describe('Markdown table cells', () => {
+  it('turns <br> into a line break but keeps other HTML escaped', async () => {
+    const html = await render('| a | b |\n| --- | --- |\n| x <br> y <br/> z | <b>bold</b> |');
+    expect(html.match(/<br\/>/g)).toHaveLength(2);
+    expect(html).not.toContain('&lt;br');
+    expect(html).toContain('&lt;b&gt;bold&lt;/b&gt;');
+  });
+});
