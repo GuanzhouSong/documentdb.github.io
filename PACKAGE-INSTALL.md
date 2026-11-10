@@ -313,18 +313,17 @@ On a systemd host, a scoped restore stops and disables that major's gateway:
 sudo documentdb-setup --restore --pg-version 18
 ```
 
-On a host without systemd, the current setup tooling cannot safely attribute a nohup gateway process to one
-PostgreSQL major. If only one DocumentDB major is configured, use an unscoped restore so the
-orphan gateway sweep runs:
+On a host without systemd, the same scoped restore stops the gateway that setup started for
+that major and leaves other majors running. It skips a gateway it has no valid record of; if the
+port is still listening afterwards, find the process on it and stop it. Setup runs the gateway
+as `documentdb-gateway`, so `sudo -u documentdb-gateway ss -lntp` shows its PID even in a
+container where root's `ss` doesn't. An unscoped restore also stops nohup gateways started by
+the packaged binary's full path, but it detaches every configured major; re-run setup for the
+majors you are keeping:
 
 ```bash
 sudo documentdb-setup --restore --yes
 ```
-
-If more than one DocumentDB major is configured without systemd, schedule a maintenance window
-and use the same unscoped restore. It detaches every configured major and stops the nohup
-gateways; re-run setup for the majors you are keeping afterward. A scoped restore alone is not
-sufficient on a no-systemd host.
 
 Restart the adopted PostgreSQL service after restore to apply removal of the managed settings.
 On an unscoped multi-major restore, restart each operator-managed PostgreSQL service involved.

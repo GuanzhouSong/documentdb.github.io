@@ -257,9 +257,19 @@ describe('Linux package articles', () => {
     expect(linuxPackagesOperationsContent).toContain(
       'sudo documentdb-setup --restore --yes',
     );
-    expect(linuxPackagesOperationsContent).toMatch(
-      /A scoped restore alone is not\s+sufficient on a no-systemd host\./,
+    // Both copies must state the same no-systemd behaviour, including the exception.
+    const packageInstall = fs.readFileSync(
+      fileURLToPath(new URL('../PACKAGE-INSTALL.md', import.meta.url)),
+      'utf8',
     );
+    const noSystemd = (text: string) =>
+      text.match(/On a host without systemd, the same scoped restore[\s\S]*?majors you are keeping:/)?.[0]
+        .replace(/\s+/g, ' ');
+    expect(noSystemd(linuxPackagesOperationsContent)).toMatch(
+      /the same scoped restore stops the gateway that setup started for that major and leaves other majors running/,
+    );
+    expect(noSystemd(linuxPackagesOperationsContent)).toMatch(/skips a gateway it has no valid record of/);
+    expect(noSystemd(packageInstall)).toBe(noSystemd(linuxPackagesOperationsContent));
     expect(linuxPackagesOperationsContent).toContain(
       'Restart the adopted PostgreSQL service after restore',
     );

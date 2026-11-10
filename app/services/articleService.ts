@@ -336,7 +336,7 @@ The gateway binds **all interfaces** (\`0.0.0.0:10260\` and \`[::]:10260\`) by d
 
 Before using this anywhere but a private machine:
 
-- Restrict the listener with \`DOCUMENTDB_LISTEN_ADDR=127.0.0.1:10260\` in \`/etc/documentdb/local/<major>/gateway.env\` and restart the service, or firewall port \`10260\`. **Re-running \`documentdb-setup\` silently resets this to a wildcard bind**, so re-check with \`grep DOCUMENTDB_LISTEN_ADDR /etc/documentdb/local/<major>/gateway.env\` afterwards. A firewall rule is the more durable control.
+- Restrict the listener with \`DOCUMENTDB_LISTEN_ADDR=127.0.0.1:10260\` in \`/etc/documentdb/local/<major>/gateway.env\` and restart the service, or firewall port \`10260\`. Re-running \`documentdb-setup\` keeps a loopback address written this way, and prints \`Keeping gateway bind address\` when it does.
 - Use a strong admin password and create per-application users rather than sharing \`admin\`.
 
 ### Replace the self-signed certificate
@@ -544,18 +544,17 @@ On a systemd host, a scoped restore stops and disables that major's gateway:
 sudo documentdb-setup --restore --pg-version 18
 \`\`\`
 
-On a host without systemd, the current setup tooling cannot safely attribute a nohup gateway process to one
-PostgreSQL major. If only one DocumentDB major is configured, use an unscoped restore so the
-orphan gateway sweep runs:
+On a host without systemd, the same scoped restore stops the gateway that setup started for
+that major and leaves other majors running. It skips a gateway it has no valid record of; if the
+port is still listening afterwards, find the process on it and stop it. Setup runs the gateway
+as \`documentdb-gateway\`, so \`sudo -u documentdb-gateway ss -lntp\` shows its PID even in a
+container where root's \`ss\` doesn't. An unscoped restore also stops nohup gateways started by
+the packaged binary's full path, but it detaches every configured major; re-run setup for the
+majors you are keeping:
 
 \`\`\`bash
 sudo documentdb-setup --restore --yes
 \`\`\`
-
-If more than one DocumentDB major is configured without systemd, schedule a maintenance window
-and use the same unscoped restore. It detaches every configured major and stops the nohup
-gateways; re-run setup for the majors you are keeping afterward. A scoped restore alone is not
-sufficient on a no-systemd host.
 
 Restart the adopted PostgreSQL service after restore to apply removal of the managed settings.
 On an unscoped multi-major restore, restart each operator-managed PostgreSQL service involved.
@@ -589,8 +588,7 @@ These are defects in this release, not expected behaviour. Most need a host with
 | --- | --- | --- |
 | Status | \`documentdb-setup --status\` can report "active" for any process holding port 10260 | **any host** |
 | Restart | Re-running \`documentdb-setup\` to restart can hang; redirecting output to a file avoids it | no systemd |
-| Stop | A scoped \`documentdb-setup --restore --pg-version N\` cannot stop a nohup gateway; follow the no-systemd brownfield removal steps above | no systemd |
-| Minimal RHEL | Install \`procps-ng\` first, or \`--restore\` reports success while the gateway keeps serving and a later run fails with \`Port 10260 is already in use\` | no systemd |
+| Stop | A scoped \`documentdb-setup --restore --pg-version N\` skips a nohup gateway it has no valid record of; follow the no-systemd brownfield removal steps above | no systemd |
 
 **Prefer a systemd host for anything you care about**, where the service lifecycle is managed by systemd rather than by the setup script.
 
