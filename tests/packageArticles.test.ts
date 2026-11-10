@@ -298,8 +298,8 @@ describe('Linux package articles', () => {
 
   it('serves the stable installer without a pinned or RC version', () => {
     expect(linuxPackagesGuideContent).toContain('https://documentdb.io/install.sh');
-    expect(linuxPackagesGuideContent).toContain('installs the current release (v1.0-1) from the package repository');
-    // install.sh rejects --version v1.0-1, and RCs are retired at GA.
+    expect(linuxPackagesGuideContent).toContain('installs the current release (v1.0-0) from the package repository');
+    // install.sh rejects --version v1.0-0, and RCs are retired at GA.
     expect(linuxPackagesGuideContent).not.toContain('--version v1.0');
     expect(linuxPackagesGuideContent).not.toMatch(/RC2|release-candidate/);
   });
@@ -308,13 +308,13 @@ describe('Linux package articles', () => {
     const offlineGuide = getArticleByPath('linux-packages', ['offline']);
 
     expect(linuxPackagesGuideContent).toContain(
-      'documentdb/blob/v1.0-1/packaging/README.md',
+      'documentdb/blob/v1.0-0/packaging/README.md',
     );
     expect(linuxPackagesGuideContent).toContain(
       '`--load-sample-data` to the setup command to seed the `StoreData` database',
     );
     expect(offlineGuide?.content).toContain(
-      'ubuntu24.04-postgresql-18-documentdb_1.0-1_amd64.deb',
+      'ubuntu24.04-postgresql-18-documentdb_1.0-0_amd64.deb',
     );
     expect(offlineGuide?.content).toContain(
       'pass the five packages for the selected PostgreSQL major',

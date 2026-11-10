@@ -43,7 +43,7 @@ const dockerCommand = `docker run -dt --name documentdb \\
   -p 127.0.0.1:10260:10260 \\
   -e USERNAME='<YOUR_USERNAME>' \\
   -e PASSWORD='<YOUR_PASSWORD>' \\
-  ghcr.io/documentdb/documentdb/documentdb-local:pg17-1.0.1`;
+  ghcr.io/documentdb/documentdb/documentdb-local:pg17-1.0.0`;
 
 const installerCommand = `curl -fsSLo documentdb-install.sh https://documentdb.io/install.sh &&
 sudo sh documentdb-install.sh`;
