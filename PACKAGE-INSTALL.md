@@ -2,7 +2,7 @@
 
 Repository-backed installation commands for DocumentDB.
 
-> This repository serves v1.0-1.
+> This repository serves v1.0-0.
 
 ## Clean-host installer
 
@@ -13,7 +13,7 @@ curl -fsSLo documentdb-install.sh https://documentdb.io/install.sh &&
 sudo sh documentdb-install.sh
 ```
 
-This installs v1.0-1 from this repository on PostgreSQL 18; add `--pg-major 17`
+This installs v1.0-0 from this repository on PostgreSQL 18; add `--pg-major 17`
 for 17. On a host where DocumentDB is already set up, it only reports that instance's status
 and doesn't upgrade it; to move an existing install to 1.0, see
 [Upgrading an existing install](#upgrading-an-existing-install).
@@ -225,7 +225,7 @@ Before using this anywhere but a private machine:
 
 ```bash
 sudo documentdb-setup --status      # gateway listener, service states, resolved paths
-documentdb-gateway --version        # DocumentDB version (1.0.1)
+documentdb-gateway --version        # DocumentDB version (1.0.0)
 dpkg -l | grep documentdb           # or: rpm -qa | grep documentdb
 ```
 
@@ -368,7 +368,7 @@ The current release publishes PostgreSQL 17 and 18. Install `documentdb-17` or
 
 ## Upgrading an existing install
 
-Package installs from v0.116, v0.117 or 1.0.0 upgrade in place to 1.0.1. Move the entire stack
+Package installs from v0.116 or v0.117 upgrade in place to 1.0. Move the entire stack
 together; upgrading only `postgresql-N-documentdb` does not update the gateway, tools, common
 payload, or `documentdb-N`. These steps use systemd; upgrading a host without it isn't covered here.
 On a package-managed private PostgreSQL 18 instance:
@@ -479,17 +479,17 @@ published in the documentdb.io package repositories. Community builds are welcom
 For example, after checking out the matching release tag, build an extension package with:
 
 ```bash
-./packaging/build_packages.sh --os deb12 --pg 16 --version 1.0.1
+./packaging/build_packages.sh --os deb12 --pg 16 --version 1.0.0
 ```
 
-Without `--version`, the script takes the version from the checked-out release tag, or else from the control file; at `v1.0-1` both give 1.0.1. That command builds only `postgresql-N-documentdb`. A custom full-stack package set uses
+`v1.0-0` and `v1.0-RC2` are on the same commit, so pass `--version`; without it the scripts can build RC-versioned packages. That command builds only `postgresql-N-documentdb`. A custom full-stack package set uses
 three entry points:
 
 - `packaging/build_packages.sh` — PostgreSQL extension
 - `packaging/gateway/build_gateway_packages.sh` — wire-protocol gateway
 - `packaging/build_extra_packages.sh` — tools, common payload, `documentdb-N`, and meta package
 
-The [v1.0 packaging guide](https://github.com/documentdb/documentdb/blob/v1.0-1/packaging/README.md)
+The [v1.0 packaging guide](https://github.com/documentdb/documentdb/blob/v1.0-0/packaging/README.md)
 documents their required arguments, version formats, prerequisites, and accepted targets.
 PostgreSQL 15 remains extension-only for package-managed installs because the setup tools
 require PostgreSQL 16 or newer.
@@ -504,9 +504,9 @@ they do not retain packages from older releases.
 Examples:
 
 ```text
-ubuntu24.04-documentdb_1.0.1_all.deb
-ubuntu24.04-postgresql-18-documentdb_1.0-1_amd64.deb
-rhel9-postgresql18-documentdb-1.0.1-1.el9.x86_64.rpm
+ubuntu24.04-documentdb_1.0.0_all.deb
+ubuntu24.04-postgresql-18-documentdb_1.0-0_amd64.deb
+rhel9-postgresql18-documentdb-1.0.0-1.el9.x86_64.rpm
 ```
 
 For a full stack, pass the five packages for the selected PostgreSQL major to one command:
