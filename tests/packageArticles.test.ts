@@ -384,8 +384,14 @@ describe('Linux package articles', () => {
       '41,505 documents in `stores` and 2 documents in `ratings`',
     );
     expect(dockerGuide?.content).toContain(
-      'Existing volumes are not migrated automatically',
+      'Existing volumes keep the sample data they were seeded with',
     );
+    // The 1.2 image updates the extensions on a 1.0 or later volume at start, one way.
+    expect(dockerGuide?.content).toContain(
+      'the image updates the DocumentDB extensions on an existing 1.0 or later data volume',
+    );
+    expect(dockerGuide?.content).toContain('This only\ngoes forward');
+    expect(dockerGuide?.content).not.toContain('does not update the DocumentDB schema');
     expect(dockerGuide?.content).not.toContain('use sampledb');
 
     const { readFile } = await import('node:fs/promises');
