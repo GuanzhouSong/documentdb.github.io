@@ -2,7 +2,7 @@
 
 Repository-backed installation commands for DocumentDB.
 
-> This repository serves v1.0-0.
+> The `stable` channel serves v1.0-0; see [Release channels](#release-channels).
 
 ## Clean-host installer
 
@@ -21,11 +21,24 @@ and doesn't upgrade it; to move an existing install to 1.0, see
 The site serves the `install.sh` attached to the release named in
 `scripts/publish-installer.mjs`, and the build fails if its SHA256 changes.
 
+## Release channels
+
+The repository publishes two channels, each signed with the same key and listing only its own
+release's packages. The commands on this page use `stable`.
+
+| Channel | Release | APT source | DNF `baseurl` |
+|---|---|---|---|
+| `stable` | v1.0-0 | `https://documentdb.io/deb stable ubuntu24` | `https://documentdb.io/rpm/rhel9` |
+| `latest` | the newest release | `https://documentdb.io/deb latest ubuntu24` | `https://documentdb.io/rpm/latest/rhel9` |
+
+Release metadata is at `https://documentdb.io/packages/release-info.json` for `stable` and
+`https://documentdb.io/packages/release-info-latest.json` for `latest`.
+
 ## What is published
 
 Starting with **v0.116-0**, DocumentDB ships a multi-package layout with a setup wizard and
-systemd integration, instead of just a bare PostgreSQL extension package. The website mirrors
-the package assets attached to one official release; it does not combine the current release
+systemd integration, instead of just a bare PostgreSQL extension package. Each channel mirrors
+the package assets attached to one official release; it does not combine that release
 with stale packages from older releases. This deliberately reduces the hosted package matrix
 compared with earlier releases so every advertised combination corresponds to the current,
 first-party-built release.
