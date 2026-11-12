@@ -368,9 +368,11 @@ The current release publishes PostgreSQL 17 and 18. Install `documentdb-17` or
 
 ## Upgrading an existing install
 
-Package installs from v0.116 or v0.117 upgrade in place to 1.0. Move the entire stack
+Package installs from 1.0.0 upgrade in place to 1.2. Move the entire stack
 together; upgrading only `postgresql-N-documentdb` does not update the gateway, tools, common
 payload, or `documentdb-N`. These steps use systemd; upgrading a host without it isn't covered here.
+There is no downgrade: an older release starts on the updated catalog, but some commands then fail,
+so back up the data directory first if you may need to go back.
 On a package-managed private PostgreSQL 18 instance:
 
 > **Warning:** A host that ran a 1.0 release candidate (RC1 or RC2) has no upgrade path. Use a
@@ -391,18 +393,17 @@ sudo dnf upgrade documentdb-18 postgresql18-documentdb \
   documentdb-common documentdb-gateway documentdb-postgresql-tools
 ```
 
-Upgrading the packages does not update the database catalog. The simplest way is to restart
-PostgreSQL so it loads the new libraries, then re-run setup with the options you installed with.
-Setup updates the extensions and then starts the gateway:
+Upgrading the packages does not update the database catalog. Re-run setup with the PostgreSQL
+major, plus any `--data-dir` or `--pg-port` you installed with. It restarts PostgreSQL once to
+load the new libraries, updates the extensions, and then starts the gateway:
 
 ```bash
-sudo systemctl restart documentdb-postgresql@18.service &&
-sudo documentdb-setup --pg-version 18 --use-new-postgres-instance --admin-user admin
+sudo documentdb-setup --pg-version 18 --yes
 ```
 
-Setup adds any missing `shared_preload_libraries` entries and updates the extensions, but only in
-the `postgres` database. If your gateway uses another database, take the manual route below. It also asks for the admin password and sets it on the existing admin
-user: enter the current password to keep it.
+Without `--admin-user`, setup asks for no password and keeps every admin user and password as
+they are. It adds any missing `shared_preload_libraries` entries and updates the extensions, but only in
+the `postgres` database. If your gateway uses another database, take the manual route below.
 
 To update by hand, or for every other database that has DocumentDB installed, first check that
 the extended RUM library is preloaded:
@@ -411,7 +412,7 @@ the extended RUM library is preloaded:
 sudo -u documentdb-local psql -h /run/documentdb-local/18/postgresql -p 9718 -d postgres -X -Atc "SHOW shared_preload_libraries;"
 ```
 
-If `pg_documentdb_extended_rum` is missing (possible on a 0.116 install), add it before updating;
+If `pg_documentdb_extended_rum` is missing (possible on a host first set up with 0.116), add it before updating;
 the update below would succeed without it, and index builds would fail later. If the gateway uses
 `postgres`, re-run setup as above. If it uses another database, add the library to
 `shared_preload_libraries` in the instance's `postgresql.conf` yourself: setup would point the
@@ -439,12 +440,11 @@ On a host with both PostgreSQL 17 and 18, `documentdb-common`, `documentdb-gatew
 (`documentdb-gateway-local@17.service` and `@18.service`) before upgrading, then update each major.
 
 For an adopted PostgreSQL instance, setup never restarts PostgreSQL. Stop the gateway
-(`documentdb-gateway-local@18.service`) before upgrading, restart the operator-managed PostgreSQL
-service yourself, then re-run
-`documentdb-setup --pg-version 18 --target-postgres-instance 18/main --admin-user admin` (with your cluster name); it
-updates the extensions and then starts the gateway. If
-setup has to change `shared_preload_libraries`, it exits without updating the extensions: restart
-PostgreSQL and run it once more. By hand, use that instance's own `psql` connection.
+(`documentdb-gateway-local@18.service`) before upgrading, then run
+`sudo documentdb-setup --target-postgres-instance 18/main --yes` (with your cluster name). It
+prints the command that restarts your PostgreSQL service and the setup command to run after it,
+then exits without updating the extensions. Run both; the second run updates the extensions and
+starts the gateway. By hand, use that instance's own `psql` connection.
 
 Confirm afterwards with:
 

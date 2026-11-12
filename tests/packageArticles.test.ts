@@ -589,9 +589,13 @@ describe('manual extension upgrade SQL', () => {
     // Setup repoints the gateway at `postgres`, so a gateway on another database must not re-run it.
     expect(text).toMatch(/If your gateway uses another database, take the manual route below\./);
     expect(text).toMatch(/If it uses another database, add the library to\s+`shared_preload_libraries`[\s\S]*?setup would point the\s+gateway back at `postgres`/);
-    // Restarting the whole target would start the gateway before setup updates the extensions.
-    expect(text).toMatch(/restart documentdb-postgresql@18\.service &&\nsudo documentdb-setup/);
+    // Setup restarts PostgreSQL itself; restarting the target first would start the gateway on the old catalog.
+    expect(text).toContain('```bash\nsudo documentdb-setup --pg-version 18 --yes\n```');
     expect(text).not.toMatch(/restart documentdb-local@18\.target &&\nsudo documentdb-setup/);
+    // Without --admin-user the re-run keeps the admin passwords; with it, setup resets that user's.
+    const upgrading = text.match(/^## Upgrading.*$[\s\S]*?(?=^## )/m)?.[0];
+    expect(upgrading).toContain('sudo documentdb-setup --target-postgres-instance 18/main --yes');
+    expect(upgrading).not.toMatch(/documentdb-setup[^\n]*--admin-user/);
   });
 });
 
