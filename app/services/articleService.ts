@@ -73,7 +73,7 @@ ${documentdbLocalTelemetryNote}
 > \`--init-data true\` seeds the built-in sample data into \`StoreData\`, which the
 > verification step below queries. It is **not** enabled by default — without it the
 > container starts with no \`StoreData\` database and \`use StoreData\` returns nothing. The data is
-> seeded once per data volume. Existing volumes are not migrated automatically;
+> seeded once per data volume. Existing volumes keep the sample data they were seeded with;
 > re-create the volume to seed again. See
 > [DocumentDB Local](/docs/documentdb-local) for \`--init-data-path\`, certificate setup,
 > and additional runtime options.
@@ -161,10 +161,13 @@ Until you remove it, re-running \`docker run --name documentdb\` fails with
 \`Conflict. The container name "/documentdb" is already in use\`. Mount a named volume
 (\`-v documentdb-data:/data\`) before storing anything you want to keep.
 
-A newer image on an existing data volume does not update the DocumentDB schema in that
-volume ([documentdb#773](https://github.com/documentdb/documentdb/issues/773)). To move data
-from an earlier release or a 1.0 release candidate to 1.0, start the 1.0 image on a new
-volume and reload your data, for example with \`mongodump\` and \`mongorestore\`.
+From 1.2, the image updates the DocumentDB extensions on an existing 1.0 or later data volume
+when it starts, and logs \`Updating the DocumentDB extensions on this data volume\`. If the
+update fails, it is rolled back and the container exits with the volume unchanged. This only
+goes forward: an older image starts on the updated volume, but some commands then fail, so back
+up the volume first if you may need to go back. To move data from a release before 1.0 or a 1.0
+release candidate, start the image on a new volume and reload your data, for example with
+\`mongodump\` and \`mongorestore\`.
 
 ## Troubleshooting and debugging
 
