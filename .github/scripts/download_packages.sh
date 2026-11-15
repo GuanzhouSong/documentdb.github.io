@@ -102,9 +102,9 @@ echo "Downloading packages from $REPO releases"
 github_api() {
   if [ -n "${GH_TOKEN:-}" ]; then
     # Header via stdin keeps the token out of argv.
-    curl -fqs -H @- "$@" <<<"Authorization: Bearer $GH_TOKEN"
+    curl -q -fsS -H @- "$@" <<<"Authorization: Bearer $GH_TOKEN"
   else
-    curl -fqs "$@"
+    curl -q -fsS "$@"
   fi
 }
 
