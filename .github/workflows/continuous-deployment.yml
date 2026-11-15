@@ -180,6 +180,8 @@ jobs:
           fi
       - name: Download DocumentDB packages for the stable and latest channels
         if: steps.features.outputs.packages == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           .github/scripts/download_packages.sh

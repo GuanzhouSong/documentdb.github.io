@@ -98,8 +98,18 @@ echo "Downloading packages from $REPO releases"
 # makes stale versions look supported.
 # ---------------------------------------------------------------------------
 
+# Unauthenticated calls share 60 requests/hour per runner IP and fail CI at random.
+github_api() {
+  if [ -n "${GH_TOKEN:-}" ]; then
+    # Header via stdin keeps the token out of argv.
+    curl -fqs -H @- "$@" <<<"Authorization: Bearer $GH_TOKEN"
+  else
+    curl -fqs "$@"
+  fi
+}
+
 RELEASES_JSON=$(mktemp)
-if ! curl -fqs "https://api.github.com/repos/${REPO}/releases?per_page=100" > "$RELEASES_JSON"; then
+if ! github_api "https://api.github.com/repos/${REPO}/releases?per_page=100" > "$RELEASES_JSON"; then
   echo "Error: Could not fetch release list"
   exit 1
 fi
@@ -221,7 +231,7 @@ mkdir -p out/packages
 
 for tag in "$PRIMARY_TAG"; do
 
-  if ! release=$(curl -fqs "https://api.github.com/repos/${REPO}/releases/tags/$tag"); then
+  if ! release=$(github_api "https://api.github.com/repos/${REPO}/releases/tags/$tag"); then
     echo "::error::Could not fetch selected release $tag"
     exit 1
   fi
@@ -328,7 +338,7 @@ rm -f "$RELEASES_JSON" "$SEEN_FILE"
 
 # release-info.json describes the primary release only: it is the "what is the
 # current version" feed for the site, not an inventory of the pool.
-release=$(curl -fqs "https://api.github.com/repos/${REPO}/releases/tags/${PRIMARY_TAG}")
+# $release still holds PRIMARY_TAG from the download loop.
 echo "$release" | python3 -c "
 import sys, json
 data = json.load(sys.stdin)

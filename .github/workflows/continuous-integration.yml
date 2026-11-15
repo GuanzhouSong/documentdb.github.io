@@ -99,6 +99,7 @@ jobs:
       - name: Generate stable from v1.0-0 and latest from the newest release
         env:
           DOCUMENTDB_VERSION: v1.0-0
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           .github/scripts/download_packages.sh
