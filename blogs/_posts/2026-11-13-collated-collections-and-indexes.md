@@ -17,6 +17,8 @@ Should a query for `"a"` also match `"A"`? By using collation, you can make that
 
 DocumentDB OSS beginning **v1.3 supports creating unsharded collections with collation**. Collation uses Unicode (ICU) rules for locale-aware string comparisons, including case- and accent-insensitive matching. Supported collated indexes can serve queries whose collation matches the index.
 
+> **v1.3 isn't released yet.** The newest published image is v1.2, which lacks the `documentdb.enable_collation_with_create_collection` flag, so step 2 fails on it. Until v1.3 ships, you need an image built from the [`main` branch](https://github.com/documentdb/documentdb); the [changelog](https://github.com/documentdb/documentdb/blob/main/CHANGELOG.md) shows when it's released.
+
 This walkthrough enables the required feature flags, creates a collection and a non-unique index, and demonstrates a case-insensitive query. It is based on [the original example and feature-flag notes](https://gist.github.com/xgerman/0d84036a676927a9382785cbffc857af).
 
 ## Choose how strings compare
@@ -30,13 +32,23 @@ Use `{ locale: "en", strength: 2 }`, so `"a"` and `"A"` compare equal, as do `"b
 
 ## 1. Start a local container
 
-You need Docker and a **DocumentDB OSS v1.3 image**. The following command uses `latest`, a moving tag; ensure the image includes v1.3 before proceeding.
+You need Docker and a **DocumentDB OSS v1.3 image**. The following command uses `latest`, a moving tag that points to v1.2 until v1.3 is released.
 
 ```bash
-docker run -d --name docdb-test -p 127.0.0.1:10260:10260 \n  -e USERNAME=testuser \n  -e PASSWORD=testpass123 \n  ghcr.io/documentdb/documentdb/documentdb-local:latest
+docker run -d --name docdb-test -p 127.0.0.1:10260:10260 \
+  -e USERNAME=testuser \
+  -e PASSWORD=testpass123 \
+  ghcr.io/documentdb/documentdb/documentdb-local:latest
 ```
 
 Allow the gateway to finish starting before connecting. The published port is bound to localhost, and the credentials are for this disposable local example only.
+
+Check the version before you continue; it must be `1.3-0` or later:
+
+```bash
+docker exec docdb-test psql -X -U documentdb -p 9712 -d postgres \
+  -Atc "SELECT extversion FROM pg_extension WHERE extname = 'documentdb';"
+```
 
 ## 2. Enable the collation feature flags
 

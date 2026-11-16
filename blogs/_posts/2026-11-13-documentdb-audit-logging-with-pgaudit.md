@@ -252,9 +252,9 @@ For conventional actor-based auditing of writes and collection DDL:
 4. Leave global auditing disabled and enable `write, ddl` on each audited role.
 5. Keep SQL statement and parameter logging disabled; enable relation and row-count logging.
 6. Reconnect clients and verify the resulting records with a representative workload.
-7. Send logs to a durable, access-controlled Microsoft Purview Audit sink.
+7. Send logs to a durable, access-controlled audit-log destination.
 8. Retain catalog mapping history if consumers require logical collection names.
 
-For authoritative commit outcomes, document reconstruction, or recovery after ordinary Audit logs are lost, complement this approach with [WAL-based forensic analysis](https://github.com/xgerman/documentdb-wal-audit) and an appropriate WAL-retention strategy.
+For authoritative commit outcomes, document reconstruction, or recovery after ordinary audit logs are lost, complement this approach with [WAL-based forensic analysis](https://github.com/xgerman/documentdb-wal-audit) and an appropriate WAL-retention strategy.
 
 The useful distinction is simple: **pgAudit records actor-attributed PostgreSQL activity; WAL-based analysis addresses what committed and what can be reconstructed.** Choose the evidence your audit requirements actually need.
