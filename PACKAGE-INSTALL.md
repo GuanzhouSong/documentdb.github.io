@@ -399,7 +399,7 @@ The current release publishes PostgreSQL 17 and 18. Install `documentdb-17` or
 
 ## Upgrading an existing install
 
-Package installs from 1.0 upgrade in place to 1.2 on either channel; to take each new release as
+Package installs from v0.116, v0.117 or 1.0 upgrade in place to 1.2 on either channel; to take each new release as
 soon as it is published, [switch it to `latest`](#switch-from-stable-to-latest). Move the entire stack
 together; upgrading only `postgresql-N-documentdb` does not update the gateway, tools, common
 payload, or `documentdb-N`. These steps use systemd; upgrading a host without it isn't covered here.
